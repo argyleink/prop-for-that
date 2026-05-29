@@ -12,9 +12,9 @@ CSS can already react to a lot — `:hover`, `[open]`, container queries, `prefe
 JavaScript knows things CSS can't see. `prop-for-that` exposes them as `--live-*` custom properties on `:root` or individual elements:
 
 ```css
-/* scroll progress bar */
-.progress-bar {
-  width: calc(var(--live-scroll-progress) * 100%);
+/* fade an element in as it scrolls into view */
+.reveal {
+  opacity: var(--live-visible-ratio);
 }
 
 /* pointer-driven tilt card */
@@ -34,7 +34,7 @@ Enable the sources once in JavaScript — then CSS does the rest.
 ```js
 import { global, bind } from 'prop-for-that'
 
-global(['scroll', 'pointer'])
+global(['pointer'])
 bind(document.querySelector('input[type="range"]'), ['range'])
 ```
 

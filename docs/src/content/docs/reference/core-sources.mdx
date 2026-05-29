@@ -1,9 +1,9 @@
 ---
 title: Core sources
-description: The six built-in sources included in the main bundle.
+description: The five built-in sources included in the main bundle.
 ---
 
-These six sources ship in the main bundle and are available with no extra imports. Global sources write to `:root`; element sources write to the bound element.
+These five sources ship in the main bundle and are available with no extra imports. Global sources write to `:root`; element sources write to the bound element.
 
 ## Global sources
 
@@ -23,22 +23,15 @@ Writes the viewport dimensions whenever the window is resized.
 }
 ```
 
-### `scroll`
-
-Writes scroll position and progress on every scroll event (passive listener).
-
-| Property | Value |
-| --- | --- |
-| `--live-scroll-x` | Horizontal scroll offset in pixels (unitless) |
-| `--live-scroll-y` | Vertical scroll offset in pixels (unitless) |
-| `--live-scroll-progress` | 0–1 fraction of total scrollable distance |
-
-```css
-.progress-bar {
-  transform: scaleX(var(--live-scroll-progress));
-  transform-origin: left;
-}
-```
+:::note[No `scroll` source — use native CSS]
+There is intentionally no scroll-position source. Continuous scroll-linked
+effects (progress bars, parallax) are better expressed with native [CSS
+scroll-driven animations](https://developer.mozilla.org/en-US/docs/Web/CSS/animation-timeline)
+(`animation-timeline: scroll()` / `view()`), which run on the compositor. For
+scroll-*triggered* state that CSS can't latch, use the [`visibility`](#visibility)
+source below. Scroll *velocity* and *direction* — which native timelines can't
+express — live in the [`scroll-velocity` plugin](/reference/plugins/).
+:::
 
 ### `pointer`
 

@@ -13,7 +13,7 @@ battery level, an element's visible ratio, network speed. This library writes
 those into custom properties efficiently, so a stylesheet can do:
 
 ```css
-.bar { width: calc(var(--live-scroll-progress) * 100%); }
+.fade { opacity: var(--live-visible-ratio); }
 .card { transform: rotateX(calc((0.5 - var(--live-pointer-y-ratio)) * 20deg)); }
 .knob::after { content: counter(x); counter-reset: x var(--live-value); }
 ```
@@ -43,7 +43,7 @@ across Chromium/Firefox/WebKit.
 ```
                  sources                       core
   ┌───────────────────────────┐   write()   ┌──────────────────┐
-  │ global:  viewport, scroll, │ ─────────►  │  Writer (rAF)    │
+  │ global:  viewport,         │ ─────────►  │  Writer (rAF)    │
   │          pointer           │             │  • coalesce      │  setProperty
   │ element: size, visibility, │             │  • diff vs last  │ ───────────►  :root / el
   │          range             │             │  • 1 flush/frame │
@@ -74,9 +74,9 @@ across Chromium/Firefox/WebKit.
 ```ts
 // 1. imperative
 import { global, bind, configure } from 'prop-for-that'
-global(['viewport', 'scroll', 'pointer'])      // writes to :root
-const h = bind(slider, ['range'])              // writes to the element
-h.dispose()
+global(['viewport', 'pointer'])      // writes to :root
+const dispose = bind(slider, ['range'])        // writes to the element
+dispose()
 
 // 2. declarative — auto entry scans [data-prop] and watches the DOM
 import 'prop-for-that/auto'
@@ -105,7 +105,6 @@ Split by cadence, not by convenience:
 | key | scope | writes (local names) |
 | --- | --- | --- |
 | `viewport` | global | `vw`, `vh` |
-| `scroll` | global | `scroll-x`, `scroll-y`, `scroll-progress` |
 | `pointer` | global | `pointer-x`, `pointer-y`, `pointer-x-ratio`, `pointer-y-ratio` |
 | `size` | element | `w`, `h`, `aspect` (ResizeObserver) |
 | `visibility` | element | `visible`, `visible-ratio` (IntersectionObserver) |
@@ -143,7 +142,11 @@ Not yet implemented (future): `light`, `audio` (Web-Audio analyser bins),
 `caret`, `children` (count via MutationObserver).
 
 > Deliberately **excluded** (CSS already covers): `:hover`, `:focus-within`,
-> `[open]`, `prefers-*`, media/container queries, `env()` safe-area insets.
+> `[open]`, `prefers-*`, media/container queries, `env()` safe-area insets, and
+> **scroll position/progress** — use native scroll-driven animations
+> (`animation-timeline: scroll()`/`view()`), which run on the compositor.
+> (Scroll *velocity*/*direction*, which timelines can't express, stay as the
+> `scroll-velocity` plugin.)
 
 ## Performance principles
 
@@ -172,7 +175,7 @@ src/
     window-events.ts  shared ref-counted passive window listeners
   sources/
     index.ts          coreSources registry
-    global/{viewport,scroll,pointer}.ts
+    global/{viewport,pointer}.ts
     element/{size,visibility,range}.ts
   plugins/            opt-in exotic sources (v1.1+)
 test/
@@ -189,6 +192,6 @@ test/
 
 ## Open questions for you
 
-1. Default global set for the `auto` entry — `viewport scroll pointer`, or leaner/heavier?
+1. Default global set for the `auto` entry — currently `viewport pointer`; leaner/heavier?
 2. Prefix strings — keep `--live-`/`--const-`, or namespace harder (`--pft-live-`) to avoid token collisions?
 3. Package/scope name on npm — `prop-for-that`, or scoped (`@argyle/prop-for-that`)?

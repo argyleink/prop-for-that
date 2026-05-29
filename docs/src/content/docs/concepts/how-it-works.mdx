@@ -8,7 +8,7 @@ description: The batched rAF writer, diffing, shared observers, and passive list
 ```
               sources                       core
 ┌───────────────────────────┐   write()   ┌──────────────────┐
-│ global:  viewport, scroll, │ ─────────► │  Writer (rAF)    │
+│ global:  viewport,         │ ─────────► │  Writer (rAF)    │
 │          pointer           │            │  • coalesce      │  setProperty
 │ element: size, visibility, │            │  • diff vs last  │ ───────────► :root / el
 │          range             │            │  • 1 flush/frame │

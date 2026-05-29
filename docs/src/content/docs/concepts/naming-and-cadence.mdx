@@ -12,7 +12,7 @@ Every property written by `prop-for-that` falls into one of two cadences:
 | `--live-` | reactive | Updated each frame when the value changes |
 | `--const-` | constant | Written once at startup; never overwritten |
 
-The prefix is the signal. If you see `--live-scroll-progress` in a stylesheet, you know it's reactive. If you see `--const-dpr`, you know it's a write-once device constant.
+The prefix is the signal. If you see `--live-pointer-x` in a stylesheet, you know it's reactive. If you see `--const-dpr`, you know it's a write-once device constant.
 
 ## Unitless values
 
@@ -26,9 +26,9 @@ This is intentional: unitless numbers compose cleanly with `calc()` and let you 
   height: calc(var(--live-vh) * 1px);
 }
 
-/* Use scroll progress as a 0–1 fraction */
+/* Use a slider's 0–1 fraction directly */
 .indicator {
-  width: calc(var(--live-scroll-progress) * 100%);
+  width: calc(var(--live-value-pct) * 100%);
 }
 
 /* Drive a hue from a range input */
@@ -61,7 +61,7 @@ configure({
 
 ```css
 /* Then use your custom prefix */
-.bar { width: calc(var(--pft-live-scroll-progress) * 100%); }
+.bar { width: calc(var(--pft-live-value-pct) * 100%); }
 ```
 
 Call `configure()` once, before any `global()` or `bind()` calls, so all subsequent writes use the new prefixes.

@@ -18,7 +18,7 @@ export interface SourceContext {
   config: Config
   /**
    * Queue a value for the next batched flush. `localName` is prefixed by cadence
-   * (e.g. `write('scroll-y', 12)` → `--live-scroll-y: 12`).
+   * (e.g. `write('pointer-x', 12)` → `--live-pointer-x: 12`).
    */
   write(localName: string, value: number | string, cadence?: Cadence): void
 }

@@ -1,43 +1,75 @@
 /* ───────────────────────────────────────────────────────────────────────
    prop-for-that — showcase
    All reactivity below reads var(--live-*). No JS touches these styles.
+   The single brand accent is itself a live value: its hue tracks the
+   pointer (--accent-h), so the whole page literally colours with interaction.
    ─────────────────────────────────────────────────────────────────────── */
 
 :root {
   color-scheme: light dark;
 
-  /* palette ── light-dark() picks per system theme, no JS, no media query */
-  --ink: light-dark(#1a1a1f, #ece9e3);
-  --ink-soft: light-dark(#5a5a64, #9a978f);
-  --paper: light-dark(#f6f4ef, #131217);
-  --surface: light-dark(#ffffff, #1c1b22);
-  --line: light-dark(#e4e0d7, #2c2b34);
-  --accent: light-dark(#3a2bd8, #9d8cff);
-  --accent-soft: light-dark(#ece9ff, #211d3a);
+  /* ── neutrals: near-black / near-white, each tinted toward the accent hue
+        (low chroma) so nothing is a dead #000 / #fff. OKLCH throughout. ── */
+  --ink: light-dark(oklch(20% 0.012 280), oklch(93% 0.01 280));
+  --ink-soft: light-dark(oklch(46% 0.012 280), oklch(64% 0.012 280));
+  --ink-faint: light-dark(oklch(53% 0.012 280), oklch(58% 0.012 280));
+  --paper: light-dark(oklch(97% 0.006 280), oklch(16% 0.012 280));
+  --surface: light-dark(oklch(99.5% 0.003 280), oklch(20% 0.013 280));
+  --line: light-dark(oklch(89% 0.008 280), oklch(28% 0.014 280));
+  --line-strong: light-dark(oklch(80% 0.01 280), oklch(36% 0.016 280));
 
-  /* fluid type scale (1.25 ratio, viewport-aware) */
-  --step--1: clamp(0.83rem, 0.79rem + 0.18vw, 0.94rem);
+  /* ── the live accent ──────────────────────────────────────────────────
+        --accent-h is the hue. It defaults to 280 (electric indigo) but is
+        re-pointed by the pointer in CSS below. Everything that wants the
+        brand colour reads --accent / --accent-soft, so a single mouse move
+        recolours the entire page. No JS involved. */
+  --accent-h: 280;
+  --accent: light-dark(
+    oklch(52% 0.27 var(--accent-h)),
+    oklch(74% 0.21 var(--accent-h))
+  );
+  --accent-ink: light-dark(oklch(46% 0.27 var(--accent-h)), oklch(78% 0.2 var(--accent-h)));
+  --accent-soft: light-dark(
+    oklch(95% 0.05 var(--accent-h)),
+    oklch(27% 0.09 var(--accent-h))
+  );
+
+  /* fluid type scale (~1.33 ratio at the top, viewport-aware, dramatic) */
+  --step--1: clamp(0.78rem, 0.74rem + 0.18vw, 0.88rem);
   --step-0: clamp(1rem, 0.95rem + 0.24vw, 1.13rem);
-  --step-1: clamp(1.25rem, 1.16rem + 0.45vw, 1.5rem);
-  --step-2: clamp(1.56rem, 1.4rem + 0.8vw, 2rem);
-  --step-3: clamp(1.95rem, 1.66rem + 1.45vw, 2.81rem);
-  --step-4: clamp(2.44rem, 1.9rem + 2.7vw, 4.1rem);
+  --step-1: clamp(1.3rem, 1.18rem + 0.55vw, 1.66rem);
+  --step-2: clamp(1.7rem, 1.46rem + 1.1vw, 2.55rem);
+  --step-3: clamp(2.2rem, 1.7rem + 2.3vw, 3.7rem);
+  --step-4: clamp(3.2rem, 2.1rem + 5.4vw, 7.5rem);
 
   /* spacing rhythm */
   --space-1: 0.5rem;
   --space-2: 1rem;
   --space-3: 1.5rem;
   --space-4: 2.5rem;
-  --space-5: 4rem;
-  --space-6: 7rem;
+  --space-5: clamp(4rem, 9vw, 7rem);
+  --space-6: clamp(7rem, 16vw, 13rem);
 
   --measure: 38rem;
-  --radius: 14px;
+  --shell: min(72rem, 92vw);
+  --gutter: clamp(1.25rem, 4vw, 4rem);
+  --radius: 16px;
 
-  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
-    Helvetica, Arial, sans-serif;
-  --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas,
-    monospace;
+  --font-display: 'Archivo', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-sans: 'Archivo', ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
+    Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'Spline Sans Mono', ui-monospace, 'SF Mono', 'JetBrains Mono',
+    Menlo, Consolas, monospace;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* explicit theme override (T key cycles light → dark → system) */
+html[data-theme='light'] {
+  color-scheme: light;
+}
+html[data-theme='dark'] {
+  color-scheme: dark;
 }
 
 *,
@@ -57,41 +89,51 @@ body {
   font-family: var(--font-sans);
   font-size: var(--step-0);
   line-height: 1.6;
+  font-synthesis: none;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
 }
 
+/* The single mouse-driven recolour. The pointer's horizontal ratio (0–1)
+   sweeps the accent hue across ~150° of the wheel. Quiet on load, alive on
+   move. This is the "small pop of colour wired to a --live-* value". */
+body {
+  --accent-h: calc(255 + var(--live-pointer-x-ratio, 0.5) * 150);
+}
+
 code {
   font-family: var(--font-mono);
-  font-size: 0.9em;
+  font-size: 0.88em;
+  font-weight: 500;
 }
 
-h1,
+.display,
 h2 {
-  line-height: 1.05;
-  letter-spacing: -0.02em;
-  font-weight: 600;
+  line-height: 0.94;
+  letter-spacing: -0.035em;
+  font-weight: 800;
   text-wrap: balance;
+  margin: 0;
 }
 
-em {
-  font-style: normal;
-  color: var(--accent);
-}
-
-.muted {
-  color: var(--ink-soft);
+/* ── shared focus treatment: a crisp, offset accent ring everywhere ── */
+:where(a, button, input, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 4px;
 }
 
 /* ─────────────────────────── scroll progress ───────────────────────────
-   Width = --live-scroll-progress (0–1). Pure CSS, no scroll handler. */
+   Native CSS scroll-driven animation. animation-timeline: scroll() runs on the
+   compositor, off the main thread — CSS already does this well, so
+   prop-for-that deliberately does NOT expose scroll position as a variable. */
 .scrollbar {
   position: fixed;
   inset: 0 0 auto 0;
-  height: 3px;
+  height: 2px;
   z-index: 50;
-  background: transparent;
+  background: var(--line);
   pointer-events: none;
 }
 .scrollbar i {
@@ -99,31 +141,114 @@ em {
   height: 100%;
   background: var(--accent);
   transform-origin: left center;
-  scale: var(--live-scroll-progress, 0) 1;
+  scale: 0 1; /* fallback if scroll timelines are unsupported */
+}
+@supports (animation-timeline: scroll()) {
+  @keyframes scrollbar-grow {
+    to {
+      scale: 1 1;
+    }
+  }
+  .scrollbar i {
+    animation: scrollbar-grow linear both;
+    animation-timeline: scroll(root block);
+  }
+}
+
+/* ─────────────────────────── live spec readout (HUD) ───────────────────
+   A fixed corner panel that narrates the page's own --live-* state. Every
+   number is a CSS counter seeded from a live value — no JS writes here. */
+.hud {
+  position: fixed;
+  top: var(--space-3);
+  right: var(--space-3);
+  z-index: 40;
+  margin: 0;
+  display: grid;
+  gap: 2px;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in oklab, var(--surface) 78%, transparent);
+  backdrop-filter: blur(8px);
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--ink-soft);
+  pointer-events: none;
+}
+.hud__row {
+  margin: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 1.4rem;
+}
+.hud__row b {
+  color: var(--accent-ink);
+  font-variant-numeric: tabular-nums;
+}
+.hud__row b::after {
+  content: counter(n) '%';
+}
+/* counters seeded straight from the live ratios (0–1 → 0–100, rounded) */
+.hud-px::after {
+  counter-reset: n calc(var(--live-pointer-x-ratio, 0.5) * 100);
+}
+.hud-py::after {
+  counter-reset: n calc(var(--live-pointer-y-ratio, 0.5) * 100);
+}
+@media (max-width: 40rem) {
+  .hud {
+    display: none;
+  }
 }
 
 /* ─────────────────────────────── masthead ─────────────────────────────── */
 .masthead {
-  max-width: var(--measure);
+  width: var(--shell);
   margin-inline: auto;
-  padding: clamp(var(--space-5), 14vh, 11rem) var(--space-3) var(--space-5);
+  padding: clamp(var(--space-5), 16vh, 12rem) 0 var(--space-6);
 }
 .eyebrow {
   font-family: var(--font-mono);
   font-size: var(--step--1);
-  letter-spacing: 0.14em;
+  font-weight: 600;
+  letter-spacing: 0.32em;
   text-transform: uppercase;
-  color: var(--accent);
-  margin: 0 0 var(--space-3);
+  color: var(--accent-ink);
+  margin: 0 0 var(--space-4);
 }
-.masthead h1 {
+.eyebrow::before {
+  content: '';
+  display: inline-block;
+  width: 2.4rem;
+  height: 1px;
+  margin-right: 0.9rem;
+  vertical-align: middle;
+  background: currentColor;
+}
+.display {
   font-size: var(--step-4);
-  margin: 0 0 var(--space-3);
+  font-stretch: 112%;
+  margin: 0;
+}
+.display__accent {
+  color: var(--accent);
+}
+.masthead__sub {
+  font-size: var(--step-2);
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  color: var(--ink-soft);
+  margin: var(--space-3) 0 var(--space-4);
 }
 .lede {
-  max-width: 34rem;
+  max-width: var(--measure);
   color: var(--ink-soft);
   font-size: var(--step-1);
+  font-weight: 350;
+  line-height: 1.5;
   margin: 0;
 }
 .lede code,
@@ -131,22 +256,66 @@ em {
 .colophon code,
 .reveal__t code {
   background: var(--accent-soft);
-  color: var(--accent);
-  padding: 0.05em 0.35em;
+  color: var(--accent-ink);
+  padding: 0.08em 0.4em;
   border-radius: 5px;
+  font-weight: 500;
 }
+
+/* quiet discoverability hint */
+.hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: var(--space-4) 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  color: var(--ink-faint);
+  letter-spacing: 0.01em;
+}
+.hint__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 0 color-mix(in oklab, var(--accent) 60%, transparent);
+  animation: pulse 2.6s var(--ease-out) infinite;
+}
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--accent) 55%, transparent);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 0.5rem transparent;
+  }
+}
+kbd {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  padding: 0.05em 0.4em;
+  line-height: 1;
+}
+
 .scroll-hint {
   font-family: var(--font-mono);
   font-size: var(--step--1);
-  letter-spacing: 0.2em;
+  font-weight: 500;
+  letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: var(--ink-soft);
-  margin: var(--space-5) 0 0;
+  color: var(--ink-faint);
+  margin: var(--space-6) 0 0;
 }
 .scroll-hint::after {
   content: '↓';
   display: inline-block;
-  margin-left: 0.5em;
+  margin-left: 0.6em;
   animation: nudge 1.8s ease-in-out infinite;
 }
 @keyframes nudge {
@@ -166,30 +335,102 @@ main {
   display: flow-root;
 }
 .demo {
-  max-width: 64rem;
+  position: relative;
+  width: var(--shell);
   margin-inline: auto;
-  padding: var(--space-6) var(--space-3);
+  padding: var(--space-6) 0;
   border-top: 1px solid var(--line);
 }
+/* huge faint index, set behind the heading as spec-sheet furniture */
+.watermark {
+  position: absolute;
+  top: calc(var(--space-6) - 0.35em);
+  right: 0;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(7rem, 22vw, 18rem);
+  font-weight: 900;
+  font-stretch: 125%;
+  line-height: 0.7;
+  letter-spacing: -0.05em;
+  color: var(--line);
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
 .demo-head {
+  position: relative;
+  z-index: 1;
   max-width: var(--measure);
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-5);
 }
 .index {
   font-family: var(--font-mono);
   font-size: var(--step--1);
-  color: var(--accent);
-  letter-spacing: 0.1em;
-  margin: 0 0 var(--space-1);
+  font-weight: 600;
+  color: var(--accent-ink);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  margin: 0 0 var(--space-3);
 }
 .demo h2 {
   font-size: var(--step-3);
-  margin: 0 0 var(--space-2);
+  font-stretch: 108%;
+  margin: 0 0 var(--space-3);
 }
 .desc {
   color: var(--ink-soft);
+  font-size: var(--step-1);
+  font-weight: 350;
+  line-height: 1.5;
   margin: 0;
-  max-width: 32rem;
+  max-width: 34rem;
+}
+
+/* ── native CSS scroll-driven animations — compositor, no JS, no library ──
+   The continuous "scrollytelling" motion (heading rise, watermark parallax) is
+   native; prop-for-that is reserved for what CSS can't do (the scroll-triggered
+   visibility reveals). Gated behind reduced-motion and feature support. */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .demo-head {
+      animation: head-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 35%;
+    }
+    @keyframes head-rise {
+      from {
+        opacity: 0;
+        translate: 0 2.5rem;
+      }
+    }
+    .watermark {
+      animation: wm-drift linear both;
+      animation-timeline: view();
+      animation-range: cover;
+    }
+    @keyframes wm-drift {
+      from {
+        translate: 0 4rem;
+      }
+      to {
+        translate: 0 -4rem;
+      }
+    }
+  }
+}
+
+/* asymmetric body: demo stage left, code caption right, breakpoint-free */
+.demo-body {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: var(--gutter) clamp(2rem, 5vw, 4rem);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  align-items: start;
+}
+#scroll .demo-body {
+  grid-template-columns: 1fr;
 }
 
 /* ─────────────────────────────── stages ─────────────────────────────── */
@@ -199,20 +440,20 @@ main {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
-  margin-bottom: var(--space-4);
 }
 
 /* ════════════════════════ 1. POINTER-REACTIVE CARD ════════════════════════
    Reads global --live-pointer-x-ratio / --live-pointer-y-ratio (0–1). */
 .stage--pointer {
-  padding: clamp(var(--space-4), 8vw, 6rem);
+  min-height: 26rem;
+  padding: clamp(var(--space-4), 6vw, 5rem);
   perspective: 1000px;
+  /* the surface glow follows the pointer too */
   background: radial-gradient(
-    120% 120% at
-      calc(var(--live-pointer-x-ratio, 0.5) * 100%)
+    120% 120% at calc(var(--live-pointer-x-ratio, 0.5) * 100%)
       calc(var(--live-pointer-y-ratio, 0.5) * 100%),
     var(--accent-soft),
-    var(--surface) 60%
+    var(--surface) 62%
   );
 }
 
@@ -222,23 +463,24 @@ main {
   --ry: calc((var(--live-pointer-x-ratio, 0.5) - 0.5) * 16deg);
 
   position: relative;
-  inline-size: min(20rem, 70vw);
+  inline-size: min(20rem, 64vw);
   aspect-ratio: 5 / 7;
   border-radius: 20px;
   overflow: hidden;
+  /* the card face carries the live accent hue in its lower stop */
   background: linear-gradient(
     155deg,
-    light-dark(#2a2540, #2a2540),
-    light-dark(#0e0c1c, #0e0c1c)
+    oklch(28% 0.12 var(--accent-h)),
+    oklch(13% 0.08 var(--accent-h))
   );
-  color: #f4f2ff;
+  color: oklch(97% 0.02 var(--accent-h));
   transform-style: preserve-3d;
   transform: rotateX(var(--rx)) rotateY(var(--ry));
   box-shadow:
     0 1px 1px #0002,
-    0 12px 30px -12px #0007,
-    0 40px 60px -30px #0009;
-  transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    0 14px 34px -14px #0008,
+    0 44px 66px -34px #000a;
+  transition: transform 220ms var(--ease-out);
   will-change: transform;
 }
 
@@ -248,8 +490,7 @@ main {
   inset: -40%;
   pointer-events: none;
   background: radial-gradient(
-    36% 36% at
-      calc(var(--live-pointer-x-ratio, 0.5) * 100%)
+    36% 36% at calc(var(--live-pointer-x-ratio, 0.5) * 100%)
       calc(var(--live-pointer-y-ratio, 0.5) * 100%),
     #ffffffcc,
     #ffffff00 60%
@@ -270,21 +511,23 @@ main {
 .tilt-card__kicker {
   font-family: var(--font-mono);
   font-size: var(--step--1);
-  letter-spacing: 0.2em;
+  font-weight: 600;
+  letter-spacing: 0.3em;
   text-transform: uppercase;
-  color: #b5a9ff;
+  color: oklch(85% 0.13 var(--accent-h));
   margin: 0 0 auto;
 }
 .tilt-card__title {
   font-size: var(--step-2);
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: -0.02em;
+  font-weight: 800;
+  font-stretch: 112%;
+  line-height: 0.92;
+  letter-spacing: -0.03em;
   margin: 0 0 var(--space-1);
 }
 .tilt-card__sub {
   font-size: var(--step--1);
-  color: #d9d2ff;
+  color: oklch(88% 0.04 var(--accent-h));
   margin: 0;
 }
 
@@ -293,8 +536,7 @@ main {
 .reveals {
   display: grid;
   gap: var(--space-3);
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
-  margin-bottom: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
 }
 .reveal {
   --r: var(--live-visible-ratio, 0);
@@ -302,217 +544,316 @@ main {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
-  min-height: 11rem;
+  min-height: 12rem;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  gap: var(--space-3);
 
   opacity: var(--r);
   translate: 0 calc((1 - var(--r)) * 2rem);
   filter: blur(calc((1 - var(--r)) * 4px));
   transition:
-    opacity 120ms linear,
-    translate 120ms linear,
-    filter 120ms linear;
+    opacity 140ms linear,
+    translate 140ms linear,
+    filter 140ms linear,
+    border-color 200ms var(--ease-out);
+}
+.reveal:hover {
+  border-color: var(--line-strong);
 }
 .reveal__n {
   font-family: var(--font-mono);
   font-size: var(--step-1);
-  color: var(--accent);
+  font-weight: 600;
+  color: var(--accent-ink);
   margin: 0;
 }
 .reveal__t {
   font-size: var(--step-1);
+  font-weight: 400;
+  line-height: 1.35;
   margin: 0;
   text-wrap: balance;
 }
 
-/* ════════════════════════════ 3. SLIDER GAUGE ════════════════════════════
-   Reads bound --live-value / --live-value-pct (0–1) from the input. */
+/* ══════════════════════════ 3. ONE VALUE, MANY READERS ════════════════════
+   The range source is bound to #meter (the container) and writes
+   --live-value / --live-value-pct there. Because custom properties inherit
+   downward, both the separate gauge (ring + counted number) and the slider
+   itself read the same value — no JS mirroring, no sibling trickery. */
 .stage--slider {
-  flex-direction: column;
-  gap: var(--space-4);
-  padding: clamp(var(--space-4), 8vw, 5rem) var(--space-3);
+  min-height: 30rem;
+  padding: clamp(var(--space-4), 8vw, 6rem) var(--space-4);
 }
 
-.gauge {
-  --pct: var(--live-value-pct, 0);
-  /* hue sweeps cool → warm as the value rises */
-  --hue: hsl(calc(220 - var(--pct) * 180) 85% 58%);
+.meter {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-5);
+  inline-size: min(34rem, 86vw);
+}
 
-  position: relative;
-  inline-size: clamp(13rem, 40vw, 18rem);
-  aspect-ratio: 1;
+/* the separate gauge: a conic ring + a big counted number, both reading the
+   value inherited from #meter — the readout the leaf <input> couldn't host. */
+.gauge {
   display: grid;
   place-items: center;
+  inline-size: clamp(11rem, 38vw, 15rem);
+  aspect-ratio: 1;
 }
-.gauge__sweep {
-  position: absolute;
-  inset: 0;
+.gauge > * {
+  grid-area: 1 / 1;
+}
+.gauge__arc {
+  --p: var(--live-value-pct, 0);
+  inline-size: 100%;
+  aspect-ratio: 1;
   border-radius: 50%;
-  /* the arc fills proportionally to --live-value-pct */
   background: conic-gradient(
-    from -90deg,
-    var(--hue) calc(var(--pct) * 100%),
+    var(--accent) calc(var(--p) * 360deg),
     var(--line) 0
   );
-  -webkit-mask: radial-gradient(circle, #0000 60%, #000 61%);
-  mask: radial-gradient(circle, #0000 60%, #000 61%);
+  -webkit-mask: radial-gradient(
+    farthest-side,
+    #0000 calc(100% - 0.85rem),
+    #000 calc(100% - 0.8rem)
+  );
+  mask: radial-gradient(
+    farthest-side,
+    #0000 calc(100% - 0.85rem),
+    #000 calc(100% - 0.8rem)
+  );
+  transition: background 90ms linear;
 }
-.gauge__core {
-  position: relative;
-  inline-size: 64%;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  display: grid;
-  place-items: center;
-  /* the inner dot grows with the value */
-  box-shadow: 0 0 0 calc(var(--pct) * 0.6rem) var(--accent-soft);
-  transition: box-shadow 120ms linear;
-}
-.gauge__readout {
-  font-family: var(--font-mono);
-  font-size: var(--step-3);
-  font-weight: 600;
+.gauge__num {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--step-4);
+  font-weight: 900;
+  font-stretch: 110%;
+  letter-spacing: -0.04em;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
-  color: var(--hue);
-  letter-spacing: -0.03em;
+  color: var(--ink);
 }
-/* the printed number is a CSS counter seeded from --live-value */
-.gauge__readout::after {
+.gauge__num::after {
   counter-reset: v calc(var(--live-value, 0));
   content: counter(v);
 }
 
 .slider {
   display: grid;
-  gap: var(--space-1);
-  inline-size: min(28rem, 90vw);
+  gap: var(--space-3);
+  inline-size: 100%;
 }
 .slider__label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
   font-family: var(--font-mono);
   font-size: var(--step--1);
-  letter-spacing: 0.14em;
+  font-weight: 600;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--ink-soft);
 }
-.slider input[type='range'] {
+.slider__keys {
+  display: inline-flex;
+  gap: 0.3rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* the bold reactive meter: thick track, value-width fill, hue-shifting,
+   the thumb a glowing dot whose halo peaks at the top of the range. */
+.dial {
   --pct: var(--live-value-pct, 0);
+  /* cool indigo → warm amber as the value climbs */
+  --hue: oklch(72% 0.2 calc(255 - var(--pct) * 210));
+
   inline-size: 100%;
-  height: 1.5rem;
+  height: 2.75rem;
   margin: 0;
   background: transparent;
   cursor: ew-resize;
   -webkit-appearance: none;
   appearance: none;
 }
-.slider input[type='range']::-webkit-slider-runnable-track {
-  height: 6px;
+.dial::-webkit-slider-runnable-track {
+  height: 0.85rem;
   border-radius: 99px;
   background: linear-gradient(
     90deg,
-    var(--accent) calc(var(--pct) * 100%),
+    var(--hue) calc(var(--pct) * 100%),
     var(--line) calc(var(--pct) * 100%)
   );
+  border: 1px solid var(--line);
+  transition: filter 180ms var(--ease-out);
 }
-.slider input[type='range']::-moz-range-track {
-  height: 6px;
+.dial::-moz-range-track {
+  height: 0.85rem;
   border-radius: 99px;
   background: var(--line);
+  border: 1px solid var(--line);
 }
-.slider input[type='range']::-moz-range-progress {
-  height: 6px;
+.dial::-moz-range-progress {
+  height: 0.85rem;
   border-radius: 99px;
-  background: var(--accent);
+  background: var(--hue);
 }
-.slider input[type='range']::-webkit-slider-thumb {
+.dial::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  inline-size: 1.25rem;
-  block-size: 1.25rem;
-  margin-top: -0.5rem;
+  inline-size: 1.6rem;
+  block-size: 1.6rem;
+  margin-top: calc((0.85rem - 1.6rem) / 2);
   border-radius: 50%;
   background: var(--surface);
-  border: 2px solid var(--accent);
-  box-shadow: 0 1px 4px #0003;
+  border: 3px solid var(--hue);
+  /* halo grows with the value: a continuous reward that maxes out at 100 */
+  box-shadow:
+    0 1px 4px #0004,
+    0 0 0 calc(var(--pct) * 0.7rem)
+      color-mix(in oklab, var(--hue) 32%, transparent);
+  transition:
+    transform 160ms var(--ease-out),
+    box-shadow 120ms linear;
 }
-.slider input[type='range']::-moz-range-thumb {
-  inline-size: 1.25rem;
-  block-size: 1.25rem;
+.dial::-moz-range-thumb {
+  inline-size: 1.6rem;
+  block-size: 1.6rem;
   border-radius: 50%;
   background: var(--surface);
-  border: 2px solid var(--accent);
-  box-shadow: 0 1px 4px #0003;
+  border: 3px solid var(--hue);
+  box-shadow:
+    0 1px 4px #0004,
+    0 0 0 calc(var(--pct) * 0.7rem)
+      color-mix(in oklab, var(--hue) 32%, transparent);
+  transition:
+    transform 160ms var(--ease-out),
+    box-shadow 120ms linear;
 }
-.slider input[type='range']:focus-visible {
+/* keyboard + active feedback: the thumb swells and the track brightens */
+.dial:is(:hover, :focus-visible)::-webkit-slider-thumb {
+  transform: scale(1.12);
+}
+.dial:is(:hover, :focus-visible)::-moz-range-thumb {
+  transform: scale(1.12);
+}
+.dial:focus-visible::-webkit-slider-runnable-track {
+  filter: brightness(1.06) saturate(1.1);
   outline: 2px solid var(--accent);
-  outline-offset: 4px;
-  border-radius: 6px;
+  outline-offset: 6px;
+}
+.dial:focus-visible::-moz-range-track {
+  filter: brightness(1.06) saturate(1.1);
+}
+.dial:focus-visible {
+  outline: none;
+}
+
+/* tick scale under the meter, 0 … 100, quiet mono furniture */
+.slider__ticks {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--ink-faint);
+}
+.slider__ticks i {
+  inline-size: 1px;
+  block-size: 0.4rem;
+  background: var(--line-strong);
 }
 
 /* ─────────────────────────── code captions ─────────────────────────── */
 .caption {
   margin: 0;
   max-width: var(--measure);
+  min-width: 0;
 }
 .caption figcaption {
   font-family: var(--font-mono);
   font-size: var(--step--1);
-  color: var(--ink-soft);
-  margin: var(--space-2) 0 var(--space-1);
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: var(--space-3) 0 var(--space-1);
+}
+.caption figcaption:first-child {
+  margin-top: 0;
 }
 .caption pre {
   margin: 0;
-  padding: var(--space-2) var(--space-3);
-  background: light-dark(#fbfaf7, #16151b);
+  padding: var(--space-3);
+  background: light-dark(oklch(99% 0.004 280), oklch(13% 0.012 280));
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 12px;
   overflow-x: auto;
   font-size: var(--step--1);
   line-height: 1.7;
+  transition: border-color 200ms var(--ease-out);
+}
+.caption pre:hover {
+  border-color: var(--line-strong);
 }
 .caption code {
   font-family: var(--font-mono);
 }
 .tok-key {
-  color: light-dark(#8a3ffb, #c4a6ff);
+  color: light-dark(oklch(48% 0.2 300), oklch(80% 0.14 300));
 }
 .tok-fn {
-  color: light-dark(#0a7ea4, #6fd1f0);
+  color: light-dark(oklch(52% 0.13 230), oklch(80% 0.11 230));
 }
 .tok-str {
-  color: light-dark(#1f8a3f, #8fe0a0);
+  color: light-dark(oklch(48% 0.14 150), oklch(80% 0.13 150));
 }
 .tok-num {
-  color: light-dark(#b5651d, #f0b87a);
+  color: light-dark(oklch(55% 0.13 60), oklch(82% 0.12 70));
 }
 .tok-sel {
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 .tok-prop {
-  color: light-dark(#444, #c9c5bd);
+  color: var(--ink-soft);
 }
 .tok-var {
-  color: light-dark(#c026a3, #ff9fe8);
+  color: light-dark(oklch(52% 0.22 350), oklch(82% 0.16 350));
   font-weight: 600;
 }
 
 /* ─────────────────────────────── colophon ─────────────────────────────── */
 .colophon {
-  max-width: var(--measure);
+  width: var(--shell);
   margin: 0 auto;
-  padding: var(--space-6) var(--space-3) var(--space-5);
+  padding: var(--space-6) 0 var(--space-5);
   border-top: 1px solid var(--line);
-  color: var(--ink-soft);
 }
-.colophon p {
+.colophon__lead {
+  font-family: var(--font-display);
+  font-size: var(--step-2);
+  font-weight: 700;
+  font-stretch: 108%;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: var(--ink);
+  text-wrap: balance;
+  margin: 0 0 var(--space-3);
+  max-width: 30rem;
+}
+.colophon__note {
+  color: var(--ink-soft);
+  max-width: var(--measure);
   margin: 0;
 }
 
 /* ─────────────────────────── reduced motion ───────────────────────────
-   Gate every motion-heavy effect. Reactivity stays legible; movement stops. */
+   Gate every motion-heavy effect. Reactivity (colour, fill, opacity) stays
+   fully legible; only travel/animation stops. */
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -529,11 +870,15 @@ main {
     /* reveal on visibility without the lift/blur travel */
     translate: none;
     filter: none;
-    transition: opacity 120ms linear;
+    transition: opacity 140ms linear;
   }
   .scroll-hint::after,
-  .gauge__core {
+  .hint__dot {
     animation: none;
+  }
+  .dial::-webkit-slider-thumb,
+  .dial::-moz-range-thumb,
+  .dial::-webkit-slider-runnable-track {
     transition: none;
   }
 }

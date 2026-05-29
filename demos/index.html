@@ -5,24 +5,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light dark" />
     <title>prop-for-that — CSS reacts, JS just listens</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Spline+Sans+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="/src/styles.css" />
   </head>
   <body>
-    <!-- Scroll progress: width driven entirely by --live-scroll-progress -->
+    <!-- Scroll progress: native CSS scroll-driven animation
+         (animation-timeline: scroll()) — compositor, no JS, no library. -->
     <div class="scrollbar" aria-hidden="true"><i></i></div>
 
+    <!-- Fixed spec readout. Every number here is a CSS counter seeded from a
+         --live-* value. JS writes nothing into this DOM. -->
+    <aside class="hud" aria-hidden="true">
+      <p class="hud__row"><span>pointer.x</span><b class="hud-px"></b></p>
+      <p class="hud__row"><span>pointer.y</span><b class="hud-py"></b></p>
+    </aside>
+
     <header class="masthead">
-      <p class="eyebrow">prop-for-that</p>
-      <h1>
-        JavaScript does the<em> minimum</em>.<br />
-        <span class="muted">CSS does the reacting.</span>
+      <p class="eyebrow">prop&#8202;-&#8202;for&#8202;-&#8202;that</p>
+      <h1 class="display">
+        JavaScript<br />
+        does the<br />
+        <span class="display__accent">minimum</span>.
       </h1>
+      <p class="masthead__sub">CSS does the reacting.</p>
       <p class="lede">
-        Runtime state JS knows but CSS can't see — pointer, scroll, size,
-        visibility, slider values — written into batched
+        Runtime state JS knows but CSS can&rsquo;t see (pointer, size,
+        visibility, slider values) written into batched
         <code>--live-*</code> custom properties. Every effect below is plain CSS
         reading a <code>var()</code>. No JS reads values. No JS sets styles in
         the animation path.
+      </p>
+      <p class="hint" role="note">
+        <span class="hint__dot" aria-hidden="true"></span>
+        press <kbd>T</kbd> to change theme &middot; the accent tracks your
+        pointer
       </p>
       <p class="scroll-hint" aria-hidden="true">scroll</p>
     </header>
@@ -30,139 +51,168 @@
     <main>
       <!-- ───────────────────────── 1. POINTER ───────────────────────── -->
       <section class="demo" id="pointer">
+        <p class="watermark" aria-hidden="true">01</p>
         <div class="demo-head">
-          <p class="index">01</p>
+          <p class="index">01 / pointer</p>
           <h2>Pointer-reactive card</h2>
           <p class="desc">
-            3D tilt and a moving glare, driven by the pointer's position across
-            the viewport. The transform and the spotlight are both pure CSS
-            reading <code>--live-pointer-*-ratio</code>.
+            3D tilt and a moving glare, driven by the pointer&rsquo;s position
+            across the viewport. The transform and the spotlight are both pure
+            CSS reading <code>--live-pointer-*-ratio</code>.
           </p>
         </div>
 
-        <div class="stage stage--pointer">
-          <article class="tilt-card">
-            <div class="tilt-card__glare" aria-hidden="true"></div>
-            <div class="tilt-card__content">
-              <p class="tilt-card__kicker">live</p>
-              <p class="tilt-card__title">move&nbsp;your<br />pointer</p>
-              <p class="tilt-card__sub">the card follows — in CSS</p>
-            </div>
-          </article>
-        </div>
+        <div class="demo-body">
+          <div class="stage stage--pointer">
+            <article class="tilt-card">
+              <div class="tilt-card__glare" aria-hidden="true"></div>
+              <div class="tilt-card__content">
+                <p class="tilt-card__kicker">live</p>
+                <p class="tilt-card__title">move&nbsp;your<br />pointer</p>
+                <p class="tilt-card__sub">the card follows, in CSS</p>
+              </div>
+            </article>
+          </div>
 
-        <figure class="caption">
-          <figcaption>The entire JS:</figcaption>
-          <pre><code><span class="tok-key">global</span>([<span class="tok-str">'pointer'</span>])</code></pre>
-          <figcaption>The reaction (CSS):</figcaption>
-          <pre><code><span class="tok-sel">.tilt-card</span> {
+          <figure class="caption">
+            <figcaption>The entire JS</figcaption>
+            <pre><code><span class="tok-key">global</span>([<span class="tok-str">'pointer'</span>])</code></pre>
+            <figcaption>The reaction (CSS)</figcaption>
+            <pre><code><span class="tok-sel">.tilt-card</span> {
   <span class="tok-prop">--rx</span>: <span class="tok-fn">calc</span>((<span class="tok-num">.5</span> - <span class="tok-var">var(--live-pointer-y-ratio)</span>) * <span class="tok-num">16deg</span>);
   <span class="tok-prop">--ry</span>: <span class="tok-fn">calc</span>((<span class="tok-var">var(--live-pointer-x-ratio)</span> - <span class="tok-num">.5</span>) * <span class="tok-num">16deg</span>);
   <span class="tok-prop">transform</span>: <span class="tok-fn">rotateX</span>(<span class="tok-var">var(--rx)</span>) <span class="tok-fn">rotateY</span>(<span class="tok-var">var(--ry)</span>);
 }</code></pre>
-        </figure>
+          </figure>
+        </div>
       </section>
 
       <!-- ──────────────────────── 2. SCROLL ──────────────────────── -->
       <section class="demo" id="scroll">
+        <p class="watermark" aria-hidden="true">02</p>
         <div class="demo-head">
-          <p class="index">02</p>
+          <p class="index">02 / scroll</p>
           <h2>Scroll storytelling</h2>
           <p class="desc">
-            The bar at the top of the page is <code>--live-scroll-progress</code>.
-            Each panel below fades and lifts as it enters the viewport, using its
-            own <code>--live-visible-ratio</code>.
+            The progress bar up top is a <em>native</em> CSS scroll-driven
+            animation &mdash; <code>animation-timeline: scroll()</code>, on the
+            compositor, no library. prop-for-that handles the part CSS can&rsquo;t:
+            each panel fades and lifts the moment it&rsquo;s scrolled into view,
+            reading its own <code>--live-visible-ratio</code> (0 &rarr; 1).
           </p>
         </div>
 
-        <div class="reveals">
-          <article class="reveal" data-reveal>
-            <p class="reveal__n">i</p>
-            <p class="reveal__t">Bind a section to <code>visibility</code>.</p>
-          </article>
-          <article class="reveal" data-reveal>
-            <p class="reveal__n">ii</p>
-            <p class="reveal__t">CSS reads its visible ratio, 0 → 1.</p>
-          </article>
-          <article class="reveal" data-reveal>
-            <p class="reveal__n">iii</p>
-            <p class="reveal__t">Opacity, blur, and lift interpolate. No scroll handler.</p>
-          </article>
-          <article class="reveal" data-reveal>
-            <p class="reveal__n">iv</p>
-            <p class="reveal__t">One IntersectionObserver does the whole page.</p>
-          </article>
-        </div>
+        <div class="demo-body">
+          <div class="reveals">
+            <article class="reveal" data-reveal>
+              <p class="reveal__n">i</p>
+              <p class="reveal__t">Bind a section to <code>visibility</code>.</p>
+            </article>
+            <article class="reveal" data-reveal>
+              <p class="reveal__n">ii</p>
+              <p class="reveal__t">CSS reads its visible ratio, 0 &rarr; 1.</p>
+            </article>
+            <article class="reveal" data-reveal>
+              <p class="reveal__n">iii</p>
+              <p class="reveal__t">
+                Opacity, blur, and lift interpolate. No scroll handler.
+              </p>
+            </article>
+            <article class="reveal" data-reveal>
+              <p class="reveal__n">iv</p>
+              <p class="reveal__t">One IntersectionObserver does the whole page.</p>
+            </article>
+          </div>
 
-        <figure class="caption">
-          <figcaption>The entire JS:</figcaption>
-          <pre><code><span class="tok-key">global</span>([<span class="tok-str">'scroll'</span>])
-<span class="tok-key">document</span>.<span class="tok-fn">querySelectorAll</span>(<span class="tok-str">'[data-reveal]'</span>)
-  .<span class="tok-fn">forEach</span>(el => <span class="tok-key">bind</span>(el, [<span class="tok-str">'visibility'</span>]))</code></pre>
-          <figcaption>The reaction (CSS):</figcaption>
-          <pre><code><span class="tok-sel">.scrollbar i</span> { <span class="tok-prop">scale</span>: <span class="tok-var">var(--live-scroll-progress)</span> <span class="tok-num">1</span>; }
+          <figure class="caption">
+            <figcaption>Continuous motion &mdash; native CSS, no library</figcaption>
+            <pre><code><span class="tok-sel">.scrollbar i</span> {
+  <span class="tok-prop">animation</span>: grow <span class="tok-key">linear</span>;
+  <span class="tok-prop">animation-timeline</span>: <span class="tok-fn">scroll</span>(<span class="tok-key">root block</span>);
+}</code></pre>
+            <figcaption>Scroll-triggered state &mdash; prop-for-that</figcaption>
+            <pre><code><span class="tok-key">document</span>.<span class="tok-fn">querySelectorAll</span>(<span class="tok-str">'[data-reveal]'</span>)
+  .<span class="tok-fn">forEach</span>(el => <span class="tok-key">bind</span>(el, [<span class="tok-str">'visibility'</span>]))
 
 <span class="tok-sel">.reveal</span> {
   <span class="tok-prop">opacity</span>: <span class="tok-var">var(--live-visible-ratio, 0)</span>;
   <span class="tok-prop">translate</span>: <span class="tok-num">0</span> <span class="tok-fn">calc</span>((<span class="tok-num">1</span> - <span class="tok-var">var(--live-visible-ratio, 0)</span>) * <span class="tok-num">2rem</span>);
 }</code></pre>
-        </figure>
+          </figure>
+        </div>
       </section>
 
       <!-- ──────────────────────── 3. SLIDER ──────────────────────── -->
       <section class="demo" id="slider">
+        <p class="watermark" aria-hidden="true">03</p>
         <div class="demo-head">
-          <p class="index">03</p>
-          <h2>Slider-driven gauge</h2>
+          <p class="index">03 / range</p>
+          <h2>One value, many readers</h2>
           <p class="desc">
-            One <code>&lt;input type="range"&gt;</code>. Its
-            <code>--live-value-pct</code> drives the gauge sweep, the hue, the
-            dot's size, and the printed number — entirely in CSS, including the
-            digits via a <code>counter</code>.
+            Bind the range source to the <em>container</em>. It finds the inner
+            <code>&lt;input&gt;</code> but writes <code>--live-value</code> and
+            <code>--live-value-pct</code> on the container &mdash; so the gauge
+            ring, the counted number, and the slider itself all read the same
+            value (custom properties inherit down). Drag or press
+            <kbd>&larr;</kbd> <kbd>&rarr;</kbd>.
           </p>
         </div>
 
-        <div class="stage stage--slider">
-          <div class="gauge" id="gauge">
-            <div class="gauge__sweep" aria-hidden="true"></div>
-            <div class="gauge__core" aria-hidden="true">
-              <span class="gauge__readout" aria-hidden="true"></span>
+        <div class="demo-body">
+          <div class="stage stage--slider">
+            <!-- Bind #meter to the range source. It finds the inner <input> and
+                 writes --live-value / --live-value-pct HERE, so both the gauge
+                 (a separate element) and the slider inherit the value. -->
+            <div class="meter" id="meter">
+              <div class="gauge" aria-hidden="true">
+                <span class="gauge__arc"></span>
+                <p class="gauge__num"></p>
+              </div>
+              <label class="slider">
+                <span class="slider__label">
+                  value
+                  <span class="slider__keys" aria-hidden="true">
+                    <kbd>&larr;</kbd><kbd>&rarr;</kbd>
+                  </span>
+                </span>
+                <input
+                  id="range"
+                  class="dial"
+                  type="range"
+                  min="0"
+                  max="100"
+                  value="42"
+                  aria-label="Demo value, 0 to 100"
+                />
+                <span class="slider__ticks" aria-hidden="true">
+                  <i></i><i></i><i></i><i></i><i></i>
+                </span>
+              </label>
             </div>
           </div>
 
-          <label class="slider">
-            <span class="slider__label">value</span>
-            <input
-              id="range"
-              type="range"
-              min="0"
-              max="100"
-              value="42"
-              aria-label="Demo value"
-            />
-          </label>
-        </div>
-
-        <figure class="caption">
-          <figcaption>The entire JS:</figcaption>
-          <pre><code><span class="tok-key">bind</span>(<span class="tok-fn">document</span>.<span class="tok-fn">getElementById</span>(<span class="tok-str">'range'</span>), [<span class="tok-str">'range'</span>])</code></pre>
-          <figcaption>The reaction (CSS):</figcaption>
-          <pre><code><span class="tok-sel">.gauge__sweep</span> {
-  <span class="tok-prop">background</span>: <span class="tok-fn">conic-gradient</span>(<span class="tok-key">from</span> <span class="tok-num">-90deg</span>,
-    <span class="tok-key">var(--hue)</span> <span class="tok-fn">calc</span>(<span class="tok-var">var(--live-value-pct)</span> * <span class="tok-num">100%</span>),
-    <span class="tok-num">#0000</span> <span class="tok-num">0</span>);
-}
-<span class="tok-sel">.gauge__readout::after</span> {
+          <figure class="caption">
+            <figcaption>The entire JS</figcaption>
+            <pre><code><span class="tok-key">bind</span>(<span class="tok-fn">document</span>.<span class="tok-fn">getElementById</span>(<span class="tok-str">'meter'</span>), [<span class="tok-str">'range'</span>])</code></pre>
+            <figcaption>The reaction (CSS) &mdash; gauge + slider, one value</figcaption>
+            <pre><code><span class="tok-sel">.gauge__num::after</span> {
   <span class="tok-prop">counter-reset</span>: v <span class="tok-fn">calc</span>(<span class="tok-var">var(--live-value)</span>);
   <span class="tok-prop">content</span>: <span class="tok-fn">counter</span>(v);
+}
+<span class="tok-sel">.gauge__arc</span> {
+  <span class="tok-prop">background</span>: <span class="tok-fn">conic-gradient</span>(<span class="tok-key">var(--accent)</span>
+    <span class="tok-fn">calc</span>(<span class="tok-var">var(--live-value-pct)</span> * <span class="tok-num">360deg</span>), <span class="tok-key">var(--line)</span> <span class="tok-num">0</span>);
 }</code></pre>
-        </figure>
+          </figure>
+        </div>
       </section>
     </main>
 
     <footer class="colophon">
-      <p>
-        Three demos, one idea: expose state, then get out of CSS's way.
+      <p class="colophon__lead">
+        Three demos, one idea: expose state, then get out of CSS&rsquo;s way.
+      </p>
+      <p class="colophon__note">
         Open DevTools and watch <code>--live-*</code> change on
         <code>:root</code> and the bound elements.
       </p>

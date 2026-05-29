@@ -2,7 +2,7 @@
 
 Expose what JavaScript knows but CSS can't see — as **batched, diffed CSS custom
 properties**. Give CSS the runtime state it lacks (slider values, pointer
-position, scroll, element visibility, viewport, …) and let it compute and react.
+position, element visibility, viewport, …) and let it compute and react.
 
 ```bash
 npm i prop-for-that
@@ -29,9 +29,9 @@ section { opacity: var(--live-visible-ratio); }
 ```js
 import { global, bind, configure } from 'prop-for-that'
 
-global(['viewport', 'scroll', 'pointer'])   // → :root
-const h = bind(slider, ['range'])            // → the element
-h.dispose()
+global(['viewport', 'pointer'])   // → :root
+const dispose = bind(slider, ['range'])      // → the element
+dispose()
 ```
 
 **Head constants** — synchronous, FOUC-safe, inline in `<head>`:
@@ -46,7 +46,6 @@ h.dispose()
 | Source | Properties |
 | --- | --- |
 | `viewport` | `--live-vw`, `--live-vh` |
-| `scroll` | `--live-scroll-x/y`, `--live-scroll-progress` |
 | `pointer` | `--live-pointer-x/y`, `--live-pointer-x/y-ratio` |
 | `size` | `--live-w`, `--live-h`, `--live-aspect` |
 | `visibility` | `--live-visible`, `--live-visible-ratio` |

@@ -8,7 +8,7 @@ import { bind, unbind, global } from './index'
  *   <input type="range" data-prop="range">
  *   <div data-prop="size visibility">…</div>
  */
-const DEFAULT_GLOBALS = ['viewport', 'scroll', 'pointer']
+const DEFAULT_GLOBALS = ['viewport', 'pointer']
 
 function keysOf(el: HTMLElement): string[] {
   return (el.dataset.prop ?? '').split(/\s+/).filter(Boolean)

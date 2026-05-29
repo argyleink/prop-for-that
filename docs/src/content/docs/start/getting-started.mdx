@@ -15,7 +15,7 @@ npm i prop-for-that
 
 Import `prop-for-that/auto` and it does everything for you:
 
-- Attaches the default global sources (`viewport`, `scroll`, `pointer`) to `:root`.
+- Attaches the default global sources (`viewport`, `pointer`) to `:root`.
 - Scans the DOM for `[data-prop]` attributes and binds the named sources to those elements.
 - Watches for DOM changes with a `MutationObserver` so dynamically added elements are handled automatically.
 
@@ -43,8 +43,8 @@ Import individual functions for explicit control over which sources are active a
 ```js
 import { global, bind, configure } from 'prop-for-that'
 
-// Write viewport/scroll/pointer to :root
-global(['viewport', 'scroll', 'pointer'])
+// Write viewport/pointer to :root
+global(['viewport', 'pointer'])
 
 // Write range source to a specific element; returns a disposer
 const slider = document.querySelector('input[type="range"]')
