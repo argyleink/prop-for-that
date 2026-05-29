@@ -1,0 +1,103 @@
+---
+title: Under consideration
+description: The full spectrum of state we considered exposing — and how to vote for what ships next.
+---
+
+import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+prop-for-that ships deliberately lean. But we considered a **lot** more — scrubbed from prior art ([State.js](https://github.com/iDev-Games/State-JS), [Obs.js](https://github.com/csswizardry/Obs.js)) and extrapolated across the HTML elements. This page is the whole spectrum, from shipped to deferred to out-of-scope, so you can see what was weighed — and **vote for what ships next**.
+
+<Aside type="tip" title="How to vote">
+Each proposal below will have a GitHub issue labelled `proposal`. **👍 the issue to vote** — the most-reacted proposals get built first. Click a name to find its issue. (Issues go live when the repo is published; until then this is the shortlist.)
+</Aside>
+
+[**→ Vote on the proposals board**](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+sort%3Areactions-%2B1-desc) · [**+ Propose something new**](https://github.com/argyleink/prop-for-that/issues/new?labels=proposal&title=%5Bproposal%5D+)
+
+## The spectrum
+
+```
+shipped ✅ ── building, v1 🔨 ── proposed, vote 🗳️ ── platform may cover 🌐 ── out of scope 🚫
+```
+
+- **✅ Shipped** — in the package today.
+- **🔨 v1** — accepted, on the build list.
+- **🗳️ Proposed** — considered, not yet committed. *Your votes decide.*
+- **🌐 Platform may cover** — emerging CSS (scroll-state queries, `:fullscreen`, orientation MQ) may make these redundant; still vote if you need them now.
+- **🚫 Out of scope** — CSS/the platform already does it well.
+
+---
+
+## 🔨 Landing in v1
+
+Beyond what's already shipped, these are accepted for the first release. (Full list & exact properties live in the repo's `SOURCE-CATALOG.md`.)
+
+- **Globals** — `modifiers` (shift/ctrl/alt/meta), `caps-lock`, `key-active`, `pointer-idle`, `memory`, `touch-points`, `document-size`, `page-visible`, `page-focused`, `idle`, `selection`, `location`, `uptime`, `gamepad`, `clock` angles, `fps` extend, `battery` extend.
+- **Element** — `viewport-pos`, `rect`, `dist-from-pointer`, `truncated`, `children`, `text-metrics`.
+- **Per-element** — `color-input`, `date-input`, `file-input`, `textarea`, `select`, `form` (completion %), `meter-progress`, `table`, `audio-analyser`.
+- **Stances** — a `capability` plugin: `delivery-mode`, `device-capability`, `connection-capability`, `conserve` (built for `@container style()`).
+
+---
+
+## 🗳️ Proposed — vote to prioritize
+
+Considered and viable, but not yet committed. Click a name to vote.
+
+### Global
+| Proposal | What it would expose |
+| --- | --- |
+| [`pointer` extend](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+pointer-extend) | `pointer-down`, `buttons`, `type`, `pressure`, `tilt` (drawing UIs) |
+| [`pointer-velocity`](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+pointer-velocity) | pointer `speed` + `angle` (momentum/inertia) |
+| [`screen`](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+screen) | screen size, avail size, colour depth (const) |
+| [`screen-orientation`](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+screen-orientation) | physical device `angle` + portrait flag |
+| [`network` extend](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+network-extend) | `downlink-max` |
+| [`motion` extend](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+motion-extend) | rotation rate, acceleration incl. gravity |
+| [`geo` extend](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+geo-extend) | `altitude`, `heading`, `speed` |
+| [`light`](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+light) | ambient light `lux` (rare support) |
+| [`gyroscope` / `magnetometer` / `gravity`](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+generic-sensor) | Generic Sensor API |
+| [`js-memory`](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+js-memory) | heap used / heap % (Chromium-only) |
+
+### Element & per-element
+| Proposal | What it would expose |
+| --- | --- |
+| [`size` extend](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+size-extend) | content box, inline/block size |
+| [`visibility` extend](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+visibility-extend) | `in-viewport`, `time-visible`, `fully-visible` |
+| [`field` extend](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+field-extend) | `remaining`, `fill-pct`, `dirty`, `focused`, granular validity flags |
+| [`checkbox`](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+checkbox) | `checked`, `indeterminate` |
+| [`media` extend](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+media-extend) | buffered, played, muted, rate, ended, seeking, video dims, PiP |
+| [`img`](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+img) | natural dims, `loaded`, `broken` |
+| [`canvas`](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+canvas) | canvas width / height |
+| [`link`](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+link) | `external`, `current` (nav highlighting) |
+| [`caret`](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+caret) | caret position, selection range |
+
+---
+
+## 🌐 The platform may cover these
+
+Emerging CSS may make these redundant — listed for transparency. Vote if you need them before browser support lands.
+
+| Proposal | Native alternative |
+| --- | --- |
+| [`scroll-state`](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+scroll-state) (`scrolled`, `at-top`, `at-bottom`) | `scroll-state()` container queries |
+| [`overflow`](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+overflow) (is-overflowing) | `scroll-state()` queries |
+| [`scrollable`](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+scrollable) | `scroll-state()` queries |
+| [`stuck`](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+stuck) (sticky-stuck) | `scroll-state(stuck)` |
+| [`fullscreen`](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+fullscreen) | `:fullscreen` |
+| [`orientation-layout`](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+orientation-layout) (`landscape`) | `orientation` media query |
+| [`details`](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+details) (`open`) | `[open]` / `:modal` |
+| [`anim-state`](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+anim-state) (`animating`) | — (no native equivalent yet) |
+
+---
+
+## 🚫 Out of scope
+
+CSS or the platform already does these well, so prop-for-that won't duplicate them:
+
+- **Interaction states** — `:hover`, `:focus`, `:focus-within`, `:focus-visible`, `:active`, `:checked`, `:disabled`, `:required`, `:placeholder-shown`, `:empty`, `:has()`, `[open]`, `:modal`, `:fullscreen`, `:popover-open`.
+- **Preferences** — `prefers-color-scheme`, `prefers-reduced-motion`, `prefers-reduced-data`, `prefers-contrast`, `forced-colors`, `inverted-colors`.
+- **Layout queries** — media / container / `@container style()` queries; `orientation`, `resolution`, `aspect-ratio` MQ.
+- **Units** — `vw/vh/dvh/svh/lvh/vmin/vmax`, `cqw/cqh`, `env()` safe-area insets.
+- **Scroll-linked** — scroll position/progress → `animation-timeline: scroll()` / `view()` (compositor-driven, no library needed).
+
+<Aside>
+Disagree with a placement? That's what voting is for — open or 👍 a proposal and make the case.
+</Aside>

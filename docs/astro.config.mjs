@@ -24,6 +24,7 @@ export default defineConfig({
 					items: [
 						{ label: 'How it works', slug: 'concepts/how-it-works' },
 						{ label: 'Naming & cadence', slug: 'concepts/naming-and-cadence' },
+						{ label: 'Style queries', slug: 'concepts/style-queries' },
 					],
 				},
 				{
@@ -38,6 +39,7 @@ export default defineConfig({
 					label: 'Roadmap',
 					items: [
 						{ label: 'Roadmap', slug: 'roadmap' },
+						{ label: 'Under consideration', slug: 'considered' },
 					],
 				},
 			],

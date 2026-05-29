@@ -1,64 +1,85 @@
 ---
 title: Plugins
-description: Opt-in exotic sources available as prop-for-that/plugins/*.
+description: Opt-in sources for exotic or expensive APIs, imported from prop-for-that/plugins.
 ---
 
-Plugins are opt-in sources that cover more exotic or expensive APIs. They're separate imports so the core bundle stays lean and tree-shaking works properly. Import only what you need.
+Plugins cover state beyond the core six sources — sensors, network, battery, media, and more. They live in a single tree-shakeable entry, `prop-for-that/plugins`, and you **register** only the ones you use, so nothing you don't import ends up in your bundle.
 
-:::note
-The plugin catalog is still being finalized. The sources listed here represent the planned set for v0.2+. Check the repository for the current availability of each plugin.
-:::
+## Using a plugin
 
-## Using plugins
-
-Plugins are registered with `register()` and then used with `bind()` or `global()` exactly like core sources:
+Import the plugin, `register()` it once, then use it by **key** with `bind()` or `global()` — exactly like a core source:
 
 ```js
-import { register, global, bind } from 'prop-for-that'
-import { scrollVelocitySource } from 'prop-for-that/plugins/scroll-velocity'
+import { register, bind } from 'prop-for-that'
+import { battery } from 'prop-for-that/plugins'
 
-register(scrollVelocitySource)
-global(['scroll-velocity'])
+register(battery)
+bind(document.documentElement, ['battery'])
 ```
+
+```css
+.indicator {
+  width: calc(var(--live-battery-level) * 100%);
+}
+```
+
+Register several at once with `registerPlugins()` — pass specific sources, or no arguments to register all of them:
+
+```js
+import { registerPlugins, fps, clock } from 'prop-for-that/plugins'
+
+registerPlugins(fps, clock)   // just these two
+registerPlugins()             // or everything
+```
+
+:::tip[Import name vs. key]
+The **import** is camelCase (`scrollVelocity`); the **key** you pass to `bind()` / `global()` / `data-prop` is the dashed form (`'scroll-velocity'`). The tables below list both.
+:::
 
 ## Global plugins
 
-These write to `:root`.
+Registered, then attached with `global([...])` — they write to `:root`.
 
-| Plugin | Import | Properties |
+| Import | Key | Properties |
 | --- | --- | --- |
-| `scroll-velocity` | `plugins/scroll-velocity` | `--live-scroll-velocity` |
-| `scroll-direction` | `plugins/scroll-direction` | `--live-scroll-direction` (1 / -1 / 0) |
-| `visual-viewport` | `plugins/visual-viewport` | `--live-vvp-w`, `--live-vvp-h`, `--live-vvp-offset-x/y` |
-| `online` | `plugins/online` | `--live-online` (1 / 0) |
-| `network` | `plugins/network` | `--live-network-type`, `--live-network-downlink` |
-| `battery` | `plugins/battery` | `--live-battery-level`, `--live-battery-charging` |
-| `clock` | `plugins/clock` | `--live-clock-h`, `--live-clock-m`, `--live-clock-s` |
-| `orientation` | `plugins/orientation` | `--live-orient-alpha/beta/gamma` |
-| `motion` | `plugins/motion` | `--live-accel-x/y/z` |
-| `light` | `plugins/light` | `--live-light-lux` |
-| `geo` | `plugins/geo` | `--live-geo-lat`, `--live-geo-lon` |
-| `audio` | `plugins/audio` | Frequency bin values (Web Audio analyser) |
-| `fps` | `plugins/fps` | `--live-fps` |
+| `scrollVelocity` | `scroll-velocity` | `--live-scroll-velocity` (signed px/frame, decays to 0), `--live-scroll-direction` (`1` / `-1` / `0`) |
+| `online` | `online` | `--live-online` (`1` / `0`) |
+| `network` | `network` | `--live-net-downlink`, `--live-net-rtt`, `--live-net-save-data` (`1` / `0`), `--live-net-type` (`slow-2g`=1 … `4g`=4, else 0) |
+| `battery` | `battery` | `--live-battery-level` (0–1), `--live-battery-charging` (`1` / `0`) |
+| `clock` | `clock` | `--live-now` (epoch seconds), `--live-hours`, `--live-minutes`, `--live-seconds` |
+| `fps` | `fps` | `--live-fps` (rounded) |
+| `visualViewport` | `visual-viewport` | `--live-vvp-scale`, `--live-vvp-offset-top`, `--live-vvp-height` |
+| `orientation` | `orientation` | `--live-orient-alpha`, `--live-orient-beta`, `--live-orient-gamma` (degrees) |
+| `motion` | `motion` | `--live-accel-x`, `--live-accel-y`, `--live-accel-z` (m/s², gravity included) |
+| `geo` | `geo` | `--live-geo-lat`, `--live-geo-lng`, `--live-geo-accuracy` (metres) |
 
 ## Element plugins
 
-These write to the bound element.
+Registered, then attached with `bind(el, [...])` — they write to the bound element.
 
-| Plugin | Import | Properties |
+| Import | Key | Properties |
 | --- | --- | --- |
-| `el-scroll` | `plugins/el-scroll` | `--live-el-scroll-top`, `--live-el-scroll-progress`, `--live-el-overflow` |
-| `pointer-local` | `plugins/pointer-local` | `--live-local-pointer-x/y`, `--live-local-pointer-x/y-ratio` |
-| `media` | `plugins/media` | `--live-current-time`, `--live-duration`, `--live-media-progress`, `--live-volume` |
-| `field` | `plugins/field` | `--live-field-length`, `--live-field-valid` |
-| `caret` | `plugins/caret` | `--live-caret-pos` |
-| `children` | `plugins/children` | `--live-children-count` (via MutationObserver) |
+| `elScroll` | `el-scroll` | `--live-scroll-top`, `--live-scroll-left`, `--live-scroll-progress-y` (0–1), `--live-scroll-progress-x` (0–1) |
+| `pointerLocal` | `pointer-local` | `--live-px`, `--live-py` (0–1 within the element's box), `--live-pointer-inside` (`1` / `0`) |
+| `media` | `media` | `--live-current-time`, `--live-duration`, `--live-progress` (0–1), `--live-paused` (`1` / `0`), `--live-volume` (0–1) — for `<video>` / `<audio>` |
+| `field` | `field` | `--live-length` (value length), `--live-empty` (`1` / `0`), `--live-valid` (`1` / `0`) — for form fields |
 
-## What's intentionally excluded
+## Permissions & feature detection
 
-These are deliberately not covered because CSS already handles them natively:
+Every plugin **feature-detects** the API it needs and quietly no-ops (returns an empty disposer) when it's unavailable — registering one is always safe.
+
+`orientation`, `motion`, and `geo` are additionally **permission-gated**: on some platforms (notably iOS) they require a user-gesture permission grant before any values arrive.
+
+## Planned
+
+Not yet implemented, tracked for a later release: `light` (ambient light sensor), `audio` (Web-Audio analyser bins), `caret` (selection/caret position), and `children` (child count via `MutationObserver`).
+
+## Intentionally excluded
+
+These are deliberately left out — CSS, or the platform, already does them better:
 
 - `:hover`, `:focus-within`, `:active` — CSS pseudo-classes
-- `[open]` — HTML attribute selectors
+- `[open]`, `:modal`, `:checked` — HTML/CSS selectors
 - `prefers-*`, media queries, container queries — CSS at-rules
 - `env()` safe-area insets — already in CSS
+- **scroll position / progress** — use native [scroll-driven animations](https://developer.mozilla.org/en-US/docs/Web/CSS/animation-timeline) (`animation-timeline: scroll()` / `view()`), which run on the compositor. (Scroll *velocity* and *direction*, which timelines can't express, are the `scroll-velocity` plugin.)
