@@ -124,37 +124,6 @@ h2 {
   border-radius: 4px;
 }
 
-/* ─────────────────────────── scroll progress ───────────────────────────
-   Native CSS scroll-driven animation. animation-timeline: scroll() runs on the
-   compositor, off the main thread — CSS already does this well, so
-   prop-for-that deliberately does NOT expose scroll position as a variable. */
-.scrollbar {
-  position: fixed;
-  inset: 0 0 auto 0;
-  height: 2px;
-  z-index: 50;
-  background: var(--line);
-  pointer-events: none;
-}
-.scrollbar i {
-  display: block;
-  height: 100%;
-  background: var(--accent);
-  transform-origin: left center;
-  scale: 0 1; /* fallback if scroll timelines are unsupported */
-}
-@supports (animation-timeline: scroll()) {
-  @keyframes scrollbar-grow {
-    to {
-      scale: 1 1;
-    }
-  }
-  .scrollbar i {
-    animation: scrollbar-grow linear both;
-    animation-timeline: scroll(root block);
-  }
-}
-
 /* ─────────────────────────── live spec readout (HUD) ───────────────────
    A fixed corner panel that narrates the page's own --live-* state. Every
    number is a CSS counter seeded from a live value — no JS writes here. */
@@ -387,39 +356,6 @@ main {
   max-width: 34rem;
 }
 
-/* ── native CSS scroll-driven animations — compositor, no JS, no library ──
-   The continuous "scrollytelling" motion (heading rise, watermark parallax) is
-   native; prop-for-that is reserved for what CSS can't do (the scroll-triggered
-   visibility reveals). Gated behind reduced-motion and feature support. */
-@media (prefers-reduced-motion: no-preference) {
-  @supports (animation-timeline: view()) {
-    .demo-head {
-      animation: head-rise linear both;
-      animation-timeline: view();
-      animation-range: entry 0% cover 35%;
-    }
-    @keyframes head-rise {
-      from {
-        opacity: 0;
-        translate: 0 2.5rem;
-      }
-    }
-    .watermark {
-      animation: wm-drift linear both;
-      animation-timeline: view();
-      animation-range: cover;
-    }
-    @keyframes wm-drift {
-      from {
-        translate: 0 4rem;
-      }
-      to {
-        translate: 0 -4rem;
-      }
-    }
-  }
-}
-
 /* asymmetric body: demo stage left, code caption right, breakpoint-free */
 .demo-body {
   position: relative;
@@ -533,41 +469,72 @@ main {
 
 /* ═══════════════════════════ 2. SCROLL REVEALS ═══════════════════════════
    Each panel reads its own --live-visible-ratio (0–1). */
+/* Stacked so you watch each panel's --live-visible-ratio change independently
+   as it scrolls through the viewport. Each panel surfaces its OWN ratio as a
+   big counting number, a fill bar, border tint, and a lift-glow — so the
+   scroll-triggered signal is impossible to miss. */
 .reveals {
   display: grid;
   gap: var(--space-3);
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
 }
 .reveal {
   --r: var(--live-visible-ratio, 0);
-  padding: var(--space-4) var(--space-3);
-  border: 1px solid var(--line);
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid;
+  /* border tint tracks the element's own live visible ratio */
+  border-color: color-mix(in oklab, var(--accent) calc(var(--r) * 100%), var(--line));
   border-radius: var(--radius);
   background: var(--surface);
-  min-height: 12rem;
+  /* a lift-glow that grows as the panel becomes visible */
+  box-shadow: 0 calc(var(--r) * 22px) calc(var(--r) * 46px)
+    calc(var(--r) * -22px) color-mix(in oklab, var(--accent) 55%, transparent);
+  transition:
+    border-color 140ms linear,
+    box-shadow 140ms linear;
+}
+.reveal__head {
   display: flex;
-  flex-direction: column;
+  align-items: baseline;
   justify-content: space-between;
   gap: var(--space-3);
-
-  opacity: var(--r);
-  translate: 0 calc((1 - var(--r)) * 2rem);
-  filter: blur(calc((1 - var(--r)) * 4px));
-  transition:
-    opacity 140ms linear,
-    translate 140ms linear,
-    filter 140ms linear,
-    border-color 200ms var(--ease-out);
-}
-.reveal:hover {
-  border-color: var(--line-strong);
 }
 .reveal__n {
   font-family: var(--font-mono);
-  font-size: var(--step-1);
+  font-size: var(--step--1);
   font-weight: 600;
-  color: var(--accent-ink);
-  margin: 0;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.reveal__ratio {
+  display: inline-flex;
+  align-items: baseline;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+/* the headline number: counts 0 → 100% with the panel's live ratio, coloured
+   faint → accent by that same ratio */
+.reveal__num {
+  font-family: var(--font-display);
+  font-size: var(--step-3);
+  font-weight: 900;
+  font-stretch: 110%;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  margin-right: 0.4rem;
+  color: color-mix(in oklab, var(--accent) calc(var(--r) * 100%), var(--ink-faint));
+  transition: color 140ms linear;
+}
+.reveal__num::after {
+  counter-reset: r calc(var(--live-visible-ratio, 0) * 100);
+  content: counter(r) '%';
 }
 .reveal__t {
   font-size: var(--step-1);
@@ -575,6 +542,30 @@ main {
   line-height: 1.35;
   margin: 0;
   text-wrap: balance;
+  /* copy gently lifts in, but never drops below readable so the % stays legible */
+  opacity: calc(0.3 + var(--r) * 0.7);
+  translate: 0 calc((1 - var(--r)) * 0.6rem);
+  transition:
+    opacity 140ms linear,
+    translate 140ms linear;
+}
+.reveal__t code {
+  white-space: nowrap;
+}
+.reveal__bar {
+  height: 0.45rem;
+  border-radius: 99px;
+  background: var(--line);
+  overflow: hidden;
+}
+.reveal__bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transform-origin: left center;
+  scale: var(--r) 1;
+  transition: scale 140ms linear;
 }
 
 /* ══════════════════════════ 3. ONE VALUE, MANY READERS ════════════════════
@@ -591,7 +582,9 @@ main {
   display: grid;
   justify-items: center;
   gap: var(--space-5);
-  inline-size: min(34rem, 86vw);
+  /* stay inside the stage's padded box — 100% of the stage, capped — so the
+     gauge and slider (plus the thumb's glow) never spill past the card edge */
+  inline-size: min(34rem, 100%);
 }
 
 /* the separate gauge: a conic ring + a big counted number, both reading the
@@ -640,6 +633,46 @@ main {
 .gauge__num::after {
   counter-reset: v calc(var(--live-value, 0));
   content: counter(v);
+}
+
+/* A discrete min/max chip flipped by a STYLE QUERY — not var(). When the integer
+   --live-value lands on an exact end, @container style() switches whole rules on.
+   #meter carries --live-value; .gauge inherits it, so its descendants can match.
+   (var()/calc() can interpolate the value but can't express "=== 100".) */
+.gauge__flag {
+  align-self: end;
+  margin-bottom: -0.5rem;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+  opacity: 0;
+  transition: opacity 160ms var(--ease-out);
+}
+.gauge__flag::after {
+  content: '';
+}
+@container style(--live-value: 0) {
+  .gauge__flag {
+    opacity: 1;
+    color: var(--ink-faint);
+  }
+  .gauge__flag::after {
+    content: 'min';
+  }
+}
+@container style(--live-value: 100) {
+  .gauge__flag {
+    opacity: 1;
+  }
+  .gauge__flag::after {
+    content: 'max';
+  }
+  .gauge__num {
+    color: var(--accent);
+  }
 }
 
 .slider {
@@ -768,6 +801,239 @@ main {
   background: var(--line-strong);
 }
 
+/* ════════════════════════ 4. DISCRETE STATE (STYLE QUERY) ════════════════
+   Same range source on a container (#level → --live-value 0–4), read as a
+   DISCRETE integer. @container style(--live-value: N) swaps whole rule blocks:
+   the state word's text + the tier hue. var()/calc() can interpolate the number
+   but can't turn it into a word or flip a rule on at an exact value.
+   Note: #level holds --live-value, so it can't style-query ITSELF — every rule
+   below targets a DESCENDANT (.level__core / .level__word / the stops). */
+.stage--state {
+  min-height: 26rem;
+  padding: clamp(var(--space-4), 8vw, 6rem) var(--space-4);
+}
+.level {
+  display: grid;
+  justify-items: center;
+  /* stay inside the stage's padded box (same fix as .meter) */
+  inline-size: min(30rem, 100%);
+}
+.level__core {
+  /* the tier hue/chroma flow down to the word, the track and the lit stop;
+     a style query re-points --tier-h per integer and everything recolours */
+  --tier-h: 280;
+  --tier-c: 0.2;
+  --tier: light-dark(
+    oklch(56% var(--tier-c) var(--tier-h)),
+    oklch(80% calc(var(--tier-c) * 0.85) var(--tier-h))
+  );
+  display: grid;
+  justify-items: center;
+  gap: var(--space-5);
+  inline-size: 100%;
+}
+
+/* the hero: a big word whose text AND colour are switched by a style query */
+.level__word {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--step-4);
+  font-weight: 900;
+  font-stretch: 110%;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--tier);
+  transition: color 200ms var(--ease-out);
+}
+.level__word::after {
+  content: '—'; /* pre-JS / unsupported fallback; queries set the real word */
+}
+
+.stepper {
+  display: grid;
+  gap: var(--space-3);
+  inline-size: 100%;
+}
+.stepper__label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.stepper__keys {
+  display: inline-flex;
+  gap: 0.3rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* a thin, stepped track; fill + thumb take the inherited tier colour */
+.steps {
+  --p: var(--live-value-pct, 0);
+  inline-size: 100%;
+  height: 2.4rem;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.steps::-webkit-slider-runnable-track {
+  height: 0.5rem;
+  border-radius: 99px;
+  background: linear-gradient(
+    90deg,
+    var(--tier) calc(var(--p) * 100%),
+    var(--line) calc(var(--p) * 100%)
+  );
+  border: 1px solid var(--line);
+}
+.steps::-moz-range-track {
+  height: 0.5rem;
+  border-radius: 99px;
+  background: var(--line);
+  border: 1px solid var(--line);
+}
+.steps::-moz-range-progress {
+  height: 0.5rem;
+  border-radius: 99px;
+  background: var(--tier);
+}
+.steps::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  inline-size: 1.4rem;
+  block-size: 1.4rem;
+  margin-top: calc((0.5rem - 1.4rem) / 2);
+  border-radius: 50%;
+  background: var(--surface);
+  border: 3px solid var(--tier);
+  box-shadow: 0 1px 4px #0004;
+  transition:
+    transform 160ms var(--ease-out),
+    border-color 200ms var(--ease-out);
+}
+.steps::-moz-range-thumb {
+  inline-size: 1.4rem;
+  block-size: 1.4rem;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 3px solid var(--tier);
+  box-shadow: 0 1px 4px #0004;
+  transition:
+    transform 160ms var(--ease-out),
+    border-color 200ms var(--ease-out);
+}
+.steps:is(:hover, :focus-visible)::-webkit-slider-thumb {
+  transform: scale(1.12);
+}
+.steps:is(:hover, :focus-visible)::-moz-range-thumb {
+  transform: scale(1.12);
+}
+.steps:focus-visible::-webkit-slider-runnable-track {
+  outline: 2px solid var(--accent);
+  outline-offset: 6px;
+}
+.steps:focus-visible {
+  outline: none;
+}
+
+/* the five discrete stops; each dot uses currentColor so the lit one (recoloured
+   by its style query) tints automatically */
+.stepper__scale {
+  display: flex;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.stepper__scale i {
+  flex: 1;
+  display: grid;
+  justify-items: center;
+  gap: 0.45rem;
+  font-style: normal;
+  color: var(--ink-faint);
+  transition: color 200ms var(--ease-out);
+}
+.stepper__scale i::before {
+  content: '';
+  inline-size: 0.32rem;
+  block-size: 0.32rem;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.55;
+}
+
+/* The switchboard: one block per integer. Each flips the word, the tier hue and
+   the lit stop — impossible to express through var()/calc(). */
+@container style(--live-value: 0) {
+  .level__word::after {
+    content: 'Off';
+  }
+  .level__core {
+    --tier-c: 0;
+  }
+  .stepper__scale i:nth-child(1) {
+    color: var(--ink);
+    font-weight: 700;
+  }
+}
+@container style(--live-value: 1) {
+  .level__word::after {
+    content: 'Low';
+  }
+  .level__core {
+    --tier-h: 255;
+  }
+  .stepper__scale i:nth-child(2) {
+    color: var(--tier);
+    font-weight: 700;
+  }
+}
+@container style(--live-value: 2) {
+  .level__word::after {
+    content: 'Mid';
+  }
+  .level__core {
+    --tier-h: 195;
+  }
+  .stepper__scale i:nth-child(3) {
+    color: var(--tier);
+    font-weight: 700;
+  }
+}
+@container style(--live-value: 3) {
+  .level__word::after {
+    content: 'High';
+  }
+  .level__core {
+    --tier-h: 70;
+  }
+  .stepper__scale i:nth-child(4) {
+    color: var(--tier);
+    font-weight: 700;
+  }
+}
+@container style(--live-value: 4) {
+  .level__word::after {
+    content: 'Max';
+  }
+  .level__core {
+    --tier-h: 25;
+    --tier-c: 0.24;
+  }
+  .stepper__scale i:nth-child(5) {
+    color: var(--tier);
+    font-weight: 700;
+  }
+}
+
 /* ─────────────────────────── code captions ─────────────────────────── */
 .caption {
   margin: 0;
@@ -866,11 +1132,9 @@ main {
     /* keep a static centered sheen rather than a tracking one */
     background: radial-gradient(36% 36% at 50% 50%, #ffffff55, #ffffff00 60%);
   }
-  .reveal {
-    /* reveal on visibility without the lift/blur travel */
+  .reveal__t {
+    /* keep the live readout, border tint and bar; drop only the copy's lift */
     translate: none;
-    filter: none;
-    transition: opacity 140ms linear;
   }
   .scroll-hint::after,
   .hint__dot {
@@ -878,7 +1142,9 @@ main {
   }
   .dial::-webkit-slider-thumb,
   .dial::-moz-range-thumb,
-  .dial::-webkit-slider-runnable-track {
+  .dial::-webkit-slider-runnable-track,
+  .steps::-webkit-slider-thumb,
+  .steps::-moz-range-thumb {
     transition: none;
   }
 }

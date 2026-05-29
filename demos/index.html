@@ -14,10 +14,6 @@
     <link rel="stylesheet" href="/src/styles.css" />
   </head>
   <body>
-    <!-- Scroll progress: native CSS scroll-driven animation
-         (animation-timeline: scroll()) — compositor, no JS, no library. -->
-    <div class="scrollbar" aria-hidden="true"><i></i></div>
-
     <!-- Fixed spec readout. Every number here is a CSS counter seeded from a
          --live-* value. JS writes nothing into this DOM. -->
     <aside class="hud" aria-hidden="true">
@@ -36,9 +32,10 @@
       <p class="lede">
         Runtime state JS knows but CSS can&rsquo;t see (pointer, size,
         visibility, slider values) written into batched
-        <code>--live-*</code> custom properties. Every effect below is plain CSS
-        reading a <code>var()</code>. No JS reads values. No JS sets styles in
-        the animation path.
+        <code>--live-*</code> custom properties. Every effect below is plain
+        CSS &mdash; reading a <code>var()</code> or matching a
+        <code>@container style()</code> query. No JS reads values. No JS sets
+        styles in the animation path.
       </p>
       <p class="hint" role="note">
         <span class="hint__dot" aria-hidden="true"></span>
@@ -92,51 +89,70 @@
         <p class="watermark" aria-hidden="true">02</p>
         <div class="demo-head">
           <p class="index">02 / scroll</p>
-          <h2>Scroll storytelling</h2>
+          <h2>Scroll-triggered reveals</h2>
           <p class="desc">
-            The progress bar up top is a <em>native</em> CSS scroll-driven
-            animation &mdash; <code>animation-timeline: scroll()</code>, on the
-            compositor, no library. prop-for-that handles the part CSS can&rsquo;t:
-            each panel fades and lifts the moment it&rsquo;s scrolled into view,
-            reading its own <code>--live-visible-ratio</code> (0 &rarr; 1).
+            Scroll-<em>triggered</em>, not scroll-linked &mdash; no
+            <code>animation-timeline</code> here. Each panel reads its own
+            <code>--live-visible-ratio</code>: the fraction of it on screen,
+            counting 0 &rarr; 100% as it enters view. One
+            IntersectionObserver drives all four &mdash; watch them track
+            independently, with no scroll handler.
           </p>
         </div>
 
         <div class="demo-body">
           <div class="reveals">
             <article class="reveal" data-reveal>
-              <p class="reveal__n">i</p>
-              <p class="reveal__t">Bind a section to <code>visibility</code>.</p>
-            </article>
-            <article class="reveal" data-reveal>
-              <p class="reveal__n">ii</p>
-              <p class="reveal__t">CSS reads its visible ratio, 0 &rarr; 1.</p>
-            </article>
-            <article class="reveal" data-reveal>
-              <p class="reveal__n">iii</p>
+              <header class="reveal__head">
+                <span class="reveal__n">i</span>
+                <span class="reveal__ratio"><b class="reveal__num"></b>&nbsp;visible</span>
+              </header>
               <p class="reveal__t">
-                Opacity, blur, and lift interpolate. No scroll handler.
+                Each panel is <code>bind(el, ['visibility'])</code>.
               </p>
+              <div class="reveal__bar" aria-hidden="true"><i></i></div>
             </article>
             <article class="reveal" data-reveal>
-              <p class="reveal__n">iv</p>
-              <p class="reveal__t">One IntersectionObserver does the whole page.</p>
+              <header class="reveal__head">
+                <span class="reveal__n">ii</span>
+                <span class="reveal__ratio"><b class="reveal__num"></b>&nbsp;visible</span>
+              </header>
+              <p class="reveal__t">
+                That number <em>is</em> its live <code>--live-visible-ratio</code>.
+              </p>
+              <div class="reveal__bar" aria-hidden="true"><i></i></div>
+            </article>
+            <article class="reveal" data-reveal>
+              <header class="reveal__head">
+                <span class="reveal__n">iii</span>
+                <span class="reveal__ratio"><b class="reveal__num"></b>&nbsp;visible</span>
+              </header>
+              <p class="reveal__t">
+                It climbs 0 &rarr; 100% as the panel scrolls into view. No scroll
+                handler.
+              </p>
+              <div class="reveal__bar" aria-hidden="true"><i></i></div>
+            </article>
+            <article class="reveal" data-reveal>
+              <header class="reveal__head">
+                <span class="reveal__n">iv</span>
+                <span class="reveal__ratio"><b class="reveal__num"></b>&nbsp;visible</span>
+              </header>
+              <p class="reveal__t">
+                One IntersectionObserver drives every panel on the page.
+              </p>
+              <div class="reveal__bar" aria-hidden="true"><i></i></div>
             </article>
           </div>
 
           <figure class="caption">
-            <figcaption>Continuous motion &mdash; native CSS, no library</figcaption>
-            <pre><code><span class="tok-sel">.scrollbar i</span> {
-  <span class="tok-prop">animation</span>: grow <span class="tok-key">linear</span>;
-  <span class="tok-prop">animation-timeline</span>: <span class="tok-fn">scroll</span>(<span class="tok-key">root block</span>);
-}</code></pre>
-            <figcaption>Scroll-triggered state &mdash; prop-for-that</figcaption>
+            <figcaption>The entire JS</figcaption>
             <pre><code><span class="tok-key">document</span>.<span class="tok-fn">querySelectorAll</span>(<span class="tok-str">'[data-reveal]'</span>)
-  .<span class="tok-fn">forEach</span>(el => <span class="tok-key">bind</span>(el, [<span class="tok-str">'visibility'</span>]))
-
-<span class="tok-sel">.reveal</span> {
-  <span class="tok-prop">opacity</span>: <span class="tok-var">var(--live-visible-ratio, 0)</span>;
-  <span class="tok-prop">translate</span>: <span class="tok-num">0</span> <span class="tok-fn">calc</span>((<span class="tok-num">1</span> - <span class="tok-var">var(--live-visible-ratio, 0)</span>) * <span class="tok-num">2rem</span>);
+  .<span class="tok-fn">forEach</span>(el => <span class="tok-key">bind</span>(el, [<span class="tok-str">'visibility'</span>]))</code></pre>
+            <figcaption>The reaction (CSS)</figcaption>
+            <pre><code><span class="tok-sel">.reveal__num::after</span> {
+  <span class="tok-prop">counter-reset</span>: r <span class="tok-fn">calc</span>(<span class="tok-var">var(--live-visible-ratio)</span> * <span class="tok-num">100</span>);
+  <span class="tok-prop">content</span>: <span class="tok-fn">counter</span>(r) <span class="tok-str">'%'</span>;
 }</code></pre>
           </figure>
         </div>
@@ -154,7 +170,9 @@
             <code>--live-value-pct</code> on the container &mdash; so the gauge
             ring, the counted number, and the slider itself all read the same
             value (custom properties inherit down). Drag or press
-            <kbd>&larr;</kbd> <kbd>&rarr;</kbd>.
+            <kbd>&larr;</kbd> <kbd>&rarr;</kbd> &mdash; at either end a
+            <code>@container style()</code> query flips a discrete min / max
+            state that <code>var()</code> can&rsquo;t express.
           </p>
         </div>
 
@@ -167,6 +185,7 @@
               <div class="gauge" aria-hidden="true">
                 <span class="gauge__arc"></span>
                 <p class="gauge__num"></p>
+                <p class="gauge__flag"></p>
               </div>
               <label class="slider">
                 <span class="slider__label">
@@ -203,6 +222,76 @@
   <span class="tok-prop">background</span>: <span class="tok-fn">conic-gradient</span>(<span class="tok-key">var(--accent)</span>
     <span class="tok-fn">calc</span>(<span class="tok-var">var(--live-value-pct)</span> * <span class="tok-num">360deg</span>), <span class="tok-key">var(--line)</span> <span class="tok-num">0</span>);
 }</code></pre>
+            <figcaption>Discrete state &mdash; a style query, not <code>var()</code></figcaption>
+            <pre><code><span class="tok-key">@container</span> <span class="tok-fn">style</span>(<span class="tok-var">--live-value</span>: <span class="tok-num">100</span>) {
+  <span class="tok-sel">.gauge__num</span> { <span class="tok-prop">color</span>: <span class="tok-key">var(--accent)</span>; }
+  <span class="tok-sel">.gauge__flag::after</span> { <span class="tok-prop">content</span>: <span class="tok-str">'max'</span>; }
+}</code></pre>
+          </figure>
+        </div>
+      </section>
+
+      <!-- ──────────────────────── 4. STYLE QUERY ──────────────────────── -->
+      <section class="demo" id="state">
+        <p class="watermark" aria-hidden="true">04</p>
+        <div class="demo-head">
+          <p class="index">04 / style query</p>
+          <h2>Discrete state, whole rules</h2>
+          <p class="desc">
+            <code>var()</code> can interpolate a number, but it can&rsquo;t turn
+            <code>3</code> into the word &ldquo;High&rdquo; or switch a rule
+            block on at one exact value. That&rsquo;s
+            <code>@container style()</code>. Step through five levels &mdash;
+            drag or press <kbd>&larr;</kbd> <kbd>&rarr;</kbd> &mdash; and each
+            integer flips a different block of CSS on: the label&rsquo;s text,
+            its colour, the lit stop. One bound value, zero JS branches.
+          </p>
+        </div>
+
+        <div class="demo-body">
+          <div class="stage stage--state">
+            <!-- Bind #level to the range source: it finds the inner <input> and
+                 writes --live-value (0–4) HERE, so the word and the stops below
+                 inherit it and can @container style() the exact integer. -->
+            <div class="level" id="level">
+              <div class="level__core">
+                <p class="level__word" aria-hidden="true"></p>
+                <label class="stepper">
+                  <span class="stepper__label">
+                    level
+                    <span class="stepper__keys" aria-hidden="true">
+                      <kbd>&larr;</kbd><kbd>&rarr;</kbd>
+                    </span>
+                  </span>
+                  <input
+                    id="level-range"
+                    class="steps"
+                    type="range"
+                    min="0"
+                    max="4"
+                    step="1"
+                    value="2"
+                    aria-label="Level, 0 (off) to 4 (max)"
+                  />
+                  <span class="stepper__scale" aria-hidden="true">
+                    <i>off</i><i>low</i><i>mid</i><i>high</i><i>max</i>
+                  </span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <figure class="caption">
+            <figcaption>The entire JS</figcaption>
+            <pre><code><span class="tok-key">bind</span>(<span class="tok-fn">document</span>.<span class="tok-fn">getElementById</span>(<span class="tok-str">'level'</span>), [<span class="tok-str">'range'</span>])</code></pre>
+            <figcaption>The reaction (CSS) &mdash; a value becomes a word</figcaption>
+            <pre><code><span class="tok-key">@container</span> <span class="tok-fn">style</span>(<span class="tok-var">--live-value</span>: <span class="tok-num">0</span>) {
+  <span class="tok-sel">.level__word::after</span> { <span class="tok-prop">content</span>: <span class="tok-str">'Off'</span>; }
+}
+<span class="tok-key">@container</span> <span class="tok-fn">style</span>(<span class="tok-var">--live-value</span>: <span class="tok-num">4</span>) {
+  <span class="tok-sel">.level__word::after</span> { <span class="tok-prop">content</span>: <span class="tok-str">'Max'</span>; }
+  <span class="tok-sel">.level__core</span> { <span class="tok-prop">--tier-h</span>: <span class="tok-num">25</span>; }
+}</code></pre>
           </figure>
         </div>
       </section>
@@ -210,7 +299,7 @@
 
     <footer class="colophon">
       <p class="colophon__lead">
-        Three demos, one idea: expose state, then get out of CSS&rsquo;s way.
+        Four demos, one idea: expose state, then get out of CSS&rsquo;s way.
       </p>
       <p class="colophon__note">
         Open DevTools and watch <code>--live-*</code> change on

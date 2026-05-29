@@ -4,10 +4,9 @@ import { global, bind } from 'prop-for-that'
 // Demo 1 (pointer-reactive card) and the page accent read globals off :root.
 global(['pointer'])
 
-// ── Demo 2: each panel exposes its own --live-visible-ratio — the scroll-
-// TRIGGERED state CSS can't latch on its own. The continuous scroll motion on
-// this page (progress bar, parallax) is native CSS scroll-driven animation
-// (animation-timeline: scroll()/view()) — no library, runs on the compositor.
+// ── Demo 2: each panel exposes its own --live-visible-ratio — scroll-TRIGGERED
+// state (one IntersectionObserver), the part CSS can't latch on its own. No
+// scroll-linked animation-timeline anywhere on the page; CSS just reads var().
 document
   .querySelectorAll<HTMLElement>('[data-reveal]')
   .forEach((el) => bind(el, ['visibility']))
@@ -17,6 +16,12 @@ document
 // big gauge AND the slider both inherit the value (custom props inherit down).
 const meter = document.getElementById('meter')
 if (meter) bind(meter, ['range'])
+
+// ── Demo 4: same range source on a container, but read as DISCRETE state. The
+// integer --live-value is matched by @container style() to swap whole rule
+// blocks (the state word, its colour) — the branch var()/calc() can't make.
+const level = document.getElementById('level')
+if (level) bind(level, ['range'])
 
 // Everything visual above is CSS reading var(--live-*). Nothing below touches
 // the reactivity path — it is one discrete affordance: a keyboard theme toggle.
