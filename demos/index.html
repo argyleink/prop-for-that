@@ -92,11 +92,12 @@
           <h2>Scroll-triggered reveals</h2>
           <p class="desc">
             Scroll-<em>triggered</em>, not scroll-linked &mdash; no
-            <code>animation-timeline</code> here. Each panel reads its own
-            <code>--live-visible-ratio</code>: the fraction of it on screen,
-            counting 0 &rarr; 100% as it enters view. One
-            IntersectionObserver drives all four &mdash; watch them track
-            independently, with no scroll handler.
+            <code>animation-timeline</code> here. Each panel reads two binary
+            signals: <code>--live-visible</code> (in view, 1/0) and
+            <code>--live-has-entered</code>, which latches on first entry and
+            never turns off. So each reveals once and <em>stays</em>: scroll back
+            up and a <code>view()</code> timeline would reverse &mdash; this
+            doesn&rsquo;t. One IntersectionObserver drives all four.
           </p>
         </div>
 
@@ -105,43 +106,52 @@
             <article class="reveal" data-reveal>
               <header class="reveal__head">
                 <span class="reveal__n">i</span>
-                <span class="reveal__ratio"><b class="reveal__num"></b>&nbsp;visible</span>
+                <span class="reveal__state">
+                  <span class="reveal__live">in view</span>
+                  <span class="reveal__seen">entered</span>
+                </span>
               </header>
               <p class="reveal__t">
                 Each panel is <code>bind(el, ['visibility'])</code>.
               </p>
-              <div class="reveal__bar" aria-hidden="true"><i></i></div>
             </article>
             <article class="reveal" data-reveal>
               <header class="reveal__head">
                 <span class="reveal__n">ii</span>
-                <span class="reveal__ratio"><b class="reveal__num"></b>&nbsp;visible</span>
+                <span class="reveal__state">
+                  <span class="reveal__live">in view</span>
+                  <span class="reveal__seen">entered</span>
+                </span>
               </header>
               <p class="reveal__t">
-                That number <em>is</em> its live <code>--live-visible-ratio</code>.
+                <code>--live-visible</code> flips 1/0 as it enters and leaves.
               </p>
-              <div class="reveal__bar" aria-hidden="true"><i></i></div>
             </article>
             <article class="reveal" data-reveal>
               <header class="reveal__head">
                 <span class="reveal__n">iii</span>
-                <span class="reveal__ratio"><b class="reveal__num"></b>&nbsp;visible</span>
+                <span class="reveal__state">
+                  <span class="reveal__live">in view</span>
+                  <span class="reveal__seen">entered</span>
+                </span>
               </header>
               <p class="reveal__t">
-                It climbs 0 &rarr; 100% as the panel scrolls into view. No scroll
-                handler.
+                <code>--live-has-entered</code> latches on first entry and never
+                resets.
               </p>
-              <div class="reveal__bar" aria-hidden="true"><i></i></div>
             </article>
             <article class="reveal" data-reveal>
               <header class="reveal__head">
                 <span class="reveal__n">iv</span>
-                <span class="reveal__ratio"><b class="reveal__num"></b>&nbsp;visible</span>
+                <span class="reveal__state">
+                  <span class="reveal__live">in view</span>
+                  <span class="reveal__seen">entered</span>
+                </span>
               </header>
               <p class="reveal__t">
-                One IntersectionObserver drives every panel on the page.
+                So it reveals once and stays &mdash; scroll up; it won&rsquo;t
+                reverse like a <code>view()</code> timeline.
               </p>
-              <div class="reveal__bar" aria-hidden="true"><i></i></div>
             </article>
           </div>
 
@@ -149,10 +159,11 @@
             <figcaption>The entire JS</figcaption>
             <pre><code><span class="tok-key">document</span>.<span class="tok-fn">querySelectorAll</span>(<span class="tok-str">'[data-reveal]'</span>)
   .<span class="tok-fn">forEach</span>(el => <span class="tok-key">bind</span>(el, [<span class="tok-str">'visibility'</span>]))</code></pre>
-            <figcaption>The reaction (CSS)</figcaption>
-            <pre><code><span class="tok-sel">.reveal__num::after</span> {
-  <span class="tok-prop">counter-reset</span>: r <span class="tok-fn">calc</span>(<span class="tok-var">var(--live-visible-ratio)</span> * <span class="tok-num">100</span>);
-  <span class="tok-prop">content</span>: <span class="tok-fn">counter</span>(r) <span class="tok-str">'%'</span>;
+            <figcaption>The reaction (CSS) &mdash; reveal once, never reverse</figcaption>
+            <pre><code><span class="tok-sel">.reveal</span> {
+  <span class="tok-prop">opacity</span>: <span class="tok-fn">calc</span>(<span class="tok-num">.25</span> + <span class="tok-var">var(--live-has-entered)</span> * <span class="tok-num">.75</span>);
+  <span class="tok-prop">translate</span>: <span class="tok-num">0</span> <span class="tok-fn">calc</span>((<span class="tok-num">1</span> - <span class="tok-var">var(--live-has-entered)</span>) * <span class="tok-num">1.5rem</span>);
+  <span class="tok-prop">transition</span>: <span class="tok-num">.5s</span>;
 }</code></pre>
           </figure>
         </div>

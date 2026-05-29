@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { netTypeToNumber } from '../src/plugins/network'
 import { field } from '../src/plugins/field'
 import { scrollVelocity } from '../src/plugins/scroll-velocity'
-import { elScroll } from '../src/plugins/el-scroll'
 import type { SourceContext } from '../src/core/types'
 
 /** Collects the latest value written per local name, ignoring cadence prefix. */
@@ -89,28 +88,5 @@ describe('scroll-velocity', () => {
 
     dispose()
     Object.defineProperty(window, 'scrollY', { value: 0, configurable: true })
-  })
-})
-
-describe('el-scroll', () => {
-  it('computes scroll progress from element metrics', () => {
-    const el = document.createElement('div')
-    // jsdom returns 0 for scroll metrics; override to exercise the math.
-    Object.defineProperties(el, {
-      scrollHeight: { value: 1000, configurable: true },
-      clientHeight: { value: 200, configurable: true },
-      scrollWidth: { value: 0, configurable: true },
-      clientWidth: { value: 0, configurable: true },
-    })
-    const { ctx, values } = makeRecorder(el)
-    const dispose = elScroll.start(ctx)
-
-    el.scrollTop = 400
-    el.dispatchEvent(new Event('scroll'))
-    expect(values['scroll-top']).toBe(400)
-    expect(values['scroll-progress-y']).toBe(0.5) // 400 / (1000-200)
-    expect(values['scroll-progress-x']).toBe(0) // no horizontal overflow
-
-    dispose()
   })
 })

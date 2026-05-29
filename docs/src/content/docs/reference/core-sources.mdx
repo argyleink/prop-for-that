@@ -76,17 +76,18 @@ Uses the shared `ResizeObserver` to write element dimensions when they change.
 
 ### `visibility`
 
-Uses the shared `IntersectionObserver` to write how much of the element is in the viewport.
+Uses the shared `IntersectionObserver` to write **binary** in/out state plus a one-way "entered" latch. The continuous *ratio* is intentionally left to native `view()` scroll-driven animations — what those can't do is latch (reveal once, keep it).
 
 | Property | Value |
 | --- | --- |
-| `--live-visible` | `1` when any part is visible, `0` otherwise |
-| `--live-visible-ratio` | 0–1 fraction of the element that is intersecting |
+| `--live-visible` | `1` while any part is in the viewport, `0` otherwise |
+| `--live-has-entered` | `1` once it has entered at least once — latches on, never resets |
 
 ```css
-.fade-in {
-  opacity: var(--live-visible-ratio);
-  transition: opacity 0.3s;
+/* reveal once and keep it — has-entered never flips back */
+[data-prop~="visibility"] {
+  opacity: calc(0.2 + var(--live-has-entered) * 0.8);
+  transition: opacity 0.4s;
 }
 ```
 

@@ -467,32 +467,33 @@ main {
   margin: 0;
 }
 
-/* ═══════════════════════════ 2. SCROLL REVEALS ═══════════════════════════
-   Each panel reads its own --live-visible-ratio (0–1). */
-/* Stacked so you watch each panel's --live-visible-ratio change independently
-   as it scrolls through the viewport. Each panel surfaces its OWN ratio as a
-   big counting number, a fill bar, border tint, and a lift-glow — so the
-   scroll-triggered signal is impossible to miss. */
+/* ═══════════════════════ 2. SCROLL-TRIGGERED REVEALS ══════════════════════
+   Binary + latched visibility — NOT a continuous ratio (that's native view()).
+   --live-visible (1/0) toggles as a panel enters/leaves; --live-has-entered
+   latches on first entry and never resets, so each panel reveals ONCE and stays
+   (a view() timeline would reverse on scroll-back). */
 .reveals {
   display: grid;
   gap: var(--space-3);
 }
 .reveal {
-  --r: var(--live-visible-ratio, 0);
+  --in: var(--live-visible, 0);
+  --seen: var(--live-has-entered, 0);
   display: grid;
   gap: var(--space-3);
   padding: var(--space-4);
   border: 1px solid;
-  /* border tint tracks the element's own live visible ratio */
-  border-color: color-mix(in oklab, var(--accent) calc(var(--r) * 100%), var(--line));
+  /* border tints in while the panel is in view */
+  border-color: color-mix(in oklab, var(--accent) calc(var(--in) * 100%), var(--line));
   border-radius: var(--radius);
   background: var(--surface);
-  /* a lift-glow that grows as the panel becomes visible */
-  box-shadow: 0 calc(var(--r) * 22px) calc(var(--r) * 46px)
-    calc(var(--r) * -22px) color-mix(in oklab, var(--accent) 55%, transparent);
+  /* the reveal is driven by has-entered → one-way, never reverses */
+  opacity: calc(0.25 + var(--seen) * 0.75);
+  translate: 0 calc((1 - var(--seen)) * 1.5rem);
   transition:
-    border-color 140ms linear,
-    box-shadow 140ms linear;
+    opacity 500ms var(--ease-out),
+    translate 500ms var(--ease-out),
+    border-color 200ms linear;
 }
 .reveal__head {
   display: flex;
@@ -508,33 +509,39 @@ main {
   text-transform: uppercase;
   color: var(--ink-faint);
 }
-.reveal__ratio {
+.reveal__state {
   display: inline-flex;
-  align-items: baseline;
+  gap: var(--space-3);
   font-family: var(--font-mono);
   font-size: var(--step--1);
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--ink-faint);
 }
-/* the headline number: counts 0 → 100% with the panel's live ratio, coloured
-   faint → accent by that same ratio */
-.reveal__num {
-  font-family: var(--font-display);
-  font-size: var(--step-3);
-  font-weight: 900;
-  font-stretch: 110%;
-  letter-spacing: -0.03em;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-  margin-right: 0.4rem;
-  color: color-mix(in oklab, var(--accent) calc(var(--r) * 100%), var(--ink-faint));
-  transition: color 140ms linear;
+/* live in/out indicator — dot + label light while --live-visible is 1 */
+.reveal__live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: color-mix(in oklab, var(--accent-ink) calc(var(--in) * 100%), var(--ink-faint));
+  transition: color 160ms linear;
 }
-.reveal__num::after {
-  counter-reset: r calc(var(--live-visible-ratio, 0) * 100);
-  content: counter(r) '%';
+.reveal__live::before {
+  content: '';
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  border-radius: 50%;
+  background: color-mix(in oklab, var(--accent) calc(var(--in) * 100%), var(--line));
+  transition: background 160ms linear;
+}
+/* latch badge — appears once --live-has-entered flips on, then stays */
+.reveal__seen {
+  color: var(--accent-ink);
+  opacity: var(--seen);
+  transition: opacity 400ms var(--ease-out);
+}
+.reveal__seen::before {
+  content: '✓ ';
 }
 .reveal__t {
   font-size: var(--step-1);
@@ -542,30 +549,9 @@ main {
   line-height: 1.35;
   margin: 0;
   text-wrap: balance;
-  /* copy gently lifts in, but never drops below readable so the % stays legible */
-  opacity: calc(0.3 + var(--r) * 0.7);
-  translate: 0 calc((1 - var(--r)) * 0.6rem);
-  transition:
-    opacity 140ms linear,
-    translate 140ms linear;
 }
 .reveal__t code {
   white-space: nowrap;
-}
-.reveal__bar {
-  height: 0.45rem;
-  border-radius: 99px;
-  background: var(--line);
-  overflow: hidden;
-}
-.reveal__bar i {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--accent);
-  transform-origin: left center;
-  scale: var(--r) 1;
-  transition: scale 140ms linear;
 }
 
 /* ══════════════════════════ 3. ONE VALUE, MANY READERS ════════════════════
@@ -1132,8 +1118,8 @@ main {
     /* keep a static centered sheen rather than a tracking one */
     background: radial-gradient(36% 36% at 50% 50%, #ffffff55, #ffffff00 60%);
   }
-  .reveal__t {
-    /* keep the live readout, border tint and bar; drop only the copy's lift */
+  .reveal {
+    /* keep the in/out + entered state and the fade; drop only the lift */
     translate: none;
   }
   .scroll-hint::after,

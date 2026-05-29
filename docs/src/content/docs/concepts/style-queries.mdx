@@ -5,8 +5,8 @@ description: Use @container style() to apply conditional CSS rules from the disc
 
 There are two ways CSS consumes the properties prop-for-that writes:
 
-- **`var()`** — *interpolate* on a value. Best for **continuous** numbers (`--live-pointer-x-ratio`, `--live-value-pct`, `--live-visible-ratio`) fed through `calc()`.
-- **`@container style()`** — apply a **conditional rule** when a property equals a value. Best for **discrete / boolean / enum** state (`--live-online`, `--live-value: 100`, `--live-paused`, `--live-battery-low`, capability tiers).
+- **`var()`** — *interpolate* on a value. Best for **continuous** numbers (`--live-pointer-x-ratio`, `--live-value-pct`) fed through `calc()`.
+- **`@container style()`** — apply a **conditional rule** when a property equals a value. Best for **discrete / boolean / enum** state (`--live-online`, `--live-visible`, `--live-has-entered`, `--live-value: 100`, `--live-paused`, `--live-battery-low`, capability tiers).
 
 Style queries are what make the *discrete* signals shine: they let a value flip whole rule blocks on and off — something `var()` can't do.
 

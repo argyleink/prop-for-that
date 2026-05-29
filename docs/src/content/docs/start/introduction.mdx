@@ -12,9 +12,10 @@ CSS can already react to a lot — `:hover`, `[open]`, container queries, `prefe
 JavaScript knows things CSS can't see. `prop-for-that` exposes them as `--live-*` custom properties on `:root` or individual elements:
 
 ```css
-/* fade an element in as it scrolls into view */
+/* reveal an element once it scrolls into view — and keep it */
 .reveal {
-  opacity: var(--live-visible-ratio);
+  opacity: var(--live-has-entered);
+  transition: opacity 0.4s;
 }
 
 /* pointer-driven tilt card */

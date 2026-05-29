@@ -33,13 +33,11 @@ export function observeIntersection(
   cb: (entry: IntersectionObserverEntry) => void,
 ): Disposer {
   if (!io) {
-    io = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) ioCallbacks.get(entry.target)?.(entry)
-      },
-      // Stepped thresholds so `visible-ratio` updates smoothly, not just 0↔1.
-      { threshold: Array.from({ length: 21 }, (_, i) => i / 20) },
-    )
+    // Default threshold (0): fires on enter/exit — all the binary `visibility`
+    // source needs. (Continuous ratios are native `view()` territory.)
+    io = new IntersectionObserver((entries) => {
+      for (const entry of entries) ioCallbacks.get(entry.target)?.(entry)
+    })
   }
   ioCallbacks.set(el, cb)
   io.observe(el)
