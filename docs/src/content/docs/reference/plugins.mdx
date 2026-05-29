@@ -1,0 +1,64 @@
+---
+title: Plugins
+description: Opt-in exotic sources available as prop-for-that/plugins/*.
+---
+
+Plugins are opt-in sources that cover more exotic or expensive APIs. They're separate imports so the core bundle stays lean and tree-shaking works properly. Import only what you need.
+
+:::note
+The plugin catalog is still being finalized. The sources listed here represent the planned set for v0.2+. Check the repository for the current availability of each plugin.
+:::
+
+## Using plugins
+
+Plugins are registered with `register()` and then used with `bind()` or `global()` exactly like core sources:
+
+```js
+import { register, global, bind } from 'prop-for-that'
+import { scrollVelocitySource } from 'prop-for-that/plugins/scroll-velocity'
+
+register(scrollVelocitySource)
+global(['scroll-velocity'])
+```
+
+## Global plugins
+
+These write to `:root`.
+
+| Plugin | Import | Properties |
+| --- | --- | --- |
+| `scroll-velocity` | `plugins/scroll-velocity` | `--live-scroll-velocity` |
+| `scroll-direction` | `plugins/scroll-direction` | `--live-scroll-direction` (1 / -1 / 0) |
+| `visual-viewport` | `plugins/visual-viewport` | `--live-vvp-w`, `--live-vvp-h`, `--live-vvp-offset-x/y` |
+| `online` | `plugins/online` | `--live-online` (1 / 0) |
+| `network` | `plugins/network` | `--live-network-type`, `--live-network-downlink` |
+| `battery` | `plugins/battery` | `--live-battery-level`, `--live-battery-charging` |
+| `clock` | `plugins/clock` | `--live-clock-h`, `--live-clock-m`, `--live-clock-s` |
+| `orientation` | `plugins/orientation` | `--live-orient-alpha/beta/gamma` |
+| `motion` | `plugins/motion` | `--live-accel-x/y/z` |
+| `light` | `plugins/light` | `--live-light-lux` |
+| `geo` | `plugins/geo` | `--live-geo-lat`, `--live-geo-lon` |
+| `audio` | `plugins/audio` | Frequency bin values (Web Audio analyser) |
+| `fps` | `plugins/fps` | `--live-fps` |
+
+## Element plugins
+
+These write to the bound element.
+
+| Plugin | Import | Properties |
+| --- | --- | --- |
+| `el-scroll` | `plugins/el-scroll` | `--live-el-scroll-top`, `--live-el-scroll-progress`, `--live-el-overflow` |
+| `pointer-local` | `plugins/pointer-local` | `--live-local-pointer-x/y`, `--live-local-pointer-x/y-ratio` |
+| `media` | `plugins/media` | `--live-current-time`, `--live-duration`, `--live-media-progress`, `--live-volume` |
+| `field` | `plugins/field` | `--live-field-length`, `--live-field-valid` |
+| `caret` | `plugins/caret` | `--live-caret-pos` |
+| `children` | `plugins/children` | `--live-children-count` (via MutationObserver) |
+
+## What's intentionally excluded
+
+These are deliberately not covered because CSS already handles them natively:
+
+- `:hover`, `:focus-within`, `:active` — CSS pseudo-classes
+- `[open]` — HTML attribute selectors
+- `prefers-*`, media queries, container queries — CSS at-rules
+- `env()` safe-area insets — already in CSS

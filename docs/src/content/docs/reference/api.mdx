@@ -1,0 +1,134 @@
+---
+title: API
+description: configure, register, global, bind, and unbind.
+---
+
+All functions are exported from `prop-for-that`.
+
+```ts
+import { configure, register, global, bind, unbind } from 'prop-for-that'
+```
+
+---
+
+## `configure(opts)`
+
+Override the property prefixes or the global root element. Call this once, before any `global()` or `bind()` calls.
+
+```ts
+function configure(opts: Partial<Config>): void
+
+interface Config {
+  livePrefix: string   // default: '--live-'
+  constPrefix: string  // default: '--const-'
+  root: HTMLElement    // default: document.documentElement (:root)
+}
+```
+
+**Example**
+
+```js
+configure({
+  livePrefix: '--pft-live-',
+  constPrefix: '--pft-const-',
+})
+```
+
+---
+
+## `register(source)`
+
+Add a custom or plugin source to the registry so it can be used by key via `bind()`, `global()`, or `data-prop`.
+
+```ts
+function register(source: Source): void
+
+interface Source {
+  key: string              // unique identifier used in bind/global/data-prop
+  scope: 'global' | 'element'
+  start(ctx: SourceContext): Disposer
+}
+
+interface SourceContext {
+  target: HTMLElement
+  config: Config
+  write(localName: string, value: string | number, cadence?: 'live' | 'const'): void
+}
+
+type Disposer = () => void
+```
+
+**Example**
+
+```js
+import { register, global } from 'prop-for-that'
+import { scrollVelocitySource } from 'prop-for-that/plugins/scroll-velocity'
+
+register(scrollVelocitySource)
+global(['scroll-velocity'])
+```
+
+---
+
+## `global(keys)`
+
+Attach one or more sources to the root element (`:root` by default, or whatever `configure({ root })` is set to). Returns a disposer.
+
+```ts
+function global(keys: string[]): Disposer
+```
+
+**Example**
+
+```js
+const dispose = global(['viewport', 'scroll', 'pointer'])
+
+// Later — stop all three sources
+dispose()
+```
+
+Re-calling `global()` with a key that's already active is a no-op for that key.
+
+---
+
+## `bind(target, keys)`
+
+Attach one or more sources to a specific element. Returns a disposer.
+
+```ts
+function bind(target: HTMLElement, keys: string[]): Disposer
+```
+
+**Example**
+
+```js
+const slider = document.querySelector('input[type="range"]')
+const dispose = bind(slider, ['range'])
+
+// Later — clean up
+dispose()
+```
+
+Re-binding an already-active key on the same element is a no-op for that key.
+
+---
+
+## `unbind(target, keys?)`
+
+Detach specific source keys from an element, or all sources if `keys` is omitted.
+
+```ts
+function unbind(target: HTMLElement, keys?: string[]): void
+```
+
+**Examples**
+
+```js
+// Remove just the 'range' source
+unbind(slider, ['range'])
+
+// Remove all sources from this element
+unbind(slider)
+```
+
+The element is removed from the internal bindings map once all its sources are detached.

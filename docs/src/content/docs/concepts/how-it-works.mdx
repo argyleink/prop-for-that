@@ -1,0 +1,60 @@
+---
+title: How it works
+description: The batched rAF writer, diffing, shared observers, and passive listeners.
+---
+
+## Architecture overview
+
+```
+              sources                       core
+┌───────────────────────────┐   write()   ┌──────────────────┐
+│ global:  viewport, scroll, │ ─────────► │  Writer (rAF)    │
+│          pointer           │            │  • coalesce      │  setProperty
+│ element: size, visibility, │            │  • diff vs last  │ ───────────► :root / el
+│          range             │            │  • 1 flush/frame │
+└───────────────────────────┘            └──────────────────┘
+      ▲ shared observers
+      │ 1× ResizeObserver, 1× IntersectionObserver, shared passive window listeners
+```
+
+There are two moving parts: **sources** that read values, and the **Writer** that flushes them into the DOM.
+
+## The Writer (batched rAF)
+
+The Writer is the core scheduling service. Instead of calling `setProperty` inside every event handler, sources call `writer.set(target, prop, value)` which queues the update into a `Map`.
+
+A single `requestAnimationFrame` callback walks the queue once per frame and for each queued value:
+
+1. Looks up the last written value in a `WeakMap<element, Map<prop, value>>`.
+2. Compares — if the value hasn't changed, it skips the write.
+3. Calls `element.style.setProperty(prop, value)` only when it actually changed.
+
+This means no matter how many events fire in a frame (mousemove, scroll, resize, input), there is at most one `setProperty` call per property per frame.
+
+## Sources
+
+Each source is a small object: `{ key, scope, start(ctx) → disposer }`.
+
+- `scope` is either `'global'` (written to `:root`) or `'element'` (written to the bound element).
+- `start(ctx)` attaches whatever listeners or observers are needed and returns a disposer function.
+- Inside their callbacks, sources call `ctx.write(localName, value, cadence)` — not `setProperty` directly. This lets the Writer handle batching and diffing.
+
+Reads happen in event or observer callbacks; writes happen in the rAF flush. This separation avoids read-after-write layout thrashing.
+
+## Shared observers
+
+Having N elements with `size` or `visibility` bindings does **not** create N `ResizeObserver` or `IntersectionObserver` instances. The library maintains exactly one of each for the whole page, dispatching results to per-element callbacks via a `WeakMap`. Adding more bound elements adds zero new observers.
+
+## Passive listeners
+
+All `window` event listeners (scroll, pointermove, resize, etc.) are registered as **passive**. They're also ref-counted by event type: if three sources each need `pointermove`, only one listener is added; it's removed when all three sources are disposed.
+
+## Cleanup
+
+Every `bind()` call returns a disposer. Calling it:
+
+- Calls the source's own disposer (unregisters from the shared observer or removes the event listener ref).
+- Removes the source's entry from the element's binding map.
+- If no sources remain for that element, removes the element from the bindings `WeakMap`.
+
+The `auto` entry also uses a `MutationObserver` to call `unbind` automatically when a `[data-prop]` element is removed from the DOM.

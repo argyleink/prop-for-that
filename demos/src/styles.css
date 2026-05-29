@@ -1,0 +1,539 @@
+/* ───────────────────────────────────────────────────────────────────────
+   prop-for-that — showcase
+   All reactivity below reads var(--live-*). No JS touches these styles.
+   ─────────────────────────────────────────────────────────────────────── */
+
+:root {
+  color-scheme: light dark;
+
+  /* palette ── light-dark() picks per system theme, no JS, no media query */
+  --ink: light-dark(#1a1a1f, #ece9e3);
+  --ink-soft: light-dark(#5a5a64, #9a978f);
+  --paper: light-dark(#f6f4ef, #131217);
+  --surface: light-dark(#ffffff, #1c1b22);
+  --line: light-dark(#e4e0d7, #2c2b34);
+  --accent: light-dark(#3a2bd8, #9d8cff);
+  --accent-soft: light-dark(#ece9ff, #211d3a);
+
+  /* fluid type scale (1.25 ratio, viewport-aware) */
+  --step--1: clamp(0.83rem, 0.79rem + 0.18vw, 0.94rem);
+  --step-0: clamp(1rem, 0.95rem + 0.24vw, 1.13rem);
+  --step-1: clamp(1.25rem, 1.16rem + 0.45vw, 1.5rem);
+  --step-2: clamp(1.56rem, 1.4rem + 0.8vw, 2rem);
+  --step-3: clamp(1.95rem, 1.66rem + 1.45vw, 2.81rem);
+  --step-4: clamp(2.44rem, 1.9rem + 2.7vw, 4.1rem);
+
+  /* spacing rhythm */
+  --space-1: 0.5rem;
+  --space-2: 1rem;
+  --space-3: 1.5rem;
+  --space-4: 2.5rem;
+  --space-5: 4rem;
+  --space-6: 7rem;
+
+  --measure: 38rem;
+  --radius: 14px;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas,
+    monospace;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--step-0);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+h1,
+h2 {
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+  text-wrap: balance;
+}
+
+em {
+  font-style: normal;
+  color: var(--accent);
+}
+
+.muted {
+  color: var(--ink-soft);
+}
+
+/* ─────────────────────────── scroll progress ───────────────────────────
+   Width = --live-scroll-progress (0–1). Pure CSS, no scroll handler. */
+.scrollbar {
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 3px;
+  z-index: 50;
+  background: transparent;
+  pointer-events: none;
+}
+.scrollbar i {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transform-origin: left center;
+  scale: var(--live-scroll-progress, 0) 1;
+}
+
+/* ─────────────────────────────── masthead ─────────────────────────────── */
+.masthead {
+  max-width: var(--measure);
+  margin-inline: auto;
+  padding: clamp(var(--space-5), 14vh, 11rem) var(--space-3) var(--space-5);
+}
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 var(--space-3);
+}
+.masthead h1 {
+  font-size: var(--step-4);
+  margin: 0 0 var(--space-3);
+}
+.lede {
+  max-width: 34rem;
+  color: var(--ink-soft);
+  font-size: var(--step-1);
+  margin: 0;
+}
+.lede code,
+.desc code,
+.colophon code,
+.reveal__t code {
+  background: var(--accent-soft);
+  color: var(--accent);
+  padding: 0.05em 0.35em;
+  border-radius: 5px;
+}
+.scroll-hint {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin: var(--space-5) 0 0;
+}
+.scroll-hint::after {
+  content: '↓';
+  display: inline-block;
+  margin-left: 0.5em;
+  animation: nudge 1.8s ease-in-out infinite;
+}
+@keyframes nudge {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateY(0.35em);
+    opacity: 1;
+  }
+}
+
+/* ─────────────────────────────── sections ─────────────────────────────── */
+main {
+  display: flow-root;
+}
+.demo {
+  max-width: 64rem;
+  margin-inline: auto;
+  padding: var(--space-6) var(--space-3);
+  border-top: 1px solid var(--line);
+}
+.demo-head {
+  max-width: var(--measure);
+  margin-bottom: var(--space-4);
+}
+.index {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  color: var(--accent);
+  letter-spacing: 0.1em;
+  margin: 0 0 var(--space-1);
+}
+.demo h2 {
+  font-size: var(--step-3);
+  margin: 0 0 var(--space-2);
+}
+.desc {
+  color: var(--ink-soft);
+  margin: 0;
+  max-width: 32rem;
+}
+
+/* ─────────────────────────────── stages ─────────────────────────────── */
+.stage {
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  margin-bottom: var(--space-4);
+}
+
+/* ════════════════════════ 1. POINTER-REACTIVE CARD ════════════════════════
+   Reads global --live-pointer-x-ratio / --live-pointer-y-ratio (0–1). */
+.stage--pointer {
+  padding: clamp(var(--space-4), 8vw, 6rem);
+  perspective: 1000px;
+  background: radial-gradient(
+    120% 120% at
+      calc(var(--live-pointer-x-ratio, 0.5) * 100%)
+      calc(var(--live-pointer-y-ratio, 0.5) * 100%),
+    var(--accent-soft),
+    var(--surface) 60%
+  );
+}
+
+.tilt-card {
+  /* pointer ratios (0–1) recentered to (-.5 … .5), then to degrees */
+  --rx: calc((0.5 - var(--live-pointer-y-ratio, 0.5)) * 16deg);
+  --ry: calc((var(--live-pointer-x-ratio, 0.5) - 0.5) * 16deg);
+
+  position: relative;
+  inline-size: min(20rem, 70vw);
+  aspect-ratio: 5 / 7;
+  border-radius: 20px;
+  overflow: hidden;
+  background: linear-gradient(
+    155deg,
+    light-dark(#2a2540, #2a2540),
+    light-dark(#0e0c1c, #0e0c1c)
+  );
+  color: #f4f2ff;
+  transform-style: preserve-3d;
+  transform: rotateX(var(--rx)) rotateY(var(--ry));
+  box-shadow:
+    0 1px 1px #0002,
+    0 12px 30px -12px #0007,
+    0 40px 60px -30px #0009;
+  transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: transform;
+}
+
+/* The glare: a soft highlight that tracks the pointer across the card face. */
+.tilt-card__glare {
+  position: absolute;
+  inset: -40%;
+  pointer-events: none;
+  background: radial-gradient(
+    36% 36% at
+      calc(var(--live-pointer-x-ratio, 0.5) * 100%)
+      calc(var(--live-pointer-y-ratio, 0.5) * 100%),
+    #ffffffcc,
+    #ffffff00 60%
+  );
+  mix-blend-mode: soft-light;
+  opacity: 0.9;
+}
+
+.tilt-card__content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: var(--space-3);
+  transform: translateZ(40px);
+}
+.tilt-card__kicker {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #b5a9ff;
+  margin: 0 0 auto;
+}
+.tilt-card__title {
+  font-size: var(--step-2);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  margin: 0 0 var(--space-1);
+}
+.tilt-card__sub {
+  font-size: var(--step--1);
+  color: #d9d2ff;
+  margin: 0;
+}
+
+/* ═══════════════════════════ 2. SCROLL REVEALS ═══════════════════════════
+   Each panel reads its own --live-visible-ratio (0–1). */
+.reveals {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  margin-bottom: var(--space-4);
+}
+.reveal {
+  --r: var(--live-visible-ratio, 0);
+  padding: var(--space-4) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  min-height: 11rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  opacity: var(--r);
+  translate: 0 calc((1 - var(--r)) * 2rem);
+  filter: blur(calc((1 - var(--r)) * 4px));
+  transition:
+    opacity 120ms linear,
+    translate 120ms linear,
+    filter 120ms linear;
+}
+.reveal__n {
+  font-family: var(--font-mono);
+  font-size: var(--step-1);
+  color: var(--accent);
+  margin: 0;
+}
+.reveal__t {
+  font-size: var(--step-1);
+  margin: 0;
+  text-wrap: balance;
+}
+
+/* ════════════════════════════ 3. SLIDER GAUGE ════════════════════════════
+   Reads bound --live-value / --live-value-pct (0–1) from the input. */
+.stage--slider {
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: clamp(var(--space-4), 8vw, 5rem) var(--space-3);
+}
+
+.gauge {
+  --pct: var(--live-value-pct, 0);
+  /* hue sweeps cool → warm as the value rises */
+  --hue: hsl(calc(220 - var(--pct) * 180) 85% 58%);
+
+  position: relative;
+  inline-size: clamp(13rem, 40vw, 18rem);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+}
+.gauge__sweep {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  /* the arc fills proportionally to --live-value-pct */
+  background: conic-gradient(
+    from -90deg,
+    var(--hue) calc(var(--pct) * 100%),
+    var(--line) 0
+  );
+  -webkit-mask: radial-gradient(circle, #0000 60%, #000 61%);
+  mask: radial-gradient(circle, #0000 60%, #000 61%);
+}
+.gauge__core {
+  position: relative;
+  inline-size: 64%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  /* the inner dot grows with the value */
+  box-shadow: 0 0 0 calc(var(--pct) * 0.6rem) var(--accent-soft);
+  transition: box-shadow 120ms linear;
+}
+.gauge__readout {
+  font-family: var(--font-mono);
+  font-size: var(--step-3);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--hue);
+  letter-spacing: -0.03em;
+}
+/* the printed number is a CSS counter seeded from --live-value */
+.gauge__readout::after {
+  counter-reset: v calc(var(--live-value, 0));
+  content: counter(v);
+}
+
+.slider {
+  display: grid;
+  gap: var(--space-1);
+  inline-size: min(28rem, 90vw);
+}
+.slider__label {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.slider input[type='range'] {
+  --pct: var(--live-value-pct, 0);
+  inline-size: 100%;
+  height: 1.5rem;
+  margin: 0;
+  background: transparent;
+  cursor: ew-resize;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.slider input[type='range']::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 99px;
+  background: linear-gradient(
+    90deg,
+    var(--accent) calc(var(--pct) * 100%),
+    var(--line) calc(var(--pct) * 100%)
+  );
+}
+.slider input[type='range']::-moz-range-track {
+  height: 6px;
+  border-radius: 99px;
+  background: var(--line);
+}
+.slider input[type='range']::-moz-range-progress {
+  height: 6px;
+  border-radius: 99px;
+  background: var(--accent);
+}
+.slider input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  margin-top: -0.5rem;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--accent);
+  box-shadow: 0 1px 4px #0003;
+}
+.slider input[type='range']::-moz-range-thumb {
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--accent);
+  box-shadow: 0 1px 4px #0003;
+}
+.slider input[type='range']:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 6px;
+}
+
+/* ─────────────────────────── code captions ─────────────────────────── */
+.caption {
+  margin: 0;
+  max-width: var(--measure);
+}
+.caption figcaption {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+  margin: var(--space-2) 0 var(--space-1);
+}
+.caption pre {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  background: light-dark(#fbfaf7, #16151b);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow-x: auto;
+  font-size: var(--step--1);
+  line-height: 1.7;
+}
+.caption code {
+  font-family: var(--font-mono);
+}
+.tok-key {
+  color: light-dark(#8a3ffb, #c4a6ff);
+}
+.tok-fn {
+  color: light-dark(#0a7ea4, #6fd1f0);
+}
+.tok-str {
+  color: light-dark(#1f8a3f, #8fe0a0);
+}
+.tok-num {
+  color: light-dark(#b5651d, #f0b87a);
+}
+.tok-sel {
+  color: var(--accent);
+}
+.tok-prop {
+  color: light-dark(#444, #c9c5bd);
+}
+.tok-var {
+  color: light-dark(#c026a3, #ff9fe8);
+  font-weight: 600;
+}
+
+/* ─────────────────────────────── colophon ─────────────────────────────── */
+.colophon {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-3) var(--space-5);
+  border-top: 1px solid var(--line);
+  color: var(--ink-soft);
+}
+.colophon p {
+  margin: 0;
+}
+
+/* ─────────────────────────── reduced motion ───────────────────────────
+   Gate every motion-heavy effect. Reactivity stays legible; movement stops. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .tilt-card {
+    transform: none;
+    transition: none;
+  }
+  .tilt-card__glare {
+    /* keep a static centered sheen rather than a tracking one */
+    background: radial-gradient(36% 36% at 50% 50%, #ffffff55, #ffffff00 60%);
+  }
+  .reveal {
+    /* reveal on visibility without the lift/blur travel */
+    translate: none;
+    filter: none;
+    transition: opacity 120ms linear;
+  }
+  .scroll-hint::after,
+  .gauge__core {
+    animation: none;
+    transition: none;
+  }
+}

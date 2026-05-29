@@ -1,0 +1,67 @@
+---
+title: Naming & cadence
+description: How --live-* and --const-* properties are named, and why.
+---
+
+## Two cadences
+
+Every property written by `prop-for-that` falls into one of two cadences:
+
+| Prefix | Cadence | When written |
+| --- | --- | --- |
+| `--live-` | reactive | Updated each frame when the value changes |
+| `--const-` | constant | Written once at startup; never overwritten |
+
+The prefix is the signal. If you see `--live-scroll-progress` in a stylesheet, you know it's reactive. If you see `--const-dpr`, you know it's a write-once device constant.
+
+## Unitless values
+
+All values are plain **unitless numbers** (or strings). There are no `px`, `deg`, or `%` suffixes.
+
+This is intentional: unitless numbers compose cleanly with `calc()` and let you attach whatever unit the current use-case needs:
+
+```css
+/* Convert unitless viewport height to pixels */
+.hero {
+  height: calc(var(--live-vh) * 1px);
+}
+
+/* Use scroll progress as a 0–1 fraction */
+.indicator {
+  width: calc(var(--live-scroll-progress) * 100%);
+}
+
+/* Drive a hue from a range input */
+.swatch {
+  background: hsl(calc(var(--live-value-pct) * 360) 70% 55%);
+}
+```
+
+## Why ASCII prefixes (not sigils)
+
+CSS custom-property names are `<dashed-ident>` tokens. Characters like `$`, `#`, and `>` are **not** valid name code-points. You can set `--$x` from JavaScript via `setProperty`, but to read it in CSS you'd have to write `var(--\$x)` — escaped. Worse, `-->` is a **CDC token** (`<!-- … -->` legacy HTML comment syntax) and breaks parsers entirely.
+
+Non-ASCII characters (≥U+0080, including emoji) are technically valid unescaped in custom property names, but they're impractical for autocomplete and tooling.
+
+Plain ASCII segment names like `live` and `const` are valid, unescaped everywhere, and autocomplete in every editor.
+
+## Configurable prefixes
+
+The defaults are `--live-` and `--const-`. You can override them globally via `configure()` before attaching any sources:
+
+```js
+import { configure } from 'prop-for-that'
+
+// Namespace to avoid token collisions with your own properties
+configure({
+  livePrefix: '--pft-live-',
+  constPrefix: '--pft-const-',
+})
+```
+
+```css
+/* Then use your custom prefix */
+.bar { width: calc(var(--pft-live-scroll-progress) * 100%); }
+```
+
+Call `configure()` once, before any `global()` or `bind()` calls, so all subsequent writes use the new prefixes.

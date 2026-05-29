@@ -1,0 +1,65 @@
+{
+  "name": "prop-for-that",
+  "version": "0.1.0",
+  "description": "Expose what JavaScript knows but CSS can't see — as batched, diffed CSS custom properties.",
+  "type": "module",
+  "license": "MIT",
+  "keywords": [
+    "css",
+    "custom-properties",
+    "css-variables",
+    "reactive",
+    "state",
+    "dom",
+    "battery",
+    "network",
+    "geolocation",
+    "device-orientation",
+    "scroll-velocity",
+    "fps"
+  ],
+  "sideEffects": [
+    "./dist/auto.js",
+    "./dist/auto.cjs",
+    "./dist/head.js",
+    "./dist/head.cjs"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./auto": {
+      "types": "./dist/auto.d.ts",
+      "import": "./dist/auto.js",
+      "require": "./dist/auto.cjs"
+    },
+    "./head": {
+      "types": "./dist/head.d.ts",
+      "import": "./dist/head.js",
+      "require": "./dist/head.cjs"
+    },
+    "./plugins": {
+      "types": "./dist/plugins.d.ts",
+      "import": "./dist/plugins.js",
+      "require": "./dist/plugins.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "jsdom": "^25.0.1",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

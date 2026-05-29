@@ -1,0 +1,32 @@
+---
+title: prop-for-that
+description: Expose what JavaScript knows but CSS can't see.
+template: splash
+hero:
+  tagline: Expose what JavaScript knows but CSS can't see.
+  actions:
+    - text: Get started
+      link: /start/introduction/
+      icon: right-arrow
+    - text: API reference
+      link: /reference/api/
+      icon: open-book
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+<CardGrid stagger>
+  <Card title="Zero-config auto mode" icon="rocket">
+    Import `prop-for-that/auto` and add `data-prop` attributes. No JavaScript required beyond the import.
+  </Card>
+  <Card title="Batched & diffed" icon="approve-check">
+    One `setProperty` flush per animation frame. Only writes when a value actually changed.
+  </Card>
+  <Card title="Six core sources" icon="list-format">
+    Viewport, scroll, pointer, size, visibility, and range — all in the main bundle.
+  </Card>
+  <Card title="Lean by default" icon="puzzle">
+    Zero runtime dependencies. Tree-shakeable. Exotic sources are opt-in plugins.
+  </Card>
+</CardGrid>

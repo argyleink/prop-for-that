@@ -1,0 +1,46 @@
+---
+title: Introduction
+description: What prop-for-that solves and how CSS reacts to JS state.
+---
+
+CSS can already react to a lot — `:hover`, `[open]`, container queries, `prefers-*` media features, scroll-driven animations. What it **cannot** do is read arbitrary runtime values: a slider's current number, the pointer's coordinates, scroll velocity, an element's visible ratio, network speed, battery level.
+
+**prop-for-that** bridges that gap. It reads runtime JavaScript state and writes it into CSS custom properties — batched, diffed, and efficient — so your stylesheet can compute and react without any JS in your CSS files.
+
+## The core idea
+
+JavaScript knows things CSS can't see. `prop-for-that` exposes them as `--live-*` custom properties on `:root` or individual elements:
+
+```css
+/* scroll progress bar */
+.progress-bar {
+  width: calc(var(--live-scroll-progress) * 100%);
+}
+
+/* pointer-driven tilt card */
+.card {
+  transform: rotateX(calc((0.5 - var(--live-pointer-y-ratio)) * 20deg))
+             rotateY(calc((var(--live-pointer-x-ratio) - 0.5) * 20deg));
+}
+
+/* range slider with live color */
+input[type="range"] {
+  accent-color: hsl(calc(var(--live-value-pct) * 120) 80% 50%);
+}
+```
+
+Enable the sources once in JavaScript — then CSS does the rest.
+
+```js
+import { global, bind } from 'prop-for-that'
+
+global(['scroll', 'pointer'])
+bind(document.querySelector('input[type="range"]'), ['range'])
+```
+
+## What makes it different
+
+- **Batched** — one `setProperty` flush per animation frame, never per-event.
+- **Diffed** — only writes when a value actually changed.
+- **Lean** — zero runtime dependencies; tree-shakeable; you ship only the sources you use.
+- **Hybrid** — works as a zero-config auto import, imperative API, or a synchronous head snippet for FOUC-safe constants.

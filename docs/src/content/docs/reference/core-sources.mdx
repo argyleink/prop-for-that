@@ -1,0 +1,126 @@
+---
+title: Core sources
+description: The six built-in sources included in the main bundle.
+---
+
+These six sources ship in the main bundle and are available with no extra imports. Global sources write to `:root`; element sources write to the bound element.
+
+## Global sources
+
+### `viewport`
+
+Writes the viewport dimensions whenever the window is resized.
+
+| Property | Value |
+| --- | --- |
+| `--live-vw` | Viewport width in pixels (unitless) |
+| `--live-vh` | Viewport height in pixels (unitless) |
+
+```css
+.full-screen {
+  width: calc(var(--live-vw) * 1px);
+  height: calc(var(--live-vh) * 1px);
+}
+```
+
+### `scroll`
+
+Writes scroll position and progress on every scroll event (passive listener).
+
+| Property | Value |
+| --- | --- |
+| `--live-scroll-x` | Horizontal scroll offset in pixels (unitless) |
+| `--live-scroll-y` | Vertical scroll offset in pixels (unitless) |
+| `--live-scroll-progress` | 0–1 fraction of total scrollable distance |
+
+```css
+.progress-bar {
+  transform: scaleX(var(--live-scroll-progress));
+  transform-origin: left;
+}
+```
+
+### `pointer`
+
+Writes pointer coordinates and viewport-relative ratios on `pointermove` (passive listener).
+
+| Property | Value |
+| --- | --- |
+| `--live-pointer-x` | Pointer X in pixels (unitless) |
+| `--live-pointer-y` | Pointer Y in pixels (unitless) |
+| `--live-pointer-x-ratio` | Pointer X as 0–1 fraction of viewport width |
+| `--live-pointer-y-ratio` | Pointer Y as 0–1 fraction of viewport height |
+
+```css
+.spotlight {
+  background: radial-gradient(
+    circle at
+    calc(var(--live-pointer-x-ratio) * 100%)
+    calc(var(--live-pointer-y-ratio) * 100%),
+    white 0%, transparent 60%
+  );
+}
+```
+
+## Element sources
+
+### `size`
+
+Uses the shared `ResizeObserver` to write element dimensions when they change.
+
+| Property | Value |
+| --- | --- |
+| `--live-w` | Element width in pixels (unitless) |
+| `--live-h` | Element height in pixels (unitless) |
+| `--live-aspect` | Width / height ratio |
+
+```css
+/* Scale font size relative to element width */
+[data-prop~="size"] {
+  font-size: calc(var(--live-w) * 0.05 * 1px);
+}
+```
+
+### `visibility`
+
+Uses the shared `IntersectionObserver` to write how much of the element is in the viewport.
+
+| Property | Value |
+| --- | --- |
+| `--live-visible` | `1` when any part is visible, `0` otherwise |
+| `--live-visible-ratio` | 0–1 fraction of the element that is intersecting |
+
+```css
+.fade-in {
+  opacity: var(--live-visible-ratio);
+  transition: opacity 0.3s;
+}
+```
+
+### `range`
+
+Listens to `input` events on a range element and writes its current value.
+
+| Property | Value |
+| --- | --- |
+| `--live-value` | Raw `value` as a number |
+| `--live-value-pct` | 0–1 fraction between `min` and `max` |
+
+```css
+input[type="range"] {
+  accent-color: hsl(calc(var(--live-value-pct) * 120) 80% 50%);
+}
+```
+
+## Head constants
+
+The `prop-for-that/head` entry writes these once, synchronously, before first paint:
+
+| Property | Value |
+| --- | --- |
+| `--const-scrollbar-w` | Scrollbar width in pixels (unitless) |
+| `--const-dpr` | `devicePixelRatio` |
+| `--const-cores` | `navigator.hardwareConcurrency` |
+| `--const-memory` | `navigator.deviceMemory` (where available) |
+| `--const-touch-points` | `navigator.maxTouchPoints` |
+| `--const-lang` | `navigator.language` string |

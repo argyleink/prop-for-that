@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>prop-for-that — CSS reacts, JS just listens</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <!-- Scroll progress: width driven entirely by --live-scroll-progress -->
+    <div class="scrollbar" aria-hidden="true"><i></i></div>
+
+    <header class="masthead">
+      <p class="eyebrow">prop-for-that</p>
+      <h1>
+        JavaScript does the<em> minimum</em>.<br />
+        <span class="muted">CSS does the reacting.</span>
+      </h1>
+      <p class="lede">
+        Runtime state JS knows but CSS can't see — pointer, scroll, size,
+        visibility, slider values — written into batched
+        <code>--live-*</code> custom properties. Every effect below is plain CSS
+        reading a <code>var()</code>. No JS reads values. No JS sets styles in
+        the animation path.
+      </p>
+      <p class="scroll-hint" aria-hidden="true">scroll</p>
+    </header>
+
+    <main>
+      <!-- ───────────────────────── 1. POINTER ───────────────────────── -->
+      <section class="demo" id="pointer">
+        <div class="demo-head">
+          <p class="index">01</p>
+          <h2>Pointer-reactive card</h2>
+          <p class="desc">
+            3D tilt and a moving glare, driven by the pointer's position across
+            the viewport. The transform and the spotlight are both pure CSS
+            reading <code>--live-pointer-*-ratio</code>.
+          </p>
+        </div>
+
+        <div class="stage stage--pointer">
+          <article class="tilt-card">
+            <div class="tilt-card__glare" aria-hidden="true"></div>
+            <div class="tilt-card__content">
+              <p class="tilt-card__kicker">live</p>
+              <p class="tilt-card__title">move&nbsp;your<br />pointer</p>
+              <p class="tilt-card__sub">the card follows — in CSS</p>
+            </div>
+          </article>
+        </div>
+
+        <figure class="caption">
+          <figcaption>The entire JS:</figcaption>
+          <pre><code><span class="tok-key">global</span>([<span class="tok-str">'pointer'</span>])</code></pre>
+          <figcaption>The reaction (CSS):</figcaption>
+          <pre><code><span class="tok-sel">.tilt-card</span> {
+  <span class="tok-prop">--rx</span>: <span class="tok-fn">calc</span>((<span class="tok-num">.5</span> - <span class="tok-var">var(--live-pointer-y-ratio)</span>) * <span class="tok-num">16deg</span>);
+  <span class="tok-prop">--ry</span>: <span class="tok-fn">calc</span>((<span class="tok-var">var(--live-pointer-x-ratio)</span> - <span class="tok-num">.5</span>) * <span class="tok-num">16deg</span>);
+  <span class="tok-prop">transform</span>: <span class="tok-fn">rotateX</span>(<span class="tok-var">var(--rx)</span>) <span class="tok-fn">rotateY</span>(<span class="tok-var">var(--ry)</span>);
+}</code></pre>
+        </figure>
+      </section>
+
+      <!-- ──────────────────────── 2. SCROLL ──────────────────────── -->
+      <section class="demo" id="scroll">
+        <div class="demo-head">
+          <p class="index">02</p>
+          <h2>Scroll storytelling</h2>
+          <p class="desc">
+            The bar at the top of the page is <code>--live-scroll-progress</code>.
+            Each panel below fades and lifts as it enters the viewport, using its
+            own <code>--live-visible-ratio</code>.
+          </p>
+        </div>
+
+        <div class="reveals">
+          <article class="reveal" data-reveal>
+            <p class="reveal__n">i</p>
+            <p class="reveal__t">Bind a section to <code>visibility</code>.</p>
+          </article>
+          <article class="reveal" data-reveal>
+            <p class="reveal__n">ii</p>
+            <p class="reveal__t">CSS reads its visible ratio, 0 → 1.</p>
+          </article>
+          <article class="reveal" data-reveal>
+            <p class="reveal__n">iii</p>
+            <p class="reveal__t">Opacity, blur, and lift interpolate. No scroll handler.</p>
+          </article>
+          <article class="reveal" data-reveal>
+            <p class="reveal__n">iv</p>
+            <p class="reveal__t">One IntersectionObserver does the whole page.</p>
+          </article>
+        </div>
+
+        <figure class="caption">
+          <figcaption>The entire JS:</figcaption>
+          <pre><code><span class="tok-key">global</span>([<span class="tok-str">'scroll'</span>])
+<span class="tok-key">document</span>.<span class="tok-fn">querySelectorAll</span>(<span class="tok-str">'[data-reveal]'</span>)
+  .<span class="tok-fn">forEach</span>(el => <span class="tok-key">bind</span>(el, [<span class="tok-str">'visibility'</span>]))</code></pre>
+          <figcaption>The reaction (CSS):</figcaption>
+          <pre><code><span class="tok-sel">.scrollbar i</span> { <span class="tok-prop">scale</span>: <span class="tok-var">var(--live-scroll-progress)</span> <span class="tok-num">1</span>; }
+
+<span class="tok-sel">.reveal</span> {
+  <span class="tok-prop">opacity</span>: <span class="tok-var">var(--live-visible-ratio, 0)</span>;
+  <span class="tok-prop">translate</span>: <span class="tok-num">0</span> <span class="tok-fn">calc</span>((<span class="tok-num">1</span> - <span class="tok-var">var(--live-visible-ratio, 0)</span>) * <span class="tok-num">2rem</span>);
+}</code></pre>
+        </figure>
+      </section>
+
+      <!-- ──────────────────────── 3. SLIDER ──────────────────────── -->
+      <section class="demo" id="slider">
+        <div class="demo-head">
+          <p class="index">03</p>
+          <h2>Slider-driven gauge</h2>
+          <p class="desc">
+            One <code>&lt;input type="range"&gt;</code>. Its
+            <code>--live-value-pct</code> drives the gauge sweep, the hue, the
+            dot's size, and the printed number — entirely in CSS, including the
+            digits via a <code>counter</code>.
+          </p>
+        </div>
+
+        <div class="stage stage--slider">
+          <div class="gauge" id="gauge">
+            <div class="gauge__sweep" aria-hidden="true"></div>
+            <div class="gauge__core" aria-hidden="true">
+              <span class="gauge__readout" aria-hidden="true"></span>
+            </div>
+          </div>
+
+          <label class="slider">
+            <span class="slider__label">value</span>
+            <input
+              id="range"
+              type="range"
+              min="0"
+              max="100"
+              value="42"
+              aria-label="Demo value"
+            />
+          </label>
+        </div>
+
+        <figure class="caption">
+          <figcaption>The entire JS:</figcaption>
+          <pre><code><span class="tok-key">bind</span>(<span class="tok-fn">document</span>.<span class="tok-fn">getElementById</span>(<span class="tok-str">'range'</span>), [<span class="tok-str">'range'</span>])</code></pre>
+          <figcaption>The reaction (CSS):</figcaption>
+          <pre><code><span class="tok-sel">.gauge__sweep</span> {
+  <span class="tok-prop">background</span>: <span class="tok-fn">conic-gradient</span>(<span class="tok-key">from</span> <span class="tok-num">-90deg</span>,
+    <span class="tok-key">var(--hue)</span> <span class="tok-fn">calc</span>(<span class="tok-var">var(--live-value-pct)</span> * <span class="tok-num">100%</span>),
+    <span class="tok-num">#0000</span> <span class="tok-num">0</span>);
+}
+<span class="tok-sel">.gauge__readout::after</span> {
+  <span class="tok-prop">counter-reset</span>: v <span class="tok-fn">calc</span>(<span class="tok-var">var(--live-value)</span>);
+  <span class="tok-prop">content</span>: <span class="tok-fn">counter</span>(v);
+}</code></pre>
+        </figure>
+      </section>
+    </main>
+
+    <footer class="colophon">
+      <p>
+        Three demos, one idea: expose state, then get out of CSS's way.
+        Open DevTools and watch <code>--live-*</code> change on
+        <code>:root</code> and the bound elements.
+      </p>
+    </footer>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
