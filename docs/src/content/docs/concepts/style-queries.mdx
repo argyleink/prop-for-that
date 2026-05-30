@@ -3,21 +3,21 @@ title: Style queries
 description: Use @container style() to apply conditional CSS rules from the discrete properties prop-for-that writes.
 ---
 
-There are two ways CSS consumes the properties prop-for-that writes:
+CSS consumes the properties prop-for-that writes in two ways:
 
-- **`var()`** — *interpolate* on a value. Best for **continuous** numbers (`--live-pointer-x-ratio`, `--live-value-pct`) fed through `calc()`.
-- **`@container style()`** — apply a **conditional rule** when a property equals a value. Best for **discrete / boolean / enum** state (`--live-online`, `--live-visible`, `--live-has-entered`, `--live-value: 100`, `--live-paused`, `--live-battery-low`, capability tiers).
+- **`var()`** *interpolates* on a value. Best for **continuous** numbers (`--live-pointer-x-ratio`, `--live-value-pct`) fed through `calc()`.
+- **`@container style()`** applies a **conditional rule** when a property equals a value. Best for **discrete, boolean, or enum** state (`--live-online`, `--live-visible`, `--live-has-entered`, `--live-value: 100`, `--live-paused`, `--live-battery-low`, capability tiers).
 
-Style queries are what make the *discrete* signals shine: they let a value flip whole rule blocks on and off — something `var()` can't do.
+Style queries are what make the discrete signals shine: a value flips whole rule blocks on and off, which `var()` can't do.
 
 ## The container rule
 
-A style query matches against an element's **nearest ancestor container** — and for style queries, *every element is a container by default* (you do **not** need `container-type`). So:
+A style query matches against an element's **nearest ancestor container**, and for style queries every element is a container by default (no `container-type` needed). So:
 
-- **Global sources** write to `:root`, an ancestor of everything → queryable from anywhere.
-- **Element sources** write to the bound element → its **descendants** can query it (an element can't style-query its own property, only an ancestor's). With the container-bound `range` pattern, that's exactly why a gauge *inside* the bound wrapper can react.
+- **Global sources** write to `:root`, an ancestor of everything, so they're queryable anywhere.
+- **Element sources** write to the bound element, so its **descendants** query it. (An element can't style-query its own property, only an ancestor's.) That's exactly why a gauge inside the container-bound `range` wrapper can react.
 
-## Example 1 — a global boolean (offline)
+## Example 1: a global boolean (offline)
 
 ```js
 import { register, global } from 'prop-for-that'
@@ -37,7 +37,7 @@ global(['online'])   // writes --live-online (1/0) to :root
 }
 ```
 
-## Example 2 — an element milestone (slider at max)
+## Example 2: an element milestone (slider at max)
 
 ```js
 bind(document.getElementById('meter'), ['range'])  // --live-value on #meter
@@ -45,17 +45,17 @@ bind(document.getElementById('meter'), ['range'])  // --live-value on #meter
 
 ```css
 /* .gauge is inside #meter and inherits --live-value, so its descendants
-   can match the exact integer — impossible to express with var()/calc() */
+   can match the exact integer, which var()/calc() can't express */
 @container style(--live-value: 100) {
   .gauge__num { color: var(--accent); }
   .gauge__flag::after { content: 'max'; }
 }
 ```
 
-## Example 3 — a capability tier *(proposed `capability` plugin)*
+## Example 3: a capability tier (proposed `capability` plugin)
 
 ```css
-/* ship light media on lite connections */
+/* ship lighter media on lite connections */
 @container style(--live-delivery-mode: 1) {
   .hero-video { display: none; }
   .hero-poster { display: block; }
@@ -64,9 +64,9 @@ bind(document.getElementById('meter'), ['range'])  // --live-value on #meter
 
 ## Equality today, ranges later
 
-Style queries currently match on **equality** (`style(--live-net-type: 4)`), not comparisons. Range style queries (`style(--live-battery-level < 0.2)`) are **not yet stable** across browsers.
+Style queries match on **equality** (`style(--live-net-type: 4)`), not comparisons. Range queries (`style(--live-battery-level < 0.2)`) aren't stable across browsers yet.
 
-That's a feature, not a bug, for this library: emit **discrete booleans and tiers from JS** and you get threshold styling that works *today*. For example, the `battery` plugin's `--live-battery-low` (1/0) or a capability tier lets you write:
+That suits this library: emit **discrete booleans and tiers from JS**, and you get threshold styling that works today. The `battery` plugin's `--live-battery-low` (1/0), or a capability tier, lets you write:
 
 ```css
 @container style(--live-battery-low: 1) {
@@ -74,8 +74,8 @@ That's a feature, not a bug, for this library: emit **discrete booleans and tier
 }
 ```
 
-…instead of waiting for range queries. Pair continuous values with `var()`, discrete values with `@container style()`.
+No waiting for range queries. Pair continuous values with `var()`, discrete values with `@container style()`.
 
 ## Browser support
 
-Style queries for custom properties ship in Chromium 111+, Safari 18+, and Firefox 128+. Where unsupported, the `@container style()` blocks are simply ignored — so treat them as progressive enhancement and keep a sensible default outside the query (as the examples above do).
+Style queries for custom properties ship in Chromium 111+, Safari 18+, and Firefox 128+. Where unsupported, `@container style()` blocks are ignored, so treat them as progressive enhancement and keep a sensible default outside the query (as the examples above do).

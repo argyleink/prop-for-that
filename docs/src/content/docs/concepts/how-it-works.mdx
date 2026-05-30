@@ -26,7 +26,7 @@ The Writer is the core scheduling service. Instead of calling `setProperty` insi
 A single `requestAnimationFrame` callback walks the queue once per frame and for each queued value:
 
 1. Looks up the last written value in a `WeakMap<element, Map<prop, value>>`.
-2. Compares — if the value hasn't changed, it skips the write.
+2. Compares. If the value hasn't changed, it skips the write.
 3. Calls `element.style.setProperty(prop, value)` only when it actually changed.
 
 This means no matter how many events fire in a frame (mousemove, scroll, resize, input), there is at most one `setProperty` call per property per frame.
@@ -37,7 +37,7 @@ Each source is a small object: `{ key, scope, start(ctx) → disposer }`.
 
 - `scope` is either `'global'` (written to `:root`) or `'element'` (written to the bound element).
 - `start(ctx)` attaches whatever listeners or observers are needed and returns a disposer function.
-- Inside their callbacks, sources call `ctx.write(localName, value, cadence)` — not `setProperty` directly. This lets the Writer handle batching and diffing.
+- Inside their callbacks, sources call `ctx.write(localName, value, cadence)`, not `setProperty` directly. This lets the Writer handle batching and diffing.
 
 Reads happen in event or observer callbacks; writes happen in the rAF flush. This separation avoids read-after-write layout thrashing.
 

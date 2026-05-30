@@ -3,11 +3,11 @@ title: Plugins
 description: Opt-in sources for exotic or expensive APIs, imported from prop-for-that/plugins.
 ---
 
-Plugins cover state beyond the core six sources — sensors, network, battery, media, and more. They live in a single tree-shakeable entry, `prop-for-that/plugins`, and you **register** only the ones you use, so nothing you don't import ends up in your bundle.
+Plugins cover state beyond the five core sources: sensors, network, battery, media, and more. They live in one tree-shakeable entry, `prop-for-that/plugins`, and you **register** only the ones you use, so nothing you don't import reaches your bundle.
 
 ## Using a plugin
 
-Import the plugin, `register()` it once, then use it by **key** with `bind()` or `global()` — exactly like a core source:
+Import the plugin, `register()` it once, then use it by **key** with `bind()` or `global()`, exactly like a core source:
 
 ```js
 import { register, bind } from 'prop-for-that'
@@ -23,7 +23,7 @@ bind(document.documentElement, ['battery'])
 }
 ```
 
-Register several at once with `registerPlugins()` — pass specific sources, or no arguments to register all of them:
+Register several at once with `registerPlugins()`. Pass specific sources, or no arguments to register everything:
 
 ```js
 import { registerPlugins, fps, clock } from 'prop-for-that/plugins'
@@ -38,7 +38,7 @@ The **import** is camelCase (`scrollVelocity`); the **key** you pass to `bind()`
 
 ## Global plugins
 
-Registered, then attached with `global([...])` — they write to `:root`.
+Register, then attach with `global([...])`; they write to `:root`.
 
 | Import | Key | Properties |
 | --- | --- | --- |
@@ -55,17 +55,17 @@ Registered, then attached with `global([...])` — they write to `:root`.
 
 ## Element plugins
 
-Registered, then attached with `bind(el, [...])` — they write to the bound element.
+Register, then attach with `bind(el, [...])`; they write to the bound element.
 
 | Import | Key | Properties |
 | --- | --- | --- |
 | `pointerLocal` | `pointer-local` | `--live-px`, `--live-py` (0–1 within the element's box), `--live-pointer-inside` (`1` / `0`) |
-| `media` | `media` | `--live-current-time`, `--live-duration`, `--live-progress` (0–1), `--live-paused` (`1` / `0`), `--live-volume` (0–1) — for `<video>` / `<audio>` |
-| `field` | `field` | `--live-length` (value length), `--live-empty` (`1` / `0`), `--live-valid` (`1` / `0`) — for form fields |
+| `media` | `media` | `--live-current-time`, `--live-duration`, `--live-progress` (0–1), `--live-paused` (`1` / `0`), `--live-volume` (0–1), for `<video>` / `<audio>` |
+| `field` | `field` | `--live-length` (value length), `--live-empty` (`1` / `0`), `--live-valid` (`1` / `0`), for form fields |
 
 ## Permissions & feature detection
 
-Every plugin **feature-detects** the API it needs and quietly no-ops (returns an empty disposer) when it's unavailable — registering one is always safe.
+Every plugin **feature-detects** the API it needs and quietly no-ops (returns an empty disposer) when it's unavailable, so registering one is always safe.
 
 `orientation`, `motion`, and `geo` are additionally **permission-gated**: on some platforms (notably iOS) they require a user-gesture permission grant before any values arrive.
 
@@ -75,10 +75,10 @@ Not yet implemented, tracked for a later release: `light` (ambient light sensor)
 
 ## Intentionally excluded
 
-These are deliberately left out — CSS, or the platform, already does them better:
+Deliberately left out, because CSS or the platform already does them better:
 
-- `:hover`, `:focus-within`, `:active` — CSS pseudo-classes
-- `[open]`, `:modal`, `:checked` — HTML/CSS selectors
-- `prefers-*`, media queries, container queries — CSS at-rules
-- `env()` safe-area insets — already in CSS
-- **scroll position / progress** — use native [scroll-driven animations](https://developer.mozilla.org/en-US/docs/Web/CSS/animation-timeline) (`animation-timeline: scroll()` / `view()`), which run on the compositor. (Scroll *velocity* and *direction*, which timelines can't express, are the `scroll-velocity` plugin.)
+- `:hover`, `:focus-within`, `:active`: CSS pseudo-classes.
+- `[open]`, `:modal`, `:checked`: HTML/CSS selectors.
+- `prefers-*`, media queries, container queries: CSS at-rules.
+- `env()` safe-area insets: already in CSS.
+- **scroll position / progress**: use native [scroll-driven animations](https://developer.mozilla.org/en-US/docs/Web/CSS/animation-timeline) (`animation-timeline: scroll()` / `view()`), which run on the compositor. Scroll *velocity* and *direction*, which timelines can't express, are the `scroll-velocity` plugin.

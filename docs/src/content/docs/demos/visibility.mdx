@@ -1,0 +1,32 @@
+---
+title: Visibility
+description: A live demo of the visibility source, exposing binary in/out state and a one-way entered latch.
+---
+
+import VisibilityDemo from '../../../components/VisibilityDemo.astro';
+
+The `visibility` source is scroll-triggered, not scroll-linked. It writes two binary signals per bound element: `--live-visible` (1 while any part is on screen) and `--live-has-entered` (latches to 1 on first entry, never resets). The continuous ratio is left to native `view()` timelines; the one-way latch is the part those can't express. Scroll the panels below into and out of view.
+
+<VisibilityDemo />
+
+## The wiring
+
+```js
+import { bind } from 'prop-for-that'
+
+document.querySelectorAll('[data-reveal]')
+  .forEach((el) => bind(el, ['visibility']))
+```
+
+```css
+/* reveal once, then keep it */
+.panel {
+  opacity: calc(0.25 + var(--live-has-entered) * 0.75);
+  transition: opacity 0.5s;
+}
+
+/* the dot lights only while in view */
+.dot {
+  background: color-mix(in oklab, var(--accent) calc(var(--live-visible) * 100%), gray);
+}
+```

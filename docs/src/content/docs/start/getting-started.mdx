@@ -13,11 +13,11 @@ npm i prop-for-that
 
 ### 1. Auto (zero-config)
 
-Import `prop-for-that/auto` and it does everything for you:
+Import `prop-for-that/auto` and it wires everything for you:
 
 - Attaches the default global sources (`viewport`, `pointer`) to `:root`.
 - Scans the DOM for `[data-prop]` attributes and binds the named sources to those elements.
-- Watches for DOM changes with a `MutationObserver` so dynamically added elements are handled automatically.
+- Watches the DOM with a `MutationObserver`, so dynamically added elements are handled automatically.
 
 ```html
 <script type="module">import 'prop-for-that/auto'</script>
@@ -32,7 +32,8 @@ input {
 }
 
 section {
-  opacity: var(--live-visible-ratio);
+  opacity: var(--live-has-entered);
+  transition: opacity 0.4s;
 }
 ```
 
@@ -43,18 +44,18 @@ Import individual functions for explicit control over which sources are active a
 ```js
 import { global, bind, configure } from 'prop-for-that'
 
-// Write viewport/pointer to :root
+// write viewport + pointer to :root
 global(['viewport', 'pointer'])
 
-// Write range source to a specific element; returns a disposer
+// write the range source to a specific element; returns a disposer
 const slider = document.querySelector('input[type="range"]')
 const dispose = bind(slider, ['range'])
 
-// Later — tear it down cleanly
+// later, tear it down cleanly
 dispose()
 ```
 
-Use `configure()` to change the property prefixes or the global root target before attaching any sources:
+Use `configure()` to change the property prefixes or the global root target, before attaching any sources:
 
 ```js
 import { configure } from 'prop-for-that'
@@ -64,7 +65,7 @@ configure({ livePrefix: '--pft-', constPrefix: '--pft-const-' })
 
 ### 3. Head constants
 
-Some values only need to be read once and are critical for the first paint (scrollbar width, device pixel ratio, CPU cores). Load the head entry as a synchronous inline script so the properties exist before any CSS is applied:
+A few values are read once and matter for the first paint: scrollbar width, device pixel ratio, CPU cores. Load the head entry as a synchronous inline script so the properties exist before any CSS applies:
 
 ```html
 <head>
@@ -73,4 +74,4 @@ Some values only need to be read once and are critical for the first paint (scro
 </head>
 ```
 
-These are written with `--const-*` names and are never overwritten after that initial write.
+These use `--const-*` names and are never overwritten after that first write.

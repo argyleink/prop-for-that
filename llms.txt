@@ -1,0 +1,177 @@
+# prop-for-that
+
+> Expose runtime state that JavaScript knows but CSS can't see, as batched, diffed
+> CSS custom properties. CSS then computes and reacts to it via `var()` (continuous
+> values) or `@container style()` (discrete values), with no JS in the animation path.
+
+prop-for-that reads browser/runtime state (pointer, viewport, element size,
+visibility, slider values, network, battery, sensors, and more) and writes it into
+`--live-*` (reactive) and `--const-*` (write-once) custom properties. A single
+`requestAnimationFrame` writer coalesces all updates and only calls `setProperty`
+when a value actually changed. Zero runtime dependencies, tree-shakeable, TypeScript.
+
+## Entry points
+
+- `prop-for-that`: the core API (`configure`, `register`, `global`, `bind`, `unbind`, `config`).
+- `prop-for-that/auto`: side-effecting. On load it attaches the default globals (`viewport`, `pointer`) to `:root`, scans the DOM for `[data-prop="key1 key2"]` and binds those sources, and watches the DOM with a `MutationObserver`.
+- `prop-for-that/head`: side-effecting. Synchronously writes FOUC-safe constants before first paint. Inline it in `<head>`.
+- `prop-for-that/plugins`: opt-in plugin sources, plus `registerPlugins` and `allPlugins`.
+
+Build outputs: ESM + CJS + `.d.ts`. Browser-only; entries guard `typeof document`, so importing is SSR-safe (sources attach client-side).
+
+## Install
+
+```bash
+npm i prop-for-that
+```
+
+## Mental model
+
+1. A **source** reads one group of state. It has a `key` (used in `bind`/`global`/`data-prop`), a `scope` (`global` → writes to `:root`; `element` → writes to the bound element), and a `start(ctx)` that attaches listeners/observers and returns a disposer.
+2. Sources call `ctx.write(localName, value, cadence?)`, never `setProperty` directly. The **Writer** queues writes and flushes once per `requestAnimationFrame`, diffing against the last value written.
+3. CSS consumes the resulting custom properties:
+   - **`var()`** for continuous values (ratios, dimensions), composed with `calc()`.
+   - **`@container style()`** for discrete/boolean/integer values (equality match). Every element is a style-query container by default; no `container-type` needed.
+
+## API
+
+```ts
+import { configure, register, global, bind, unbind } from 'prop-for-that'
+
+configure(opts: Partial<Config>): void   // call once, before any global()/bind()
+register(source: Source): void           // add a custom/plugin source by key
+global(keys: string[]): Disposer         // attach sources to config.root (:root)
+bind(target: HTMLElement, keys: string[]): Disposer   // attach to an element
+unbind(target: HTMLElement, keys?: string[]): void    // detach some/all
+
+interface Config { livePrefix: string; constPrefix: string; root: HTMLElement }
+// defaults: livePrefix '--live-', constPrefix '--const-', root document.documentElement
+
+interface Source {
+  key: string
+  scope: 'global' | 'element'
+  start(ctx: SourceContext): Disposer
+}
+interface SourceContext {
+  target: HTMLElement
+  config: Config
+  write(localName: string, value: string | number, cadence?: 'live' | 'const'): void
+}
+type Disposer = () => void
+```
+
+Plugins:
+
+```ts
+import { registerPlugins, allPlugins, battery /* …named exports */ } from 'prop-for-that/plugins'
+
+registerPlugins()                 // register every plugin
+registerPlugins(battery, clock)   // register a subset
+```
+
+`global()`/`bind()` return a disposer; re-binding an already-active key is a no-op.
+
+## Variable catalog (canonical)
+
+All names below are the full property names. Reactive values use the `--live-`
+prefix; constants use `--const-`. Values are unitless numbers unless noted.
+
+### Core sources (in the main bundle)
+
+| key | scope | properties |
+| --- | --- | --- |
+| `viewport` | global | `--live-vw`, `--live-vh` |
+| `pointer` | global | `--live-pointer-x`, `--live-pointer-y`, `--live-pointer-x-ratio` (0–1), `--live-pointer-y-ratio` (0–1) |
+| `size` | element | `--live-w`, `--live-h`, `--live-aspect` (w/h) |
+| `visibility` | element | `--live-visible` (1/0, in viewport), `--live-has-entered` (1/0, latches on first entry, never resets) |
+| `range` | element | `--live-value`, `--live-value-pct` (0–1). Bind the `<input>` or a container holding one. |
+
+### Head constants (`prop-for-that/head`)
+
+| property | value |
+| --- | --- |
+| `--const-scrollbar-w` | scrollbar width in px |
+| `--const-dpr` | `devicePixelRatio` |
+| `--const-cores` | `navigator.hardwareConcurrency` |
+
+### Plugins (`prop-for-that/plugins`)
+
+Import name is camelCase; the key for `bind`/`global`/`data-prop` is the dashed form.
+
+| import | key | scope | properties |
+| --- | --- | --- | --- |
+| `scrollVelocity` | `scroll-velocity` | global | `--live-scroll-velocity` (signed px/frame), `--live-scroll-direction` (1/-1/0) |
+| `online` | `online` | global | `--live-online` (1/0) |
+| `network` | `network` | global | `--live-net-downlink`, `--live-net-rtt`, `--live-net-save-data` (1/0), `--live-net-type` (slow-2g=1…4g=4, else 0) |
+| `battery` | `battery` | global | `--live-battery-level` (0–1), `--live-battery-charging` (1/0) |
+| `clock` | `clock` | global | `--live-now` (epoch seconds), `--live-hours`, `--live-minutes`, `--live-seconds` |
+| `fps` | `fps` | global | `--live-fps` |
+| `visualViewport` | `visual-viewport` | global | `--live-vvp-scale`, `--live-vvp-offset-top`, `--live-vvp-height` |
+| `orientation` | `orientation` | global | `--live-orient-alpha`, `--live-orient-beta`, `--live-orient-gamma` (deg) |
+| `motion` | `motion` | global | `--live-accel-x`, `--live-accel-y`, `--live-accel-z` (m/s²) |
+| `geo` | `geo` | global | `--live-geo-lat`, `--live-geo-lng`, `--live-geo-accuracy` (m) |
+| `pointerLocal` | `pointer-local` | element | `--live-px`, `--live-py` (0–1 within the element), `--live-pointer-inside` (1/0) |
+| `media` | `media` | element | `--live-current-time`, `--live-duration`, `--live-progress` (0–1), `--live-paused` (1/0), `--live-volume` (0–1) |
+| `field` | `field` | element | `--live-length`, `--live-empty` (1/0), `--live-valid` (1/0) |
+
+## Recipes
+
+Zero-config (attributes):
+
+```html
+<script type="module">import 'prop-for-that/auto'</script>
+<input type="range" data-prop="range">
+<section data-prop="size visibility">…</section>
+```
+
+Imperative:
+
+```js
+import { global, bind } from 'prop-for-that'
+global(['pointer'])                 // writes pointer vars to :root
+bind(el, ['size', 'visibility'])    // writes element vars to el
+```
+
+A plugin:
+
+```js
+import { register, global } from 'prop-for-that'
+import { battery } from 'prop-for-that/plugins'
+register(battery)
+global(['battery'])
+```
+
+Container-bound range (so siblings can read the value):
+
+```js
+// the source finds the inner <input> but writes the vars on the wrapper
+bind(document.querySelector('.meter'), ['range'])
+```
+
+Continuous reaction with `var()`:
+
+```css
+.card { transform: rotateY(calc((var(--live-pointer-x-ratio) - 0.5) * 16deg)); }
+```
+
+Discrete reaction with a style query:
+
+```css
+@container style(--live-online: 0) { .banner { display: block; } }
+@container style(--live-value: 100) { .badge { color: var(--accent); } }
+```
+
+## Gotchas (read before writing CSS)
+
+- **Custom properties inherit downward only.** An `element`-scoped source writes its vars on the bound element. To let *sibling* elements react, bind a common ancestor. `range` and `field` help here: bind them to a container and they find the inner `<input>`, writing the vars on the container.
+- **Pick the right consumer.** Continuous numbers go through `var()` + `calc()`. Discrete/boolean/integer values use `@container style()`, which matches on **equality only** (range comparisons like `style(--x < 5)` are not stable yet). Emit booleans/tiers when you need thresholds.
+- **`visibility` is binary + latched, not a ratio.** It writes `--live-visible` and `--live-has-entered`. There is no continuous visible-ratio and no scroll-position source: use native `animation-timeline: scroll()` / `view()` for continuous scroll-driven effects.
+- **Values are unitless.** Multiply by `1px`, `1deg`, `100%`, etc. in CSS.
+- **Configure prefixes before attaching.** `configure({ livePrefix, constPrefix })` must run before any `global()`/`bind()`.
+- **Permission-gated plugins** (`orientation`, `motion`, `geo`) and unsupported APIs feature-detect and no-op; registering them is always safe. On iOS some need a user-gesture permission grant before values arrive.
+
+## Links
+
+- Source catalog and roadmap: `PLAN.md`
+- Considered/deferred sources and voting: docs `Under consideration` page
+- Repository: https://github.com/argyleink/prop-for-that

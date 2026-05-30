@@ -1,0 +1,71 @@
+---
+// Range demo: the range source is bound to the container, so --live-value and
+// --live-value-pct land here and the readout, bar, and badge all inherit them.
+---
+<div class="pft-stage range-demo" data-pft-range>
+  <p class="pft-readout">
+    <span class="pft-chip">--live-value <b class="range-demo__v"></b></span>
+    <span class="pft-chip">--live-value-pct <b class="range-demo__p"></b></span>
+  </p>
+
+  <div class="range-demo__bar"><i></i></div>
+
+  <input class="range-demo__input" type="range" min="0" max="100" value="42" aria-label="Demo value, 0 to 100" />
+
+  <p class="pft-hint">
+    Drag the slider. At exactly 100, a <code>@container style()</code> query flips
+    the badge to <b class="range-demo__badge">max</b>, a branch <code>var()</code> can't make.
+  </p>
+</div>
+
+<style>
+  .range-demo__bar {
+    height: 0.6rem;
+    border-radius: 99px;
+    background: var(--sl-color-gray-5);
+    overflow: hidden;
+  }
+  .range-demo__bar i {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    transform-origin: left center;
+    background: var(--sl-color-text-accent);
+    scale: var(--live-value-pct, 0) 1;
+    transition: scale 0.1s linear;
+  }
+  .range-demo__input {
+    inline-size: 100%;
+    accent-color: var(--sl-color-accent);
+  }
+  /* readouts are pure CSS counters seeded from the live values */
+  .range-demo__v::after {
+    counter-reset: v calc(var(--live-value, 0));
+    content: counter(v);
+  }
+  .range-demo__p::after {
+    counter-reset: p calc(var(--live-value-pct, 0) * 100);
+    content: counter(p) '%';
+  }
+  .range-demo__badge {
+    opacity: 0.35;
+    transition: opacity 0.15s;
+  }
+  /* discrete state, only expressible as a style query */
+  @container style(--live-value: 100) {
+    .range-demo__badge {
+      opacity: 1;
+      color: var(--sl-color-text-accent);
+    }
+    .range-demo__bar i {
+      background: oklch(72% 0.2 30);
+    }
+  }
+</style>
+
+<script>
+  import { bind } from 'prop-for-that'
+  document
+    .querySelectorAll<HTMLElement>('[data-pft-range]')
+    .forEach((el) => bind(el, ['range']))
+</script>

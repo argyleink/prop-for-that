@@ -1,12 +1,22 @@
 import { global, bind } from 'prop-for-that'
+import { registerPlugins, pointerLocal } from 'prop-for-that/plugins'
 
 // ── The entire reactive wiring. JS exposes state; CSS does all the reacting.
-// Demo 1 (pointer-reactive card) and the page accent read globals off :root.
-global(['pointer'])
+// These globals land on :root: the page accent, the HUD, and the bottom
+// telemetry panel all read them. (viewport adds --live-vw / --live-vh.)
+global(['pointer', 'viewport'])
 
-// ── Demo 2: each panel exposes its own --live-visible-ratio — scroll-TRIGGERED
-// state (one IntersectionObserver), the part CSS can't latch on its own. No
-// scroll-linked animation-timeline anywhere on the page; CSS just reads var().
+// Demo 1: bind pointer-local to the card's CONTAINER (the stage), not the card.
+// The source writes --live-px / --live-py (0–1 within the stage) plus
+// --live-pointer-inside; the stage glow, the card tilt, and the card's glare all
+// read them, so the whole panel reacts to the pointer and rests when you leave.
+registerPlugins(pointerLocal)
+const stage = document.querySelector<HTMLElement>('.stage--pointer')
+if (stage) bind(stage, ['pointer-local'])
+
+// ── Demo 2: each panel exposes binary --live-visible / --live-has-entered, the
+// scroll-TRIGGERED state CSS can't latch on its own (one IntersectionObserver).
+// No scroll-linked animation-timeline anywhere on the page; CSS just reads var().
 document
   .querySelectorAll<HTMLElement>('[data-reveal]')
   .forEach((el) => bind(el, ['visibility']))

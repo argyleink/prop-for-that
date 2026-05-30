@@ -1,0 +1,66 @@
+---
+// Pointer demo: the global pointer source writes --live-pointer-*-ratio (0–1
+// across the viewport) to :root. The spotlight and follower dot read them.
+---
+<div class="pft-stage pointer-demo">
+  <p class="pft-readout">
+    <span class="pft-chip">--live-pointer-x-ratio <b class="pointer-demo__x"></b></span>
+    <span class="pft-chip">--live-pointer-y-ratio <b class="pointer-demo__y"></b></span>
+  </p>
+  <div class="pointer-demo__field" aria-hidden="true">
+    <span class="pointer-demo__dot"></span>
+    <span class="pointer-demo__label">move your pointer</span>
+  </div>
+  <p class="pft-hint">
+    Move anywhere in the window. The spotlight and dot read the pointer's viewport
+    ratio, written to <code>:root</code> by <code>global(['pointer'])</code>.
+  </p>
+</div>
+
+<style>
+  .pointer-demo__field {
+    position: relative;
+    min-block-size: 15rem;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    background:
+      radial-gradient(
+        9rem 9rem at calc(var(--live-pointer-x-ratio, 0.5) * 100%)
+          calc(var(--live-pointer-y-ratio, 0.5) * 100%),
+        color-mix(in oklab, var(--sl-color-accent) 50%, transparent),
+        transparent 70%
+      ),
+      var(--sl-color-black);
+  }
+  .pointer-demo__dot {
+    position: absolute;
+    inline-size: 1rem;
+    block-size: 1rem;
+    border-radius: 50%;
+    background: var(--sl-color-text-accent);
+    left: calc(var(--live-pointer-x-ratio, 0.5) * 100%);
+    top: calc(var(--live-pointer-y-ratio, 0.5) * 100%);
+    translate: -50% -50%;
+    box-shadow: 0 0 0 0.4rem color-mix(in oklab, var(--sl-color-accent) 30%, transparent);
+  }
+  .pointer-demo__label {
+    font-family: var(--sl-font-mono, ui-monospace, monospace);
+    font-size: 0.8rem;
+    color: var(--sl-color-gray-3);
+  }
+  .pointer-demo__x::after {
+    counter-reset: x calc(var(--live-pointer-x-ratio, 0.5) * 100);
+    content: counter(x) '%';
+  }
+  .pointer-demo__y::after {
+    counter-reset: y calc(var(--live-pointer-y-ratio, 0.5) * 100);
+    content: counter(y) '%';
+  }
+</style>
+
+<script>
+  import { global } from 'prop-for-that'
+  global(['pointer'])
+</script>

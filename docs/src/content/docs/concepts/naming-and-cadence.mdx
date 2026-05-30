@@ -39,7 +39,7 @@ This is intentional: unitless numbers compose cleanly with `calc()` and let you 
 
 ## Why ASCII prefixes (not sigils)
 
-CSS custom-property names are `<dashed-ident>` tokens. Characters like `$`, `#`, and `>` are **not** valid name code-points. You can set `--$x` from JavaScript via `setProperty`, but to read it in CSS you'd have to write `var(--\$x)` — escaped. Worse, `-->` is a **CDC token** (`<!-- … -->` legacy HTML comment syntax) and breaks parsers entirely.
+CSS custom-property names are `<dashed-ident>` tokens. Characters like `$`, `#`, and `>` are **not** valid name code-points. You can set `--$x` from JavaScript via `setProperty`, but to read it in CSS you'd have to write `var(--\$x)`, escaped. Worse, `-->` is a **CDC token** (`<!-- … -->` legacy HTML comment syntax) and breaks parsers entirely.
 
 Non-ASCII characters (≥U+0080, including emoji) are technically valid unescaped in custom property names, but they're impractical for autocomplete and tooling.
 

@@ -47,7 +47,9 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "llms.txt",
+    "CHANGELOG.md"
   ],
   "scripts": {
     "build": "tsup",

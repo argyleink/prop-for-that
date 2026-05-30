@@ -1,0 +1,31 @@
+---
+title: Pointer
+description: A live demo of the pointer source, exposing the cursor's viewport position.
+---
+
+import PointerDemo from '../../../components/PointerDemo.astro';
+
+The `pointer` source writes the cursor's position to `:root`: `--live-pointer-x` / `-y` in pixels, and `--live-pointer-x-ratio` / `-y-ratio` as 0–1 fractions of the viewport. Move your pointer and watch the spotlight, the dot, and the readout follow, all in CSS.
+
+<PointerDemo />
+
+## The wiring
+
+One global call, then CSS does the rest:
+
+```js
+import { global } from 'prop-for-that'
+
+global(['pointer'])
+```
+
+```css
+.spotlight {
+  background: radial-gradient(
+    9rem 9rem at
+    calc(var(--live-pointer-x-ratio) * 100%)
+    calc(var(--live-pointer-y-ratio) * 100%),
+    var(--accent), transparent 70%
+  );
+}
+```

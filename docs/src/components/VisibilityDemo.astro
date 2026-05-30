@@ -1,0 +1,99 @@
+---
+// Visibility demo: three panels spaced down the page. Scroll, and each panel's
+// --live-visible flips 1/0 while --live-has-entered latches on first entry.
+---
+<div class="vis-demo">
+  <div class="pft-stage vis-demo__panel" data-pft-vis>
+    <header class="vis-demo__head">
+      <span class="vis-demo__n">i</span>
+      <span class="vis-demo__state">
+        <span class="vis-demo__live">in view</span>
+        <span class="vis-demo__seen">entered</span>
+      </span>
+    </header>
+    <p class="vis-demo__t"><code>--live-visible</code> is 1 while any part is on screen.</p>
+  </div>
+
+  <div class="pft-stage vis-demo__panel" data-pft-vis>
+    <header class="vis-demo__head">
+      <span class="vis-demo__n">ii</span>
+      <span class="vis-demo__state">
+        <span class="vis-demo__live">in view</span>
+        <span class="vis-demo__seen">entered</span>
+      </span>
+    </header>
+    <p class="vis-demo__t"><code>--live-has-entered</code> latches on first entry and never resets.</p>
+  </div>
+
+  <div class="pft-stage vis-demo__panel" data-pft-vis>
+    <header class="vis-demo__head">
+      <span class="vis-demo__n">iii</span>
+      <span class="vis-demo__state">
+        <span class="vis-demo__live">in view</span>
+        <span class="vis-demo__seen">entered</span>
+      </span>
+    </header>
+    <p class="vis-demo__t">So it reveals once and stays. Scroll back up; it won't reverse.</p>
+  </div>
+</div>
+
+<style>
+  .vis-demo__panel {
+    --in: var(--live-visible, 0);
+    --seen: var(--live-has-entered, 0);
+    margin-block: 42vh;
+    /* one-way reveal driven by has-entered */
+    opacity: calc(0.25 + var(--seen) * 0.75);
+    translate: 0 calc((1 - var(--seen)) * 1.25rem);
+    border-color: color-mix(in oklab, var(--sl-color-accent) calc(var(--in) * 100%), var(--sl-color-gray-5));
+    transition:
+      opacity 0.5s var(--ease-out, ease-out),
+      translate 0.5s var(--ease-out, ease-out),
+      border-color 0.2s linear;
+  }
+  .vis-demo__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    font-family: var(--sl-font-mono, ui-monospace, monospace);
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+  .vis-demo__n { color: var(--sl-color-gray-3); }
+  .vis-demo__state { display: inline-flex; gap: 1rem; }
+  .vis-demo__live {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: color-mix(in oklab, var(--sl-color-text-accent) calc(var(--in) * 100%), var(--sl-color-gray-4));
+    transition: color 0.16s linear;
+  }
+  .vis-demo__live::before {
+    content: '';
+    inline-size: 0.5rem;
+    block-size: 0.5rem;
+    border-radius: 50%;
+    background: color-mix(in oklab, var(--sl-color-accent) calc(var(--in) * 100%), var(--sl-color-gray-5));
+    transition: background 0.16s linear;
+  }
+  .vis-demo__seen {
+    color: var(--sl-color-text-accent);
+    opacity: var(--seen);
+    transition: opacity 0.4s ease-out;
+  }
+  .vis-demo__seen::before { content: '\2713\00a0'; }
+  .vis-demo__t { margin: 0; font-size: 1.05rem; }
+  @media (prefers-reduced-motion: reduce) {
+    .vis-demo__panel { translate: none; }
+  }
+</style>
+
+<script>
+  import { bind } from 'prop-for-that'
+  document
+    .querySelectorAll<HTMLElement>('[data-pft-vis]')
+    .forEach((el) => bind(el, ['visibility']))
+</script>

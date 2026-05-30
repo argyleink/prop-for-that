@@ -1,0 +1,69 @@
+---
+// Size demo: viewport (global) + size (element, via a shared ResizeObserver).
+// Drag the box's corner; --live-w / --live-h update and the heading scales.
+---
+<div class="pft-stage size-demo">
+  <p class="pft-readout">
+    <span class="pft-chip">--live-vw <b class="size-demo__vw"></b></span>
+    <span class="pft-chip">--live-vh <b class="size-demo__vh"></b></span>
+  </p>
+  <div class="size-demo__box" data-pft-size>
+    <p class="size-demo__dims"><b class="size-demo__w"></b> &times; <b class="size-demo__h"></b></p>
+    <p class="size-demo__tag">resize me &searr;</p>
+  </div>
+  <p class="pft-hint">
+    Drag the box's corner. Its <code>--live-w</code> and <code>--live-h</code> update
+    via one shared <code>ResizeObserver</code>, and the heading font size scales with
+    the width. The viewport readout above tracks <code>--live-vw</code> / <code>--live-vh</code>
+    (resize the window).
+  </p>
+</div>
+
+<style>
+  .size-demo__box {
+    resize: both;
+    overflow: hidden;
+    inline-size: 18rem;
+    block-size: 10rem;
+    min-inline-size: 9rem;
+    min-block-size: 7rem;
+    max-inline-size: 100%;
+    display: grid;
+    align-content: center;
+    gap: 0.35rem;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--sl-color-gray-4);
+    border-radius: 0.5rem;
+    background: var(--sl-color-black);
+  }
+  .size-demo__dims {
+    margin: 0;
+    font-family: var(--sl-font-mono, ui-monospace, monospace);
+    font-weight: 700;
+    /* the heading scales with the element's own measured width */
+    font-size: clamp(1rem, calc(var(--live-w, 288) * 0.055px), 2.6rem);
+    line-height: 1;
+    color: var(--sl-color-white);
+    font-variant-numeric: tabular-nums;
+  }
+  .size-demo__tag {
+    margin: 0;
+    font-family: var(--sl-font-mono, ui-monospace, monospace);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--sl-color-gray-3);
+  }
+  .size-demo__w::after { counter-reset: w calc(var(--live-w, 0)); content: counter(w); }
+  .size-demo__h::after { counter-reset: h calc(var(--live-h, 0)); content: counter(h); }
+  .size-demo__vw::after { counter-reset: vw calc(var(--live-vw, 0)); content: counter(vw); }
+  .size-demo__vh::after { counter-reset: vh calc(var(--live-vh, 0)); content: counter(vh); }
+</style>
+
+<script>
+  import { global, bind } from 'prop-for-that'
+  global(['viewport'])
+  document
+    .querySelectorAll<HTMLElement>('[data-pft-size]')
+    .forEach((el) => bind(el, ['size']))
+</script>

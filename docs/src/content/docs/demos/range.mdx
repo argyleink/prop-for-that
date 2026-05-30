@@ -1,0 +1,35 @@
+---
+title: Range
+description: A live demo of the range source, exposing value and value-pct from a slider.
+---
+
+import RangeDemo from '../../../components/RangeDemo.astro';
+
+The `range` source mirrors a slider into `--live-value` and `--live-value-pct`. Bind it to the `<input>`, or to a container that holds one so siblings can read the value too. Drag the slider: the readout, the fill bar, and a `@container style()` milestone all react in CSS.
+
+<RangeDemo />
+
+## The wiring
+
+One call binds the container; the inner `<input>` is found automatically:
+
+```js
+import { bind } from 'prop-for-that'
+
+bind(document.querySelector('.range-demo'), ['range'])
+```
+
+Everything visible is CSS reading the value:
+
+```css
+/* fill bar */
+.bar i { scale: var(--live-value-pct) 1; }
+
+/* numeric readout, no JS reads the value */
+.value::after { counter-reset: v calc(var(--live-value)); content: counter(v); }
+
+/* discrete milestone, only a style query can express it */
+@container style(--live-value: 100) {
+  .badge { color: var(--accent); }
+}
+```

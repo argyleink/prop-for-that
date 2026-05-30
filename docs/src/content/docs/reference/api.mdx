@@ -62,9 +62,9 @@ type Disposer = () => void
 
 ```js
 import { register, global } from 'prop-for-that'
-import { scrollVelocitySource } from 'prop-for-that/plugins/scroll-velocity'
+import { scrollVelocity } from 'prop-for-that/plugins'
 
-register(scrollVelocitySource)
+register(scrollVelocity)
 global(['scroll-velocity'])
 ```
 
@@ -83,7 +83,7 @@ function global(keys: string[]): Disposer
 ```js
 const dispose = global(['viewport', 'pointer'])
 
-// Later — stop all three sources
+// later, stop both sources
 dispose()
 ```
 
@@ -105,7 +105,7 @@ function bind(target: HTMLElement, keys: string[]): Disposer
 const slider = document.querySelector('input[type="range"]')
 const dispose = bind(slider, ['range'])
 
-// Later — clean up
+// later, clean up
 dispose()
 ```
 

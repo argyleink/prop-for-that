@@ -322,7 +322,9 @@ main {
   font-stretch: 125%;
   line-height: 0.7;
   letter-spacing: -0.05em;
-  color: var(--line);
+  /* faintly tinted toward the live accent, so the index quietly shifts hue as
+     the pointer sweeps --accent-h across the wheel */
+  color: color-mix(in oklab, var(--accent) 14%, var(--line));
   pointer-events: none;
   user-select: none;
   z-index: 0;
@@ -378,28 +380,38 @@ main {
   background: var(--surface);
 }
 
-/* ════════════════════════ 1. POINTER-REACTIVE CARD ════════════════════════
-   Reads global --live-pointer-x-ratio / --live-pointer-y-ratio (0–1). */
+/* ═══════════════════════ 1. POINTER-REACTIVE CARD ═════════════════════════
+   pointer-local is bound to this stage (the card's container), so --live-px /
+   --live-py (0–1 across the panel) and --live-pointer-inside live here and
+   inherit into the card. The panel glow, the tilt, and the glare all read them,
+   so the whole panel answers to the pointer. --act gates it: rests on leave. */
 .stage--pointer {
-  min-height: 26rem;
-  padding: clamp(var(--space-4), 6vw, 5rem);
+  --act: var(--live-pointer-inside, 0);
+  min-height: 22rem;
+  padding: clamp(var(--space-4), 6vw, 4rem);
   perspective: 1000px;
-  /* the surface glow follows the pointer too */
+  /* a soft glow tracks the pointer across the panel — it aligns because the
+     glow and pointer-local share this element. It fades in only while inside. */
   background: radial-gradient(
-    120% 120% at calc(var(--live-pointer-x-ratio, 0.5) * 100%)
-      calc(var(--live-pointer-y-ratio, 0.5) * 100%),
-    var(--accent-soft),
-    var(--surface) 62%
+    9rem 9rem at calc(var(--live-px, 0.5) * 100%) calc(var(--live-py, 0.5) * 100%),
+    color-mix(in oklab, var(--accent-soft) calc(var(--act) * 100%), var(--surface)),
+    var(--surface) 72%
   );
 }
 
 .tilt-card {
-  /* pointer ratios (0–1) recentered to (-.5 … .5), then to degrees */
-  --rx: calc((0.5 - var(--live-pointer-y-ratio, 0.5)) * 16deg);
-  --ry: calc((var(--live-pointer-x-ratio, 0.5) - 0.5) * 16deg);
+  --w: min(16rem, 60vw);
+  /* --gx / --gy (0–1) are the pointer's position in the panel, recentered to
+     (-.5 … .5) and scaled to degrees. --act (inherited) gates the motion so the
+     card lies flat when the pointer is outside the panel. */
+  --gx: var(--live-px, 0.5);
+  --gy: var(--live-py, 0.5);
+  --rx: calc((0.5 - var(--gy, 0.5)) * 16deg * var(--act, 1));
+  --ry: calc((var(--gx, 0.5) - 0.5) * 16deg * var(--act, 1));
+  --glare-r: calc(var(--w) * 0.45);
 
   position: relative;
-  inline-size: min(20rem, 64vw);
+  inline-size: var(--w);
   aspect-ratio: 5 / 7;
   border-radius: 20px;
   overflow: hidden;
@@ -420,19 +432,21 @@ main {
   will-change: transform;
 }
 
-/* The glare: a soft highlight that tracks the pointer across the card face. */
+/* The glare: a circular highlight at (--gx, --gy) on the card face. inset:0 maps
+   those 0–1 fractions onto the face; --act fades it with the motion. */
 .tilt-card__glare {
   position: absolute;
-  inset: -40%;
+  inset: 0;
   pointer-events: none;
   background: radial-gradient(
-    36% 36% at calc(var(--live-pointer-x-ratio, 0.5) * 100%)
-      calc(var(--live-pointer-y-ratio, 0.5) * 100%),
+    circle var(--glare-r, 6rem) at calc(var(--gx, 0.5) * 100%)
+      calc(var(--gy, 0.5) * 100%),
     #ffffffcc,
-    #ffffff00 60%
+    #ffffff00 70%
   );
   mix-blend-mode: soft-light;
-  opacity: 0.9;
+  opacity: calc(0.9 * var(--act, 1));
+  transition: opacity 200ms var(--ease-out);
 }
 
 .tilt-card__content {
@@ -473,85 +487,149 @@ main {
    latches on first entry and never resets, so each panel reveals ONCE and stays
    (a view() timeline would reverse on scroll-back). */
 .reveals {
+  position: relative;
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-4);
+}
+/* the rail: a faint vertical track the index coins sit on */
+.reveals::before {
+  content: '';
+  position: absolute;
+  left: 1.35rem;
+  top: 1.35rem;
+  bottom: 1.35rem;
+  inline-size: 2px;
+  background: var(--line);
+  border-radius: 2px;
 }
 .reveal {
   --in: var(--live-visible, 0);
   --seen: var(--live-has-entered, 0);
+  position: relative;
   display: grid;
+  grid-template-columns: 2.7rem 1fr;
   gap: var(--space-3);
-  padding: var(--space-4);
-  border: 1px solid;
-  /* border tints in while the panel is in view */
-  border-color: color-mix(in oklab, var(--accent) calc(var(--in) * 100%), var(--line));
-  border-radius: var(--radius);
-  background: var(--surface);
-  /* the reveal is driven by has-entered → one-way, never reverses */
-  opacity: calc(0.25 + var(--seen) * 0.75);
-  translate: 0 calc((1 - var(--seen)) * 1.5rem);
+  align-items: start;
+  /* develop into focus: lift + unblur + fade. Driven by the LATCH, so it plays
+     once on first entry and never reverses when you scroll back up. */
+  opacity: calc(0.14 + var(--seen) * 0.86);
+  translate: 0 calc((1 - var(--seen)) * 2.4rem);
+  filter: blur(calc((1 - var(--seen)) * 5px));
   transition:
-    opacity 500ms var(--ease-out),
-    translate 500ms var(--ease-out),
-    border-color 200ms linear;
+    opacity 650ms var(--ease-out),
+    translate 650ms var(--ease-out),
+    filter 650ms var(--ease-out);
 }
-.reveal__head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-.reveal__n {
+/* index coin: fills with accent the moment the panel latches, and wears a
+   halo while it's live in view. One element carries both signals at once. */
+.reveal__node {
+  position: relative;
+  z-index: 1;
+  justify-self: center;
+  display: grid;
+  place-items: center;
+  inline-size: 2.7rem;
+  block-size: 2.7rem;
+  border-radius: 50%;
   font-family: var(--font-mono);
   font-size: var(--step--1);
   font-weight: 600;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
-  color: var(--ink-faint);
+  color: color-mix(in oklab, var(--accent-ink) calc(var(--seen) * 100%), var(--ink-faint));
+  background: color-mix(in oklab, var(--accent-soft) calc(var(--seen) * 100%), var(--surface));
+  border: 2px solid
+    color-mix(in oklab, var(--accent) calc(max(var(--seen), var(--in)) * 100%), var(--line));
+  box-shadow: 0 0 0 calc(var(--in) * 0.4rem)
+    color-mix(in oklab, var(--accent) calc(var(--in) * 20%), transparent);
+  scale: calc(0.82 + max(var(--seen), var(--in)) * 0.18);
+  transition:
+    background 450ms var(--ease-out),
+    color 450ms var(--ease-out),
+    border-color 250ms linear,
+    box-shadow 300ms var(--ease-out),
+    scale 450ms var(--ease-out);
 }
+/* connector: the rail segment above each coin fills as it enters, so the whole
+   rail lights up top to bottom as you scroll — a cumulative progress line. */
+.reveal:not(:first-child) .reveal__node::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  translate: -50% 0;
+  inline-size: 2px;
+  block-size: calc(var(--space-4) + 0.25rem);
+  background: color-mix(in oklab, var(--accent) calc(var(--seen) * 100%), transparent);
+  transition: background 550ms var(--ease-out);
+}
+.reveal__body {
+  display: grid;
+  gap: var(--space-2);
+  padding-block-start: 0.28rem; /* optically center the text on the coin */
+}
+.reveal__t {
+  font-size: var(--step-1);
+  font-weight: 400;
+  line-height: 1.4;
+  margin: 0;
+  text-wrap: pretty;
+}
+.reveal__t code {
+  white-space: nowrap;
+}
+/* the two state pills, side by side: in-view toggles live, entered latches. */
 .reveal__state {
   display: inline-flex;
-  gap: var(--space-3);
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
   font-family: var(--font-mono);
   font-size: var(--step--1);
   font-weight: 600;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
-/* live in/out indicator — dot + label light while --live-visible is 1 */
-.reveal__live {
+.reveal__live,
+.reveal__seen {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.5ch;
+  padding: 0.25em 0.75em;
+  border: 1px solid;
+  border-radius: 999px;
+}
+/* in view: brightens while --live-visible is 1, dims when scrolled away */
+.reveal__live {
   color: color-mix(in oklab, var(--accent-ink) calc(var(--in) * 100%), var(--ink-faint));
-  transition: color 160ms linear;
+  border-color: color-mix(in oklab, var(--accent) calc(var(--in) * 55%), var(--line));
+  background: color-mix(in oklab, var(--accent-soft) calc(var(--in) * 100%), transparent);
+  transition:
+    color 200ms linear,
+    border-color 200ms linear,
+    background 200ms linear;
 }
 .reveal__live::before {
   content: '';
   inline-size: 0.5rem;
   block-size: 0.5rem;
   border-radius: 50%;
-  background: color-mix(in oklab, var(--accent) calc(var(--in) * 100%), var(--line));
-  transition: background 160ms linear;
+  background: color-mix(in oklab, var(--accent) calc(var(--in) * 100%), var(--line-strong));
+  transition: background 200ms linear;
 }
-/* latch badge — appears once --live-has-entered flips on, then stays */
+/* entered: a latched pill — fades and scales in once, then stays put */
 .reveal__seen {
   color: var(--accent-ink);
+  border-color: color-mix(in oklab, var(--accent) 45%, var(--line));
+  background: var(--accent-soft);
   opacity: var(--seen);
-  transition: opacity 400ms var(--ease-out);
+  scale: calc(0.88 + var(--seen) * 0.12);
+  transition:
+    opacity 500ms var(--ease-out),
+    scale 500ms var(--ease-out);
 }
 .reveal__seen::before {
-  content: '✓ ';
-}
-.reveal__t {
-  font-size: var(--step-1);
-  font-weight: 400;
-  line-height: 1.35;
-  margin: 0;
-  text-wrap: balance;
-}
-.reveal__t code {
-  white-space: nowrap;
+  content: '✓';
+  font-weight: 700;
 }
 
 /* ══════════════════════════ 3. ONE VALUE, MANY READERS ════════════════════
@@ -1078,6 +1156,128 @@ main {
   font-weight: 600;
 }
 
+/* ════════════════════════════ ∑. LIVE TELEMETRY ═══════════════════════════
+   A full readout of every --live-* on :root. Each number is a CSS counter
+   seeded from a live value (via the row's inline --n); each bar is a calc()
+   width (via --bar). Pure CSS — nothing here reads a value in JS. */
+.telemetry__grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: var(--gutter) clamp(2rem, 5vw, 4rem);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  align-items: center;
+}
+/* 2D pointer plot — the dot sits at (x-ratio, y-ratio); it aligns because the
+   plot box maps 0–1 across its own size, just like the viewport ratios. A faint
+   measure grid sits behind live crosshair lines that track the pointer. */
+.xy {
+  position: relative;
+  margin: 0;
+  aspect-ratio: 1;
+  max-inline-size: 18rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background:
+    repeating-linear-gradient(
+      to right,
+      transparent 0 calc(12.5% - 1px),
+      color-mix(in oklab, var(--line) 55%, transparent) calc(12.5% - 1px) 12.5%
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0 calc(12.5% - 1px),
+      color-mix(in oklab, var(--line) 55%, transparent) calc(12.5% - 1px) 12.5%
+    ),
+    var(--surface);
+}
+/* the live crosshair — vertical + horizontal lines through the dot */
+.xy::before,
+.xy::after {
+  content: '';
+  position: absolute;
+  background: color-mix(in oklab, var(--accent) 32%, transparent);
+  pointer-events: none;
+}
+.xy::before {
+  inset-block: 0;
+  inline-size: 1px;
+  left: calc(var(--live-pointer-x-ratio, 0.5) * 100%);
+}
+.xy::after {
+  inset-inline: 0;
+  block-size: 1px;
+  top: calc(var(--live-pointer-y-ratio, 0.5) * 100%);
+}
+.xy__dot {
+  position: absolute;
+  z-index: 1;
+  inline-size: 0.8rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow:
+    0 0 0 5px color-mix(in oklab, var(--accent) 22%, transparent),
+    0 0 1.4rem color-mix(in oklab, var(--accent) 45%, transparent);
+  left: calc(var(--live-pointer-x-ratio, 0.5) * 100%);
+  top: calc(var(--live-pointer-y-ratio, 0.5) * 100%);
+  translate: -50% -50%;
+}
+.xy figcaption {
+  position: absolute;
+  z-index: 1;
+  inset: auto auto var(--space-2) var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.readout {
+  margin: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+.readout__row {
+  display: grid;
+  grid-template-columns: minmax(7rem, auto) 4.5rem 1fr;
+  align-items: center;
+  gap: var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+}
+.readout__row dt {
+  margin: 0;
+  color: var(--ink-soft);
+  letter-spacing: 0.02em;
+}
+.readout__row .num {
+  margin: 0;
+  text-align: right;
+  color: var(--accent-ink);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.readout__row .num::after {
+  counter-reset: n var(--n, 0);
+  content: counter(n) var(--suffix, '');
+}
+.bar {
+  block-size: 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--line) 80%, transparent);
+  overflow: hidden;
+}
+.bar i {
+  display: block;
+  block-size: 100%;
+  inline-size: clamp(0%, calc(var(--bar, 0) * 100%), 100%);
+  border-radius: inherit;
+  background: var(--accent);
+}
+
 /* ─────────────────────────────── colophon ─────────────────────────────── */
 .colophon {
   width: var(--shell);
@@ -1119,8 +1319,12 @@ main {
     background: radial-gradient(36% 36% at 50% 50%, #ffffff55, #ffffff00 60%);
   }
   .reveal {
-    /* keep the in/out + entered state and the fade; drop only the lift */
+    /* keep the in/out + entered state and the fade; drop the lift + blur */
     translate: none;
+    filter: none;
+  }
+  .reveal__node {
+    scale: 1;
   }
   .scroll-hint::after,
   .hint__dot {

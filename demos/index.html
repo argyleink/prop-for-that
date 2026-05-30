@@ -53,9 +53,13 @@
           <p class="index">01 / pointer</p>
           <h2>Pointer-reactive card</h2>
           <p class="desc">
-            3D tilt and a moving glare, driven by the pointer&rsquo;s position
-            across the viewport. The transform and the spotlight are both pure
-            CSS reading <code>--live-pointer-*-ratio</code>.
+            <code>pointer-local</code> is bound to the card&rsquo;s
+            <em>container</em>, so it writes <code>--live-px</code> /
+            <code>--live-py</code> (0&ndash;1 across the panel) and
+            <code>--live-pointer-inside</code>. The panel glow, the 3D tilt, and
+            the circular glare all read those same props &mdash; the whole panel
+            answers to your cursor and rests when you leave. Pure CSS reading
+            <code>--live-*</code>; one line of JS.
           </p>
         </div>
 
@@ -66,18 +70,18 @@
               <div class="tilt-card__content">
                 <p class="tilt-card__kicker">live</p>
                 <p class="tilt-card__title">move&nbsp;your<br />pointer</p>
-                <p class="tilt-card__sub">the card follows, in CSS</p>
+                <p class="tilt-card__sub">the panel follows, in CSS</p>
               </div>
             </article>
           </div>
 
           <figure class="caption">
             <figcaption>The entire JS</figcaption>
-            <pre><code><span class="tok-key">global</span>([<span class="tok-str">'pointer'</span>])</code></pre>
+            <pre><code><span class="tok-key">bind</span>(stage, [<span class="tok-str">'pointer-local'</span>])</code></pre>
             <figcaption>The reaction (CSS)</figcaption>
             <pre><code><span class="tok-sel">.tilt-card</span> {
-  <span class="tok-prop">--rx</span>: <span class="tok-fn">calc</span>((<span class="tok-num">.5</span> - <span class="tok-var">var(--live-pointer-y-ratio)</span>) * <span class="tok-num">16deg</span>);
-  <span class="tok-prop">--ry</span>: <span class="tok-fn">calc</span>((<span class="tok-var">var(--live-pointer-x-ratio)</span> - <span class="tok-num">.5</span>) * <span class="tok-num">16deg</span>);
+  <span class="tok-prop">--rx</span>: <span class="tok-fn">calc</span>((<span class="tok-num">.5</span> - <span class="tok-var">var(--live-py)</span>) * <span class="tok-num">16deg</span>);
+  <span class="tok-prop">--ry</span>: <span class="tok-fn">calc</span>((<span class="tok-var">var(--live-px)</span> - <span class="tok-num">.5</span>) * <span class="tok-num">16deg</span>);
   <span class="tok-prop">transform</span>: <span class="tok-fn">rotateX</span>(<span class="tok-var">var(--rx)</span>) <span class="tok-fn">rotateY</span>(<span class="tok-var">var(--ry)</span>);
 }</code></pre>
           </figure>
@@ -89,69 +93,71 @@
         <p class="watermark" aria-hidden="true">02</p>
         <div class="demo-head">
           <p class="index">02 / scroll</p>
-          <h2>Scroll-triggered reveals</h2>
+          <h2>Reveal once, then stay</h2>
           <p class="desc">
-            Scroll-<em>triggered</em>, not scroll-linked &mdash; no
-            <code>animation-timeline</code> here. Each panel reads two binary
-            signals: <code>--live-visible</code> (in view, 1/0) and
-            <code>--live-has-entered</code>, which latches on first entry and
-            never turns off. So each reveals once and <em>stays</em>: scroll back
-            up and a <code>view()</code> timeline would reverse &mdash; this
-            doesn&rsquo;t. One IntersectionObserver drives all four.
+            Triggered, not linked: no <code>animation-timeline</code> in sight.
+            Each panel reads two binary signals.
+            <code>--live-visible</code> flips 1&#8202;/&#8202;0 every time it
+            crosses the viewport; <code>--live-has-entered</code> latches the
+            first time it does and never lets go. So a panel develops in once
+            and stays put. Scroll back up: a <code>view()</code> timeline
+            reverses, this won&rsquo;t. One IntersectionObserver feeds all four.
           </p>
         </div>
 
         <div class="demo-body">
           <div class="reveals">
             <article class="reveal" data-reveal>
-              <header class="reveal__head">
-                <span class="reveal__n">i</span>
-                <span class="reveal__state">
+              <div class="reveal__node" aria-hidden="true">i</div>
+              <div class="reveal__body">
+                <p class="reveal__t">
+                  One line wires each panel:
+                  <code>bind(el, ['visibility'])</code>.
+                </p>
+                <p class="reveal__state">
                   <span class="reveal__live">in view</span>
                   <span class="reveal__seen">entered</span>
-                </span>
-              </header>
-              <p class="reveal__t">
-                Each panel is <code>bind(el, ['visibility'])</code>.
-              </p>
+                </p>
+              </div>
             </article>
             <article class="reveal" data-reveal>
-              <header class="reveal__head">
-                <span class="reveal__n">ii</span>
-                <span class="reveal__state">
+              <div class="reveal__node" aria-hidden="true">ii</div>
+              <div class="reveal__body">
+                <p class="reveal__t">
+                  <code>--live-visible</code> tracks you live, flipping
+                  1&#8202;/&#8202;0 as this panel enters and leaves.
+                </p>
+                <p class="reveal__state">
                   <span class="reveal__live">in view</span>
                   <span class="reveal__seen">entered</span>
-                </span>
-              </header>
-              <p class="reveal__t">
-                <code>--live-visible</code> flips 1/0 as it enters and leaves.
-              </p>
+                </p>
+              </div>
             </article>
             <article class="reveal" data-reveal>
-              <header class="reveal__head">
-                <span class="reveal__n">iii</span>
-                <span class="reveal__state">
+              <div class="reveal__node" aria-hidden="true">iii</div>
+              <div class="reveal__body">
+                <p class="reveal__t">
+                  <code>--live-has-entered</code> latches on first sight and
+                  never resets.
+                </p>
+                <p class="reveal__state">
                   <span class="reveal__live">in view</span>
                   <span class="reveal__seen">entered</span>
-                </span>
-              </header>
-              <p class="reveal__t">
-                <code>--live-has-entered</code> latches on first entry and never
-                resets.
-              </p>
+                </p>
+              </div>
             </article>
             <article class="reveal" data-reveal>
-              <header class="reveal__head">
-                <span class="reveal__n">iv</span>
-                <span class="reveal__state">
+              <div class="reveal__node" aria-hidden="true">iv</div>
+              <div class="reveal__body">
+                <p class="reveal__t">
+                  Watch the pills: scroll a panel away and <em>in&nbsp;view</em>
+                  goes dark, yet <em>entered</em> stays lit.
+                </p>
+                <p class="reveal__state">
                   <span class="reveal__live">in view</span>
                   <span class="reveal__seen">entered</span>
-                </span>
-              </header>
-              <p class="reveal__t">
-                So it reveals once and stays &mdash; scroll up; it won&rsquo;t
-                reverse like a <code>view()</code> timeline.
-              </p>
+                </p>
+              </div>
             </article>
           </div>
 
@@ -304,6 +310,50 @@
   <span class="tok-sel">.level__core</span> { <span class="tok-prop">--tier-h</span>: <span class="tok-num">25</span>; }
 }</code></pre>
           </figure>
+        </div>
+      </section>
+
+      <!-- ───────────────────────── ∑. LIVE TELEMETRY ───────────────────────── -->
+      <section class="demo telemetry" id="telemetry">
+        <p class="watermark" aria-hidden="true">&sum;</p>
+        <div class="demo-head">
+          <p class="index">live / :root</p>
+          <h2>Everything, live</h2>
+          <p class="desc">
+            Every <code>--live-*</code> the page broadcasts on
+            <code>:root</code>, read straight into this panel. The numbers are
+            CSS counters seeded from the values; the bars are
+            <code>calc()</code> widths &mdash; no JS reads anything here, same
+            as the corner readout.
+          </p>
+        </div>
+
+        <div class="telemetry__grid">
+          <figure class="xy" aria-hidden="true">
+            <span class="xy__dot"></span>
+            <figcaption>pointer&nbsp;&middot;&nbsp;:root</figcaption>
+          </figure>
+
+          <dl class="readout">
+            <div class="readout__row" style="--n: var(--live-pointer-x, 0); --bar: var(--live-pointer-x-ratio, 0)">
+              <dt>pointer.x</dt><dd class="num"></dd><span class="bar"><i></i></span>
+            </div>
+            <div class="readout__row" style="--n: var(--live-pointer-y, 0); --bar: var(--live-pointer-y-ratio, 0)">
+              <dt>pointer.y</dt><dd class="num"></dd><span class="bar"><i></i></span>
+            </div>
+            <div class="readout__row" style="--n: calc(var(--live-pointer-x-ratio, 0) * 100); --bar: var(--live-pointer-x-ratio, 0); --suffix: '%'">
+              <dt>pointer.x&#8201;ratio</dt><dd class="num"></dd><span class="bar"><i></i></span>
+            </div>
+            <div class="readout__row" style="--n: calc(var(--live-pointer-y-ratio, 0) * 100); --bar: var(--live-pointer-y-ratio, 0); --suffix: '%'">
+              <dt>pointer.y&#8201;ratio</dt><dd class="num"></dd><span class="bar"><i></i></span>
+            </div>
+            <div class="readout__row" style="--n: var(--live-vw, 0); --bar: calc(var(--live-vw, 0) / 2400)">
+              <dt>viewport.w</dt><dd class="num"></dd><span class="bar"><i></i></span>
+            </div>
+            <div class="readout__row" style="--n: var(--live-vh, 0); --bar: calc(var(--live-vh, 0) / 1400)">
+              <dt>viewport.h</dt><dd class="num"></dd><span class="bar"><i></i></span>
+            </div>
+          </dl>
         </div>
       </section>
     </main>

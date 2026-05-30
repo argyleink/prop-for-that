@@ -1,0 +1,53 @@
+/* Shared primitives for the interactive Demos pages.
+   Demo-specific styling lives in each component's scoped <style>. */
+
+.pft-stage {
+  position: relative;
+  display: grid;
+  gap: 1.25rem;
+  padding: clamp(1.25rem, 5vw, 2.25rem);
+  margin: 1.5rem 0;
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 0.75rem;
+  background: var(--sl-color-gray-6);
+}
+
+/* a row of live value readouts (each filled by a CSS counter from a --live-*) */
+.pft-readout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  margin: 0;
+  font-family: var(--sl-font-mono, ui-monospace, 'SF Mono', monospace);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.pft-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  color: var(--sl-color-gray-2);
+}
+.pft-chip b {
+  min-width: 2.5ch;
+  color: var(--sl-color-text-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.pft-hint {
+  margin: 0;
+  font-family: var(--sl-font-mono, ui-monospace, 'SF Mono', monospace);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--sl-color-gray-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pft-stage *,
+  .pft-stage *::before,
+  .pft-stage *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}

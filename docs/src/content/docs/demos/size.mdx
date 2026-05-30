@@ -1,0 +1,26 @@
+---
+title: Size & viewport
+description: Live demos of the size and viewport sources, exposing element and window dimensions.
+---
+
+import SizeDemo from '../../../components/SizeDemo.astro';
+
+Two dimension sources. `viewport` (global) writes `--live-vw` / `--live-vh` on resize. `size` (element) writes `--live-w`, `--live-h`, and `--live-aspect` for any bound element, via one shared `ResizeObserver`. Drag the box to resize it, or resize the window.
+
+<SizeDemo />
+
+## The wiring
+
+```js
+import { global, bind } from 'prop-for-that'
+
+global(['viewport'])
+bind(document.querySelector('.box'), ['size'])
+```
+
+```css
+/* the heading scales with the element's own width */
+.box h2 {
+  font-size: calc(var(--live-w) * 0.055px);
+}
+```
