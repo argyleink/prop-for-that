@@ -1,65 +1,173 @@
 import { config } from './core/config'
 import { writer } from './core/writer'
+import { registerTyped } from './core/property'
 import { coreSources } from './sources'
-import type { Cadence, Config, Disposer, Source, SourceContext } from './core/types'
+import type {
+  Cadence,
+  Config,
+  Disposer,
+  PropSpec,
+  Source,
+  SourceContext,
+} from './core/types'
 
-export type { Cadence, Config, Disposer, Source, SourceContext }
-export { config }
+export type { Cadence, Config, Disposer, PropSpec, Source, SourceContext }
 
-/** Active source disposers, keyed by target then source key. */
-const bindings = new WeakMap<HTMLElement, Map<string, Disposer>>()
+type CoreKey = 'viewport' | 'pointer' | 'size' | 'visibility' | 'range'
+/** Built-in keys autocomplete; any registered/plugin key (a string) is allowed. */
+export type SourceKey = CoreKey | (string & {})
 
+interface Entry {
+  dispose: Disposer
+  written: Set<string>
+}
+
+const noop: Disposer = () => {}
+
+/** target → (key → live binding). A strong map so `reset()` can tear everything down. */
+const bindings = new Map<HTMLElement, Map<string, Entry>>()
 const registry: Record<string, Source> = { ...coreSources }
 
-/** Register a custom source so it can be used by key via `bind`/`global`/`data-prop`. */
+/** Register a custom or plugin source so it can be used by key. */
 export function register(source: Source): void {
   registry[source.key] = source
 }
 
-/** Override prefixes or the global root target. */
+/** Remove a previously registered source key. */
+export function unregister(key: string): void {
+  delete registry[key]
+}
+
+/** Override prefixes or the global root target. Call before attaching sources. */
 export function configure(opts: Partial<Config>): void {
   Object.assign(config, opts)
 }
 
-function makeContext(target: HTMLElement): SourceContext {
+function makeContext(
+  target: HTMLElement,
+  written: Set<string>,
+  props?: Source['props'],
+): SourceContext {
   return {
     target,
     config,
     write(localName, value, cadence: Cadence = 'live') {
-      const prefix = cadence === 'const' ? config.constPrefix : config.livePrefix
-      writer.set(target, prefix + localName, String(value))
+      const prop = (cadence === 'const' ? config.constPrefix : config.livePrefix) + localName
+      written.add(prop)
+      if (config.typed) registerTyped(prop, localName, props)
+      writer.set(target, prop, String(value))
     },
   }
 }
 
-/** Attach sources (by key) to an element. Re-binding an active key is a no-op. */
-export function bind(target: HTMLElement, keys: string[]): Disposer {
+function disposeEntry(target: HTMLElement, key: string, active: Map<string, Entry>): void {
+  const entry = active.get(key)
+  if (!entry) return
+  entry.dispose()
+  for (const prop of entry.written) {
+    target.style.removeProperty(prop)
+    writer.forget(target, prop)
+  }
+  active.delete(key)
+}
+
+function startOn(target: HTMLElement, keys: string[]): Disposer {
   let active = bindings.get(target)
   if (!active) bindings.set(target, (active = new Map()))
+
+  const started: string[] = []
   for (const key of keys) {
-    if (active.has(key)) continue
+    if (active.has(key)) continue // already active on this element
     const source = registry[key]
     if (!source) {
       console.warn(`[prop-for-that] unknown source "${key}"`)
       continue
     }
-    active.set(key, source.start(makeContext(target)))
+    const written = new Set<string>()
+    let dispose: Disposer
+    try {
+      dispose = source.start(makeContext(target, written, source.props))
+    } catch (err) {
+      console.error(`[prop-for-that] source "${key}" failed to start`, err)
+      continue
+    }
+    active.set(key, { dispose, written })
+    started.push(key)
   }
-  return () => unbind(target, keys)
+
+  // disposes exactly what THIS call started (and only if still active)
+  return () => {
+    const a = bindings.get(target)
+    if (!a) return
+    for (const key of started) disposeEntry(target, key, a)
+    if (a.size === 0) bindings.delete(target)
+  }
 }
 
-/** Detach specific source keys, or all of them when `keys` is omitted. */
+function toTargets(input: unknown): HTMLElement[] {
+  if (input instanceof Element) return [input as HTMLElement]
+  if (
+    (typeof NodeList !== 'undefined' && input instanceof NodeList) ||
+    (typeof HTMLCollection !== 'undefined' && input instanceof HTMLCollection) ||
+    Array.isArray(input)
+  ) {
+    return Array.from(input as Iterable<unknown>).filter(
+      (n): n is HTMLElement => n instanceof Element,
+    )
+  }
+  return []
+}
+
+function isKeys(x: unknown): x is string[] {
+  return Array.isArray(x) && (x.length === 0 || typeof x[0] === 'string')
+}
+
+/**
+ * Attach sources by key. Global by default (writes to `:root`); pass a Node,
+ * NodeList, or array of elements as the first argument to attach to elements.
+ *
+ *   propsFor(['pointer'])            // → :root
+ *   propsFor(el, ['size'])           // → el
+ *   propsFor(els, ['visibility'])    // → each element in a NodeList / array
+ *
+ * Returns a disposer that tears down exactly what this call started and removes
+ * the custom properties it wrote.
+ */
+export function propsFor(keys: SourceKey[]): Disposer
+export function propsFor(
+  target: Element | NodeList | HTMLCollection | Element[],
+  keys: SourceKey[],
+): Disposer
+export function propsFor(a: unknown, b?: SourceKey[]): Disposer {
+  let targets: HTMLElement[]
+  let keys: string[]
+  if (b === undefined && isKeys(a)) {
+    targets = config.root ? [config.root] : [] // global, SSR-safe
+    keys = a
+  } else {
+    targets = toTargets(a)
+    keys = (b ?? []) as string[]
+  }
+  if (!targets.length || !keys.length) return noop
+  const disposers = targets.map((t) => startOn(t, keys))
+  return () => {
+    for (const d of disposers) d()
+  }
+}
+
+/** Detach specific keys from an element, or all of them. Removes written props. */
 export function unbind(target: HTMLElement, keys?: string[]): void {
   const active = bindings.get(target)
   if (!active) return
-  for (const key of keys ?? [...active.keys()]) {
-    active.get(key)?.()
-    active.delete(key)
-  }
+  for (const key of keys ?? [...active.keys()]) disposeEntry(target, key, active)
   if (active.size === 0) bindings.delete(target)
 }
 
-/** Attach global sources to `config.root` (`:root` by default). */
-export function global(keys: string[]): Disposer {
-  return bind(config.root, keys)
+/** Tear down every active binding (and, via ref-counting, the shared observers
+ *  and listeners they used). Useful for SPA route changes, HMR, and tests. */
+export function reset(): void {
+  for (const [target, active] of bindings) {
+    for (const key of [...active.keys()]) disposeEntry(target, key, active)
+  }
+  bindings.clear()
 }

@@ -51,10 +51,10 @@ All `window` event listeners (scroll, pointermove, resize, etc.) are registered 
 
 ## Cleanup
 
-Every `bind()` call returns a disposer. Calling it:
+Every `propsFor()` call returns a disposer. Calling it:
 
 - Calls the source's own disposer (unregisters from the shared observer or removes the event listener ref).
 - Removes the source's entry from the element's binding map.
-- If no sources remain for that element, removes the element from the bindings `WeakMap`.
+- If no sources remain for that element, removes the element from the bindings map.
 
 The `auto` entry also uses a `MutationObserver` to call `unbind` automatically when a `[data-prop]` element is removed from the DOM.

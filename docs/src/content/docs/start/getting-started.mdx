@@ -42,14 +42,14 @@ section {
 Import individual functions for explicit control over which sources are active and when they're torn down:
 
 ```js
-import { global, bind, configure } from 'prop-for-that'
+import { propsFor, configure } from 'prop-for-that'
 
 // write viewport + pointer to :root
-global(['viewport', 'pointer'])
+propsFor(['viewport', 'pointer'])
 
 // write the range source to a specific element; returns a disposer
 const slider = document.querySelector('input[type="range"]')
-const dispose = bind(slider, ['range'])
+const dispose = propsFor(slider, ['range'])
 
 // later, tear it down cleanly
 dispose()

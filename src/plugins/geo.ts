@@ -1,4 +1,5 @@
 import type { Source } from '../core/types'
+import { round4 } from '../core/num'
 
 /**
  * `--live-geo-lat`, `--live-geo-lng`, `--live-geo-accuracy` (meters) from
@@ -15,9 +16,9 @@ export const geo: Source = {
     let disposed = false
     const id = geolocation.watchPosition((pos) => {
       if (disposed) return
-      ctx.write('geo-lat', Math.round(pos.coords.latitude * 1e4) / 1e4)
-      ctx.write('geo-lng', Math.round(pos.coords.longitude * 1e4) / 1e4)
-      ctx.write('geo-accuracy', Math.round(pos.coords.accuracy * 1e4) / 1e4)
+      ctx.write('geo-lat', round4(pos.coords.latitude))
+      ctx.write('geo-lng', round4(pos.coords.longitude))
+      ctx.write('geo-accuracy', round4(pos.coords.accuracy))
     })
 
     return () => {

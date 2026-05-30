@@ -20,11 +20,11 @@ A style query matches against an element's **nearest ancestor container**, and f
 ## Example 1: a global boolean (offline)
 
 ```js
-import { register, global } from 'prop-for-that'
+import { register, propsFor } from 'prop-for-that'
 import { online } from 'prop-for-that/plugins'
 
 register(online)
-global(['online'])   // writes --live-online (1/0) to :root
+propsFor(['online'])   // writes --live-online (1/0) to :root
 ```
 
 ```css
@@ -40,7 +40,7 @@ global(['online'])   // writes --live-online (1/0) to :root
 ## Example 2: an element milestone (slider at max)
 
 ```js
-bind(document.getElementById('meter'), ['range'])  // --live-value on #meter
+propsFor(document.getElementById('meter'), ['range'])  // --live-value on #meter
 ```
 
 ```css

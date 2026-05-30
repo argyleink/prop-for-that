@@ -12,10 +12,9 @@ The `visibility` source is scroll-triggered, not scroll-linked. It writes two bi
 ## The wiring
 
 ```js
-import { bind } from 'prop-for-that'
+import { propsFor } from 'prop-for-that'
 
-document.querySelectorAll('[data-reveal]')
-  .forEach((el) => bind(el, ['visibility']))
+propsFor(document.querySelectorAll('[data-reveal]'), ['visibility'])
 ```
 
 ```css

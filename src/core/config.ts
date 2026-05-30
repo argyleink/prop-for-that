@@ -6,4 +6,5 @@ export const config: Config = {
   root: (typeof document !== 'undefined'
     ? document.documentElement
     : undefined) as HTMLElement,
+  typed: false,
 }

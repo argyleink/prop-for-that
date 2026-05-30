@@ -1,21 +1,24 @@
 import type { Source } from '../core/types'
+import { onFrame } from '../core/frame'
 
-/** `--live-fps` (rounded), measured from frame time in a rAF loop. */
+/**
+ * `--live-fps`, a short exponential moving average of recent frame rates so the
+ * value is stable rather than jittering frame to frame. Runs on the shared frame
+ * loop while bound.
+ */
 export const fps: Source = {
   key: 'fps',
   scope: 'global',
   start(ctx) {
-    let frame = 0
     let last = performance.now()
+    let avg = 60
 
-    const loop = (now: number) => {
+    return onFrame((now) => {
       const dt = now - last
       last = now
-      if (dt > 0) ctx.write('fps', Math.round(1000 / dt))
-      frame = requestAnimationFrame(loop)
-    }
-
-    frame = requestAnimationFrame(loop)
-    return () => cancelAnimationFrame(frame)
+      if (dt <= 0) return
+      avg += (1000 / dt - avg) * 0.1
+      ctx.write('fps', Math.round(avg))
+    })
   },
 }

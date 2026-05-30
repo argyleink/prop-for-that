@@ -1,9 +1,14 @@
 {
   "name": "prop-for-that",
   "version": "0.2.0",
-  "description": "Expose what JavaScript knows but CSS can't see — as batched, diffed CSS custom properties.",
+  "description": "Expose what JavaScript knows but CSS can't see, as batched, diffed CSS custom properties.",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/argyleink/prop-for-that.git"
+  },
+  "author": "Adam Argyle (https://github.com/argyleink)",
   "keywords": [
     "css",
     "custom-properties",
@@ -44,21 +49,29 @@
       "types": "./dist/plugins.d.ts",
       "import": "./dist/plugins.js",
       "require": "./dist/plugins.cjs"
-    }
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "dist",
     "llms.txt",
     "CHANGELOG.md"
   ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "prepublishOnly": "npm run build"
   },
   "devDependencies": {
+    "@playwright/test": "^1.49.1",
     "jsdom": "^25.0.1",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2",

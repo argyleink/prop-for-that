@@ -14,9 +14,9 @@ The `range` source mirrors a slider into `--live-value` and `--live-value-pct`. 
 One call binds the container; the inner `<input>` is found automatically:
 
 ```js
-import { bind } from 'prop-for-that'
+import { propsFor } from 'prop-for-that'
 
-bind(document.querySelector('.range-demo'), ['range'])
+propsFor(document.querySelector('.range-demo'), ['range'])
 ```
 
 Everything visible is CSS reading the value:

@@ -1,19 +1,19 @@
 ---
 title: API
-description: configure, register, global, bind, and unbind.
+description: configure, register, unregister, propsFor, unbind, and reset.
 ---
 
 All functions are exported from `prop-for-that`.
 
 ```ts
-import { configure, register, global, bind, unbind } from 'prop-for-that'
+import { configure, register, unregister, propsFor, unbind, reset } from 'prop-for-that'
 ```
 
 ---
 
 ## `configure(opts)`
 
-Override the property prefixes or the global root element. Call this once, before any `global()` or `bind()` calls.
+Override the property prefixes or the global root element. Call this once, before any `propsFor()` calls.
 
 ```ts
 function configure(opts: Partial<Config>): void
@@ -22,8 +22,12 @@ interface Config {
   livePrefix: string   // default: '--live-'
   constPrefix: string  // default: '--const-'
   root: HTMLElement    // default: document.documentElement (:root)
+  typed: boolean       // default: false; register --live-* with @property
+  defaults?: Record<string, string | number>  // typed initial values, by local name
 }
 ```
+
+Set `typed: true` to register written `--live-*` properties with `@property`, making them interpolatable and giving them a guaranteed initial value. Pass `defaults` (keyed by a source's local name, e.g. `'pointer-x-ratio'`) to choose those initial values. See [Typed properties](/concepts/typed-properties/).
 
 **Example**
 
@@ -38,13 +42,13 @@ configure({
 
 ## `register(source)`
 
-Add a custom or plugin source to the registry so it can be used by key via `bind()`, `global()`, or `data-prop`.
+Add a custom or plugin source to the registry so it can be used by key via `propsFor()` or `data-prop`.
 
 ```ts
 function register(source: Source): void
 
 interface Source {
-  key: string              // unique identifier used in bind/global/data-prop
+  key: SourceKey          // unique identifier used in propsFor/data-prop
   scope: 'global' | 'element'
   start(ctx: SourceContext): Disposer
 }
@@ -61,55 +65,71 @@ type Disposer = () => void
 **Example**
 
 ```js
-import { register, global } from 'prop-for-that'
+import { register, propsFor } from 'prop-for-that'
 import { scrollVelocity } from 'prop-for-that/plugins'
 
 register(scrollVelocity)
-global(['scroll-velocity'])
+propsFor(['scroll-velocity'])
 ```
 
 ---
 
-## `global(keys)`
+## `unregister(key)`
 
-Attach one or more sources to the root element (`:root` by default, or whatever `configure({ root })` is set to). Returns a disposer.
+Remove a source from the registry by key, so it can no longer be attached. Already-active bindings of that key are unaffected; tear those down with their disposer or `unbind()`.
 
 ```ts
-function global(keys: string[]): Disposer
+function unregister(key: SourceKey): void
 ```
 
 **Example**
 
 ```js
-const dispose = global(['viewport', 'pointer'])
+import { unregister } from 'prop-for-that'
 
-// later, stop both sources
+unregister('scroll-velocity')
+```
+
+---
+
+## `propsFor(...)`
+
+The single entry point for attaching sources. It's **global** (writes to the configured root, `:root` by default) unless the first argument is a `Node`, a `NodeList`, or an array of elements, in which case the sources attach to that element (or to each element). Returns a disposer that tears down exactly what that call started and removes the custom properties it wrote.
+
+```ts
+function propsFor(keys: string[]): Disposer
+function propsFor(target: Element | NodeList | Element[], keys: string[]): Disposer
+```
+
+**Global** (writes to `:root`):
+
+```js
+const dispose = propsFor(['viewport', 'pointer'])
+
+// later, stop both sources and remove the properties they wrote
 dispose()
 ```
 
-Re-calling `global()` with a key that's already active is a no-op for that key.
-
----
-
-## `bind(target, keys)`
-
-Attach one or more sources to a specific element. Returns a disposer.
-
-```ts
-function bind(target: HTMLElement, keys: string[]): Disposer
-```
-
-**Example**
+**Per element**:
 
 ```js
 const slider = document.querySelector('input[type="range"]')
-const dispose = bind(slider, ['range'])
+const dispose = propsFor(slider, ['range'])
 
 // later, clean up
 dispose()
 ```
 
-Re-binding an already-active key on the same element is a no-op for that key.
+**Across a NodeList or array** (attaches to each element):
+
+```js
+const dispose = propsFor(document.querySelectorAll('[data-reveal]'), ['visibility'])
+
+// one disposer tears down every element this call touched
+dispose()
+```
+
+Re-attaching a key that's already active on the same target is a no-op for that key.
 
 ---
 
@@ -132,3 +152,21 @@ unbind(slider)
 ```
 
 The element is removed from the internal bindings map once all its sources are detached.
+
+---
+
+## `reset()`
+
+Tear down everything: every active binding (global and per element) plus the shared observers and listeners. Use it to fully clean up, for example between tests or before a hot reload.
+
+```ts
+function reset(): void
+```
+
+**Example**
+
+```js
+import { reset } from 'prop-for-that'
+
+reset()
+```

@@ -1,4 +1,5 @@
 import type { Source } from '../core/types'
+import { round4 } from '../core/num'
 
 interface BatteryManager extends EventTarget {
   level: number
@@ -22,7 +23,7 @@ export const battery: Source = {
       if (disposed) return
       mgr = battery
       update = () => {
-        ctx.write('battery-level', Math.round(battery.level * 1e4) / 1e4)
+        ctx.write('battery-level', round4(battery.level))
         ctx.write('battery-charging', battery.charging ? 1 : 0)
       }
       update()

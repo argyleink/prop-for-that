@@ -64,8 +64,6 @@
 </style>
 
 <script>
-  import { bind } from 'prop-for-that'
-  document
-    .querySelectorAll<HTMLElement>('[data-pft-range]')
-    .forEach((el) => bind(el, ['range']))
+  import { propsFor } from 'prop-for-that'
+  propsFor(document.querySelectorAll<HTMLElement>('[data-pft-range]'), ['range'])
 </script>

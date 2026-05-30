@@ -61,9 +61,7 @@
 </style>
 
 <script>
-  import { global, bind } from 'prop-for-that'
-  global(['viewport'])
-  document
-    .querySelectorAll<HTMLElement>('[data-pft-size]')
-    .forEach((el) => bind(el, ['size']))
+  import { propsFor } from 'prop-for-that'
+  propsFor(['viewport'])
+  propsFor(document.querySelectorAll<HTMLElement>('[data-pft-size]'), ['size'])
 </script>

@@ -1,40 +1,30 @@
 import type { Source } from '../core/types'
 import { onWindow } from '../core/window-events'
-import { observeResize } from '../core/observers'
+import { round4 } from '../core/num'
 
 /**
  * `--live-px`, `--live-py` (0–1 within the element's box),
  * `--live-pointer-inside` (0/1).
  *
- * The element's rect is cached and refreshed on resize/scroll so pointer moves
- * never trigger layout reads.
+ * Shares the page's single `pointermove` listener. The rect is read per move
+ * (cheap when layout is clean) so it stays correct through layout shifts, which
+ * a cached rect would miss.
  */
 export const pointerLocal: Source = {
   key: 'pointer-local',
   scope: 'element',
   start(ctx) {
     const el = ctx.target
-    let rect = el.getBoundingClientRect()
-    const refresh = () => {
-      rect = el.getBoundingClientRect()
-    }
-
-    const onMove = (e: PointerEvent) => {
-      const px = rect.width > 0 ? (e.clientX - rect.left) / rect.width : 0
-      const py = rect.height > 0 ? (e.clientY - rect.top) / rect.height : 0
+    const onMove = (e: Event) => {
+      const p = e as PointerEvent
+      const r = el.getBoundingClientRect()
+      const px = r.width > 0 ? (p.clientX - r.left) / r.width : 0
+      const py = r.height > 0 ? (p.clientY - r.top) / r.height : 0
       const inside = px >= 0 && px <= 1 && py >= 0 && py <= 1
-      ctx.write('px', Math.round(px * 1e4) / 1e4)
-      ctx.write('py', Math.round(py * 1e4) / 1e4)
+      ctx.write('px', round4(px))
+      ctx.write('py', round4(py))
       ctx.write('pointer-inside', inside ? 1 : 0)
     }
-
-    window.addEventListener('pointermove', onMove, { passive: true })
-    const offScroll = onWindow('scroll', refresh)
-    const offResize = observeResize(el, refresh)
-    return () => {
-      window.removeEventListener('pointermove', onMove)
-      offScroll()
-      offResize()
-    }
+    return onWindow('pointermove', onMove)
   },
 }

@@ -7,14 +7,14 @@ Plugins cover state beyond the five core sources: sensors, network, battery, med
 
 ## Using a plugin
 
-Import the plugin, `register()` it once, then use it by **key** with `bind()` or `global()`, exactly like a core source:
+Import the plugin, `register()` it once, then use it by **key** with `propsFor()`, exactly like a core source:
 
 ```js
-import { register, bind } from 'prop-for-that'
+import { register, propsFor } from 'prop-for-that'
 import { battery } from 'prop-for-that/plugins'
 
 register(battery)
-bind(document.documentElement, ['battery'])
+propsFor(document.documentElement, ['battery'])
 ```
 
 ```css
@@ -33,12 +33,12 @@ registerPlugins()             // or everything
 ```
 
 :::tip[Import name vs. key]
-The **import** is camelCase (`scrollVelocity`); the **key** you pass to `bind()` / `global()` / `data-prop` is the dashed form (`'scroll-velocity'`). The tables below list both.
+The **import** is camelCase (`scrollVelocity`); the **key** you pass to `propsFor()` / `data-prop` is the dashed form (`'scroll-velocity'`). The tables below list both.
 :::
 
 ## Global plugins
 
-Register, then attach with `global([...])`; they write to `:root`.
+Register, then attach with `propsFor([...])`; they write to `:root`.
 
 | Import | Key | Properties |
 | --- | --- | --- |
@@ -55,7 +55,7 @@ Register, then attach with `global([...])`; they write to `:root`.
 
 ## Element plugins
 
-Register, then attach with `bind(el, [...])`; they write to the bound element.
+Register, then attach with `propsFor(el, [...])`; they write to the bound element.
 
 | Import | Key | Properties |
 | --- | --- | --- |

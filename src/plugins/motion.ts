@@ -1,4 +1,5 @@
 import type { Source } from '../core/types'
+import { round4 } from '../core/num'
 
 /**
  * `--live-accel-x`, `--live-accel-y`, `--live-accel-z` (m/s², gravity included)
@@ -13,9 +14,9 @@ export const motion: Source = {
 
     const onMotion = (e: DeviceMotionEvent) => {
       const a = e.accelerationIncludingGravity
-      ctx.write('accel-x', Math.round((a?.x ?? 0) * 1e4) / 1e4)
-      ctx.write('accel-y', Math.round((a?.y ?? 0) * 1e4) / 1e4)
-      ctx.write('accel-z', Math.round((a?.z ?? 0) * 1e4) / 1e4)
+      ctx.write('accel-x', round4(a?.x ?? 0))
+      ctx.write('accel-y', round4(a?.y ?? 0))
+      ctx.write('accel-z', round4(a?.z ?? 0))
     }
     window.addEventListener('devicemotion', onMotion, { passive: true })
     return () => window.removeEventListener('devicemotion', onMotion)

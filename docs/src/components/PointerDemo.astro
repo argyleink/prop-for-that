@@ -13,7 +13,7 @@
   </div>
   <p class="pft-hint">
     Move anywhere in the window. The spotlight and dot read the pointer's viewport
-    ratio, written to <code>:root</code> by <code>global(['pointer'])</code>.
+    ratio, written to <code>:root</code> by <code>propsFor(['pointer'])</code>.
   </p>
 </div>
 
@@ -61,6 +61,6 @@
 </style>
 
 <script>
-  import { global } from 'prop-for-that'
-  global(['pointer'])
+  import { propsFor } from 'prop-for-that'
+  propsFor(['pointer'])
 </script>

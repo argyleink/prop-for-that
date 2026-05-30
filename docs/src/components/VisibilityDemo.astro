@@ -92,8 +92,6 @@
 </style>
 
 <script>
-  import { bind } from 'prop-for-that'
-  document
-    .querySelectorAll<HTMLElement>('[data-pft-vis]')
-    .forEach((el) => bind(el, ['visibility']))
+  import { propsFor } from 'prop-for-that'
+  propsFor(document.querySelectorAll<HTMLElement>('[data-pft-vis]'), ['visibility'])
 </script>

@@ -1,22 +1,22 @@
 import type { Source } from '../../core/types'
+import { resolveTarget } from '../../core/find'
+import { round4 } from '../../core/num'
 
 /**
  * `--live-value`, `--live-value-pct` (0–1 across min/max).
  *
  * Bind it to the `<input type="range|number">` itself, or to a container that
  * holds one. When bound to a container the props are written on the container,
- * so the input *and* sibling elements (a separate gauge, a numeric readout) can
- * all read the value — custom properties only inherit downward.
+ * so the input and sibling elements (a gauge, a readout) can all read the value.
  */
 export const range: Source = {
   key: 'range',
   scope: 'element',
   start(ctx) {
-    const input = (
-      ctx.target instanceof HTMLInputElement
-        ? ctx.target
-        : ctx.target.querySelector('input[type="range"], input[type="number"]')
-    ) as HTMLInputElement | null
+    const input = resolveTarget<HTMLInputElement>(
+      ctx.target,
+      'input[type="range"], input[type="number"]',
+    )
     if (!input) return () => {}
 
     const update = () => {
@@ -24,10 +24,7 @@ export const range: Source = {
       const max = input.max === '' ? 100 : Number(input.max)
       const value = Number(input.value)
       ctx.write('value', value)
-      ctx.write(
-        'value-pct',
-        max > min ? Math.round(((value - min) / (max - min)) * 1e4) / 1e4 : 0,
-      )
+      ctx.write('value-pct', max > min ? round4((value - min) / (max - min)) : 0)
     }
     update()
     input.addEventListener('input', update, { passive: true })

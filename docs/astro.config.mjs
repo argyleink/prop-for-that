@@ -54,6 +54,7 @@ export default defineConfig({
 						{ label: 'How it works', slug: 'concepts/how-it-works' },
 						{ label: 'Naming & cadence', slug: 'concepts/naming-and-cadence' },
 						{ label: 'Style queries', slug: 'concepts/style-queries' },
+						{ label: 'Typed properties', slug: 'concepts/typed-properties' },
 					],
 				},
 				{

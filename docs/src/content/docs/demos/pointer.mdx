@@ -14,9 +14,9 @@ The `pointer` source writes the cursor's position to `:root`: `--live-pointer-x`
 One global call, then CSS does the rest:
 
 ```js
-import { global } from 'prop-for-that'
+import { propsFor } from 'prop-for-that'
 
-global(['pointer'])
+propsFor(['pointer'])
 ```
 
 ```css

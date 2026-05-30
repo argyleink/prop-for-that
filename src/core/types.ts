@@ -10,6 +10,30 @@ export interface Config {
   constPrefix: string
   /** Where global sources write. */
   root: HTMLElement
+  /**
+   * When true, written `--live-*` properties are registered with `@property`
+   * (via `CSS.registerProperty`) as typed, interpolatable custom properties with
+   * a guaranteed initial value. Opt in with `configure({ typed: true })` before
+   * attaching sources. Off by default.
+   */
+  typed: boolean
+  /**
+   * Initial (default) values for typed properties, keyed by a source's local
+   * name (e.g. `'pointer-x-ratio'`). Applied as the `@property` initial-value
+   * when `typed` is on, overriding a source's declared initial and the `0`
+   * default. The value must be valid for the property's syntax.
+   */
+  defaults?: Record<string, string | number>
+}
+
+/** Optional `@property` typing for a source's local name, used when `typed` is on. */
+export interface PropSpec {
+  /** CSS `@property` syntax. Default `'<number>'`. */
+  syntax?: string
+  /** Initial value. Default `'0'`. */
+  initial?: string
+  /** Whether the property inherits. Default `true` (required for container-bound sources). */
+  inherits?: boolean
 }
 
 export interface SourceContext {
@@ -24,9 +48,11 @@ export interface SourceContext {
 }
 
 export interface Source {
-  /** Key used in `data-prop` / `bind()` / `global()`. */
+  /** Key used in `data-prop` / `propsFor()`. */
   key: string
   scope: Scope
+  /** Optional `@property` typings per local name, applied when `typed` is on. */
+  props?: Record<string, PropSpec>
   /** Attach listeners/observers, seed initial values, return a disposer. */
   start(ctx: SourceContext): Disposer
 }

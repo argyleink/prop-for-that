@@ -1,0 +1,70 @@
+---
+title: Typed properties
+description: Opt into @property registration so --live-* values interpolate and have guaranteed initial values.
+---
+
+By default, prop-for-that writes plain custom properties. They work everywhere, but to the engine they're untyped (`<*>`): they can't be interpolated (a `transition` or `@keyframes` on them snaps instead of tweening), and `var(--live-x)` is invalid until a value is written, which is why you reach for `var(--live-x, fallback)`.
+
+Opt in, and the library registers each `--live-*` it writes with [`@property`](https://developer.mozilla.org/en-US/docs/Web/CSS/@property) (via `CSS.registerProperty`):
+
+```js
+import { configure, propsFor } from 'prop-for-that'
+
+configure({ typed: true }) // before attaching any sources
+propsFor(['pointer'])
+```
+
+Each property then gets:
+
+- a **`<number>` type**, so it **interpolates**: a `transition` or animation tweens it instead of snapping;
+- a **guaranteed initial value of `0`**, so `var(--live-x)` resolves with no fallback.
+
+## Behavior-safe and opt-in
+
+Nothing animates unless *you* add a `transition` or `@keyframes`, so turning `typed` on doesn't change how an existing stylesheet renders, except that `var(--live-x)` now resolves to `0` before a value arrives instead of being invalid. Smoothing a jumpy value is then one line:
+
+```css
+.bar {
+  width: calc(var(--live-value-pct) * 100%);
+  transition: --live-value-pct 120ms ease-out; /* tweens because it's typed */
+}
+```
+
+## Default values
+
+Set per-property defaults in the same `configure` call, keyed by a source's local name. They become the `@property` initial value, so `var(--live-…)` resolves to them before any data arrives, overriding the source's own default and the `0` fallback:
+
+```js
+configure({
+  typed: true,
+  defaults: {
+    'pointer-x-ratio': 0.5, // centered until the pointer moves
+    'pointer-y-ratio': 0.5,
+  },
+})
+```
+
+The value must be valid for the property's syntax (a plain number for the default `<number>` typing). Defaults only apply when `typed` is on.
+
+## Notes
+
+- **Opt in before attaching.** Call `configure({ typed: true })` before your first `propsFor()`, like the prefixes.
+- **One-way door.** `@property` registrations last the page's lifetime (the spec has no unregister). Properties are still cleared from elements on teardown; only the type registration persists.
+- **Inherited.** Registrations use `inherits: true`, which the container-bound sources (`range`, `field`, `media`) rely on.
+- **Safe to double up.** If you, or another library, already declared `@property --live-…`, prop-for-that skips it rather than throwing.
+- **Feature-detected.** Where `CSS.registerProperty` is unavailable it is a no-op and properties stay untyped. Support: Chromium 85+, Safari 16.4+, Firefox 128+.
+
+## Custom syntax for your own sources
+
+A custom or plugin source can declare per-property typings via `props`, applied only when `typed` is on. Anything you don't declare defaults to `<number>` / `0` / inherited:
+
+```js
+register({
+  key: 'tilt',
+  scope: 'element',
+  props: { angle: { syntax: '<angle>', initial: '0deg' } },
+  start(ctx) {
+    /* … ctx.write('angle', 12) … */
+  },
+})
+```

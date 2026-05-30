@@ -1,4 +1,5 @@
 import type { Source } from '../core/types'
+import { round4 } from '../core/num'
 
 /**
  * `--live-vvp-scale`, `--live-vvp-offset-top`, `--live-vvp-height`
@@ -12,9 +13,9 @@ export const visualViewport: Source = {
     if (!vvp) return () => {}
 
     const update = () => {
-      ctx.write('vvp-scale', Math.round(vvp.scale * 1e4) / 1e4)
-      ctx.write('vvp-offset-top', vvp.offsetTop)
-      ctx.write('vvp-height', vvp.height)
+      ctx.write('vvp-scale', round4(vvp.scale))
+      ctx.write('vvp-offset-top', round4(vvp.offsetTop))
+      ctx.write('vvp-height', round4(vvp.height))
     }
     update()
     vvp.addEventListener('resize', update, { passive: true })

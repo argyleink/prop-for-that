@@ -12,10 +12,10 @@ Two dimension sources. `viewport` (global) writes `--live-vw` / `--live-vh` on r
 ## The wiring
 
 ```js
-import { global, bind } from 'prop-for-that'
+import { propsFor } from 'prop-for-that'
 
-global(['viewport'])
-bind(document.querySelector('.box'), ['size'])
+propsFor(['viewport'])
+propsFor(document.querySelector('.box'), ['size'])
 ```
 
 ```css

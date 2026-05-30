@@ -33,10 +33,10 @@ input[type="range"] {
 Enable the sources once in JavaScript, and CSS does the rest:
 
 ```js
-import { global, bind } from 'prop-for-that'
+import { propsFor } from 'prop-for-that'
 
-global(['pointer'])
-bind(document.querySelector('input[type="range"]'), ['range'])
+propsFor(['pointer'])
+propsFor(document.querySelector('input[type="range"]'), ['range'])
 ```
 
 ## What makes it different

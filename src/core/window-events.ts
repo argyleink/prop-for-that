@@ -2,16 +2,19 @@ import type { Disposer } from './types'
 
 /**
  * Shared, ref-counted passive `window` listeners. Many sources can subscribe to
- * `scroll`/`resize` with a single real listener per event type.
+ * the same event (`scroll`, `pointermove`, `resize`, …) with a single real
+ * listener per event type. The event is passed through to each handler.
  */
-const groups = new Map<string, { handlers: Set<() => void>; dispatch: EventListener }>()
+type Handler = (e: Event) => void
 
-export function onWindow(type: string, handler: () => void): Disposer {
+const groups = new Map<string, { handlers: Set<Handler>; dispatch: EventListener }>()
+
+export function onWindow(type: string, handler: Handler): Disposer {
   let group = groups.get(type)
   if (!group) {
-    const handlers = new Set<() => void>()
-    const dispatch: EventListener = () => {
-      for (const h of handlers) h()
+    const handlers = new Set<Handler>()
+    const dispatch: EventListener = (e) => {
+      for (const h of [...handlers]) h(e)
     }
     group = { handlers, dispatch }
     groups.set(type, group)

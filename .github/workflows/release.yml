@@ -1,0 +1,73 @@
+name: Release
+
+# Cut a release by pushing a version tag that matches package.json, e.g.:
+#   git tag v0.3.0 && git push origin v0.3.0
+# CHANGELOG.md must already have a matching `## [0.3.0]` section (this fails
+# otherwise) — that section becomes the GitHub Release notes.
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write # create the GitHub Release
+  id-token: write # npm provenance attestation
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: publish ${{ github.ref_name }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          registry-url: https://registry.npmjs.org # needed for NODE_AUTH_TOKEN
+          cache: npm
+
+      - run: npm ci
+
+      # Gate: the tag, package.json, and CHANGELOG must agree before we publish.
+      - name: Verify version and changelog
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          PKG="$(node -p "require('./package.json').version")"
+          if [ "$VERSION" != "$PKG" ]; then
+            echo "::error::tag $TAG does not match package.json version $PKG"
+            exit 1
+          fi
+          if ! grep -q "^## \[$VERSION\]" CHANGELOG.md; then
+            echo "::error::CHANGELOG.md has no '## [$VERSION]' section"
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      # Don't publish a broken build.
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+      # Pull this version's section out of CHANGELOG.md for the release notes.
+      - name: Extract release notes
+        run: |
+          awk -v ver="$VERSION" '
+            $0 ~ "^## \\[" ver "\\]" { f = 1; next }
+            /^## \[/ && f { f = 0 }
+            f { print }
+          ' CHANGELOG.md > RELEASE_NOTES.md
+          echo "----- release notes -----"; cat RELEASE_NOTES.md
+
+      - name: Publish to npm
+        # access: public + provenance come from package.json "publishConfig"
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file RELEASE_NOTES.md

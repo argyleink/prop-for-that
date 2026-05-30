@@ -1,6 +1,6 @@
 # prop-for-that
 
-Expose what JavaScript knows but CSS can't see — as **batched, diffed CSS custom
+Expose what JavaScript knows but CSS can't see, as **batched, diffed CSS custom
 properties**. Give CSS the runtime state it lacks (slider values, pointer
 position, element visibility, viewport, …) and let it compute and react.
 
@@ -10,7 +10,7 @@ npm i prop-for-that
 
 ## Use it three ways
 
-**Zero-config** — auto-attaches global state and binds `data-prop` elements:
+**Zero-config.** Auto-attaches global state and binds `data-prop` elements:
 
 ```html
 <script type="module">import 'prop-for-that/auto'</script>
@@ -21,20 +21,20 @@ npm i prop-for-that
 
 ```css
 input { background: hsl(calc(var(--live-value-pct) * 120) 80% 50%); }
-section { opacity: var(--live-visible-ratio); }
+section { opacity: var(--live-has-entered); }
 ```
 
-**Imperative** — explicit control and cleanup:
+**Imperative.** Explicit control and cleanup:
 
 ```js
-import { global, bind, configure } from 'prop-for-that'
+import { propsFor, configure } from 'prop-for-that'
 
-global(['viewport', 'pointer'])   // → :root
-const dispose = bind(slider, ['range'])      // → the element
+propsFor(['viewport', 'pointer'])            // → :root
+const dispose = propsFor(slider, ['range'])  // → the element
 dispose()
 ```
 
-**Head constants** — synchronous, FOUC-safe, inline in `<head>`:
+**Head constants.** Synchronous, FOUC-safe, inline in `<head>`:
 
 ```html
 <script type="module">import 'prop-for-that/head'</script>
@@ -48,23 +48,23 @@ dispose()
 | `viewport` | `--live-vw`, `--live-vh` |
 | `pointer` | `--live-pointer-x/y`, `--live-pointer-x/y-ratio` |
 | `size` | `--live-w`, `--live-h`, `--live-aspect` |
-| `visibility` | `--live-visible`, `--live-visible-ratio` |
+| `visibility` | `--live-visible`, `--live-has-entered` |
 | `range` | `--live-value`, `--live-value-pct` |
 
 `--live-*` updates continuously (one batched `setProperty` flush per frame, only
 when a value actually changed). `--const-*` is written once. Values are unitless
-numbers — compose them with `calc()` and units in CSS.
+numbers; compose them with `calc()` and units in CSS.
 
 ## Plugins (opt-in)
 
 Exotic sources live in `prop-for-that/plugins` and are registered explicitly, so
-they stay tree-shakeable — you only ship the ones you register:
+they stay tree-shakeable; you only ship the ones you register:
 
 ```js
-import { register, bind } from 'prop-for-that'
+import { register, propsFor } from 'prop-for-that'
 import { battery } from 'prop-for-that/plugins'
 register(battery)
-bind(document.documentElement, ['battery'])
+propsFor(document.documentElement, ['battery'])
 ```
 
 ```css
@@ -87,7 +87,6 @@ registerPlugins(fps, clock)   // or registerPlugins() for everything
 | `clock` | global | `--live-now`, `--live-hours`, `--live-minutes`, `--live-seconds` |
 | `fps` | global | `--live-fps` |
 | `visualViewport` | global | `--live-vvp-scale`, `--live-vvp-offset-top`, `--live-vvp-height` |
-| `elScroll` | element | `--live-scroll-top/left`, `--live-scroll-progress-y/x` |
 | `pointerLocal` | element | `--live-px`, `--live-py`, `--live-pointer-inside` |
 | `media` | element | `--live-current-time`, `--live-duration`, `--live-progress`, `--live-paused`, `--live-volume` |
 | `field` | element | `--live-length`, `--live-empty`, `--live-valid` |
@@ -97,17 +96,17 @@ registerPlugins(fps, clock)   // or registerPlugins() for everything
 
 `orientation`, `motion`, and `geo` are sensor/permission-gated: they
 feature-detect and no-op when unavailable, and may need a user-gesture
-permission grant (notably on iOS). The key string for `bind`/`global`/`data-prop`
-is the dashed form (e.g. `'scroll-velocity'`, `'el-scroll'`, `'pointer-local'`,
+permission grant (notably on iOS). The key string for `propsFor`/`data-prop`
+is the dashed form (e.g. `'scroll-velocity'`, `'pointer-local'`,
 `'visual-viewport'`).
 
 ## How it stays cheap
 
 One `requestAnimationFrame` flush per frame, write-on-change diffing, passive
 listeners, and a single shared `ResizeObserver` / `IntersectionObserver` for the
-whole page. Tree-shakeable — you only ship the sources you use.
+whole page. Tree-shakeable: you only ship the sources you use.
 
-See [`PLAN.md`](./PLAN.md) for the full design, source catalog, and roadmap.
+See [`llms.txt`](./llms.txt) for an agent-oriented reference.
 
 ## License
 

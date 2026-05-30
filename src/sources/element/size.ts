@@ -1,5 +1,6 @@
 import type { Source } from '../../core/types'
 import { observeResize } from '../../core/observers'
+import { round4 } from '../../core/num'
 
 /** `--live-w`, `--live-h`, `--live-aspect` (w/h) */
 export const size: Source = {
@@ -10,9 +11,9 @@ export const size: Source = {
       const box = entry.borderBoxSize?.[0]
       const w = box ? box.inlineSize : entry.contentRect.width
       const h = box ? box.blockSize : entry.contentRect.height
-      ctx.write('w', w)
-      ctx.write('h', h)
-      ctx.write('aspect', h > 0 ? Math.round((w / h) * 1e4) / 1e4 : 0)
+      ctx.write('w', round4(w))
+      ctx.write('h', round4(h))
+      ctx.write('aspect', h > 0 ? round4(w / h) : 0)
     })
   },
 }
