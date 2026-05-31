@@ -36,7 +36,7 @@ npm i prop-for-that
 ## API
 
 ```ts
-import { configure, register, unregister, propsFor, unbind, reset } from 'prop-for-that'
+import { configure, register, unregister, propsFor, unbind, reset, pause, resume } from 'prop-for-that'
 
 configure(opts: Partial<Config>): void   // call once, before any propsFor()
 register(source: Source): void           // add a custom/plugin source by key
@@ -45,13 +45,16 @@ propsFor(keys: string[]): Disposer       // global: attach sources to config.roo
 propsFor(target: Element | NodeList | Element[], keys: string[]): Disposer  // per element(s)
 unbind(target: HTMLElement, keys?: string[]): void    // detach some/all
 reset(): void                            // tear down every binding + shared observers/listeners
+pause(): void                            // freeze the loop (no sampling/flushing); idempotent
+resume(): void                           // unfreeze; flushes anything queued while paused
 
 // propsFor is global unless the first arg is a Node, NodeList, or array of elements.
 // Its disposer tears down only what that call started and removes the properties it wrote.
 
-interface Config { livePrefix: string; constPrefix: string; root: HTMLElement; typed: boolean; defaults?: Record<string, string|number> }
-// defaults: livePrefix '--live-', constPrefix '--const-', root document.documentElement, typed false
+interface Config { livePrefix: string; constPrefix: string; root: HTMLElement; typed: boolean; defaults?: Record<string, string|number>; liveHz?: number }
+// defaults: livePrefix '--live-', constPrefix '--const-', root document.documentElement, typed false, liveHz unset (every frame)
 // config.defaults are typed @property initial values, keyed by a source's local name
+// liveHz caps loop sampling+flushing rate (e.g. 30); fewer writes = less style recalc + calmer DevTools
 
 interface Source {
   key: SourceKey
@@ -89,7 +92,7 @@ prefix; constants use `--const-`. Values are unitless numbers unless noted.
 | `viewport` | global | `--live-vw`, `--live-vh` |
 | `pointer` | global | `--live-pointer-x`, `--live-pointer-y`, `--live-pointer-x-ratio` (0–1), `--live-pointer-y-ratio` (0–1) |
 | `size` | element | `--live-w`, `--live-h`, `--live-aspect` (w/h) |
-| `visibility` | element | `--live-visible` (1/0, in viewport), `--live-has-entered` (1/0, latches on first entry, never resets) |
+| `visibility` | element | `--live-visible` (1/0, any part in viewport), `--live-has-entered` (1/0, latches once entirely in viewport, never resets) |
 | `range` | element | `--live-value`, `--live-value-pct` (0–1). Bind the `<input>` or a container holding one. |
 
 ### Head constants (`prop-for-that/head`)
@@ -176,6 +179,8 @@ Discrete reaction with a style query:
 - **Configure prefixes before attaching.** `configure({ livePrefix, constPrefix })` must run before any `propsFor()`.
 - **Typed properties are opt-in.** `configure({ typed: true })` (before attaching) registers each written `--live-*` with `@property` so it interpolates (consumers add `transition`/`@keyframes`) and resolves to `0` before a value arrives. It is a one-way door (no unregister), uses `inherits: true`, is feature-detected, and skips names already registered. Sources can declare per-property `props: { name: { syntax, initial, inherits } }` (default `<number>` / `0` / inherited); consumers can set initials with `configure({ typed: true, defaults: { 'pointer-x-ratio': 0.5 } })` (keyed by local name).
 - **Permission-gated plugins** (`orientation`, `motion`, `geo`) and unsupported APIs feature-detect and no-op; registering them is always safe. On iOS some need a user-gesture permission grant before values arrive.
+- **Global writes land in an adopted stylesheet, not `<html>` inline style.** Root `--live-*` go into one constructable, adopted `:root {}` rule (element-scoped writes stay inline; the `head` entry still writes `--const-*` inline for first paint). Keeps the DevTools Styles panel usable under per-frame churn; `var()`/`calc()` consumption is identical (still inherits). Reading `documentElement.style` directly won't show them — read computed style. Falls back to inline where constructable stylesheets are unsupported.
+- **Freeze or throttle the loop.** `pause()` / `resume()` stop and restart sampling+flushing (values hold steady; bindings stay attached). `configure({ liveHz: 30 })` caps the rate to reduce mutations/recalc, throttling samplers (`fps`, `scroll-velocity`) too.
 
 ## Links
 

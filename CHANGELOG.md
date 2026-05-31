@@ -8,6 +8,45 @@ backwards-compatible change (semver's `1.0.0`+ rules kick in at v1).
 Only the published library (`dist/`) is versioned here; the demo and docs site
 are repo-only and not part of the npm package.
 
+## [0.4.0]
+
+### Changed (breaking)
+- **`visibility`'s `--live-has-entered` now latches only once the element is
+  *entirely* within the viewport**, not on first-pixel entry. The shared
+  `IntersectionObserver` gains `threshold: [0, 1]` so the source can distinguish
+  "any part visible" (`--live-visible`, unchanged) from "fully visible"
+  (`--live-has-entered`). An element larger than the viewport can never be
+  entirely visible, so its `has-entered` no longer latches.
+
+## [0.3.0]
+
+### Changed (breaking)
+- **Global `--live-*` writes go to an adopted stylesheet, not `<html>` inline
+  style.** Values written to the document root through the rAF writer now land in
+  a single constructable, adopted stylesheet rule (`:root {}`) instead of the
+  `<html>` element's inline `style`. This stops the per-frame churn from making
+  the DevTools Styles panel unusable and from flashing the Elements tree.
+  **Consumption is unchanged** — the rule targets `:root`, so `var()` / `calc()`
+  still inherit and resolve identically. What changes: reading
+  `document.documentElement.style.getPropertyValue('--live-*')` directly no longer
+  reflects these values (read computed style instead), and their cascade origin
+  moves from inline to an author rule (so author CSS / `!important` can now win).
+  Falls back to inline style where constructable stylesheets aren't supported
+  (older engines, SSR). **Element-scoped** writes are unchanged (still inline), and
+  the synchronous `head` entry still writes its `--const-*` constants inline by
+  design (first paint).
+
+### Added
+- **`pause()` / `resume()`**: freeze the shared frame loop (no sampling, no
+  flushing) so live values hold steady — handy for inspecting them in DevTools
+  without churn, or halting work in a backgrounded tab — then pick back up.
+  Bindings stay attached; both are idempotent.
+- **`configure({ liveHz })`**: optional cap (in Hz) on how often the loop samples
+  and flushes. Unset (default) runs every animation frame; e.g. `30` coalesces
+  writes to ≤30/sec for fewer style recalcs and a calmer DevTools panel, at the
+  cost of update smoothness. Throttles the whole loop, so per-frame samplers
+  (`fps`, `scroll-velocity`) measure at this rate too.
+
 ## [0.2.0]
 
 ### Changed (breaking)

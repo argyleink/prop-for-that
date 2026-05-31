@@ -11,12 +11,14 @@ The `range` source mirrors a slider into `--live-value` and `--live-value-pct`. 
 
 ## The wiring
 
-One call binds the container; the inner `<input>` is found automatically:
+One attribute on the wrapper binds it; the inner `<input>` is found automatically:
 
-```js
-import { propsFor } from 'prop-for-that'
+```html
+<script type="module">import 'prop-for-that/auto'</script>
 
-propsFor(document.querySelector('.range-demo'), ['range'])
+<div data-prop="range">
+  <input type="range" min="0" max="100">
+</div>
 ```
 
 Everything visible is CSS reading the value:

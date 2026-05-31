@@ -14,7 +14,8 @@
     "types": ["vite/client", "node"],
     "paths": {
       "prop-for-that": ["../src/index.ts"],
-      "prop-for-that/plugins": ["../src/plugins/index.ts"]
+      "prop-for-that/plugins": ["../src/plugins/index.ts"],
+      "prop-for-that/auto": ["../src/auto.ts"]
     }
   },
   "include": ["src", "vite.config.ts"]

@@ -33,11 +33,16 @@ export function observeIntersection(
   cb: (entry: IntersectionObserverEntry) => void,
 ): Disposer {
   if (!io) {
-    // Default threshold (0): fires on enter/exit — all the binary `visibility`
-    // source needs. (Continuous ratios are native `view()` territory.)
-    io = new IntersectionObserver((entries) => {
-      for (const entry of entries) ioCallbacks.get(entry.target)?.(entry)
-    })
+    // Thresholds [0, 1]: notify on first-pixel enter/exit (ratio crosses 0) and
+    // on full containment (ratio crosses 1), so `visibility` can flag "any part
+    // visible" and latch "entirely visible". (Continuous ratios in between are
+    // native `view()` territory.)
+    io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) ioCallbacks.get(entry.target)?.(entry)
+      },
+      { threshold: [0, 1] },
+    )
   }
   ioCallbacks.set(el, cb)
   io.observe(el)

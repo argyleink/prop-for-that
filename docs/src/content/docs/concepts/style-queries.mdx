@@ -39,8 +39,11 @@ propsFor(['online'])   // writes --live-online (1/0) to :root
 
 ## Example 2: an element milestone (slider at max)
 
-```js
-propsFor(document.getElementById('meter'), ['range'])  // --live-value on #meter
+```html
+<script type="module">import 'prop-for-that/auto'</script>
+
+<!-- auto binds it from the attribute; descendants of #meter inherit --live-value -->
+<div id="meter" data-prop="range">…</div>
 ```
 
 ```css

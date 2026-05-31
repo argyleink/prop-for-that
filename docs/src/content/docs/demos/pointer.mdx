@@ -4,6 +4,7 @@ description: A live demo of the pointer source, exposing the cursor's viewport p
 ---
 
 import PointerDemo from '../../../components/PointerDemo.astro';
+import PointerLocalDemo from '../../../components/PointerLocalDemo.astro';
 
 The `pointer` source writes the cursor's position to `:root`: `--live-pointer-x` / `-y` in pixels, and `--live-pointer-x-ratio` / `-y-ratio` as 0–1 fractions of the viewport. Move your pointer and watch the spotlight, the dot, and the readout follow, all in CSS.
 
@@ -11,12 +12,10 @@ The `pointer` source writes the cursor's position to `:root`: `--live-pointer-x`
 
 ## The wiring
 
-One global call, then CSS does the rest:
+`pointer` is one of auto's default global sources, so the import is the whole setup — then CSS does the rest:
 
-```js
-import { propsFor } from 'prop-for-that'
-
-propsFor(['pointer'])
+```html
+<script type="module">import 'prop-for-that/auto'</script>
 ```
 
 ```css
@@ -26,6 +25,40 @@ propsFor(['pointer'])
     calc(var(--live-pointer-x-ratio) * 100%)
     calc(var(--live-pointer-y-ratio) * 100%),
     var(--accent), transparent 70%
+  );
+}
+```
+
+## Scoped to an element
+
+The global source answers "where is the pointer in the _viewport_?" The
+`pointer-local` plugin answers "where is it _within this element_?" It writes
+`--live-px` / `--live-py` (0–1 across the bound element's box) and
+`--live-pointer-inside` (`1` while the pointer is over it) to that element only,
+so its descendants inherit them and nothing outside does.
+
+<PointerLocalDemo />
+
+It's a plugin, so register it once **before the DOM is scanned** (auto registers only the core sources); after that the element opts in with `data-prop`:
+
+```html
+<script type="module">
+  import 'prop-for-that/auto'
+  import { register } from 'prop-for-that'
+  import { pointerLocal } from 'prop-for-that/plugins'
+  register(pointerLocal)
+</script>
+
+<div data-prop="pointer-local">…</div>
+```
+
+```css
+.box {
+  /* spotlight tracks the pointer within the box, lit only while it's inside */
+  background: radial-gradient(
+    7rem 7rem at calc(var(--live-px) * 100%) calc(var(--live-py) * 100%),
+    color-mix(in oklab, var(--accent) calc(var(--live-pointer-inside) * 50%), transparent),
+    transparent 70%
   );
 }
 ```

@@ -11,11 +11,12 @@ Two dimension sources. `viewport` (global) writes `--live-vw` / `--live-vh` on r
 
 ## The wiring
 
-```js
-import { propsFor } from 'prop-for-that'
+`viewport` is on by default in auto mode; the element opts into `size` with a `data-prop` attribute — no JavaScript past the import:
 
-propsFor(['viewport'])
-propsFor(document.querySelector('.box'), ['size'])
+```html
+<script type="module">import 'prop-for-that/auto'</script>
+
+<div data-prop="size">…</div>
 ```
 
 ```css

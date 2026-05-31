@@ -1,4 +1,5 @@
 import { requestTick, setFlush } from './frame'
+import { styleFor } from './root-style'
 
 /**
  * Batched, diffed custom-property writer.
@@ -38,9 +39,10 @@ export class Writer {
     for (const [target, props] of this.pending) {
       let seen = this.last.get(target)
       if (!seen) this.last.set(target, (seen = new Map()))
+      const style = styleFor(target)
       for (const [prop, value] of props) {
         if (seen.get(prop) !== value) {
-          target.style.setProperty(prop, value)
+          style.setProperty(prop, value)
           seen.set(prop, value)
         }
       }

@@ -55,7 +55,17 @@ Register, then attach with `propsFor([...])`; they write to `:root`.
 
 ## Element plugins
 
-Register, then attach with `propsFor(el, [...])`; they write to the bound element.
+Register, then attach with `propsFor(el, [...])`; they write to the bound element. In [auto mode](/start/getting-started/#1-auto-zero-config) a registered element plugin also binds straight from a `data-prop` attribute — just register it before the DOM is scanned:
+
+```html
+<script type="module">
+  import 'prop-for-that/auto'
+  import { registerPlugins, field } from 'prop-for-that/plugins'
+  registerPlugins(field)   // register before auto scans the DOM
+</script>
+
+<input data-prop="field">
+```
 
 | Import | Key | Properties |
 | --- | --- | --- |

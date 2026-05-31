@@ -1,6 +1,6 @@
 ---
 // Visibility demo: three panels spaced down the page. Scroll, and each panel's
-// --live-visible flips 1/0 while --live-has-entered latches on first entry.
+// --live-visible flips 1/0 while --live-has-entered latches once entirely visible.
 ---
 <div class="vis-demo">
   <div class="pft-stage vis-demo__panel" data-pft-vis>
@@ -22,7 +22,7 @@
         <span class="vis-demo__seen">entered</span>
       </span>
     </header>
-    <p class="vis-demo__t"><code>--live-has-entered</code> latches on first entry and never resets.</p>
+    <p class="vis-demo__t"><code>--live-has-entered</code> latches once the element is entirely in view and never resets.</p>
   </div>
 
   <div class="pft-stage vis-demo__panel" data-pft-vis>

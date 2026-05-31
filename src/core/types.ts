@@ -24,6 +24,15 @@ export interface Config {
    * default. The value must be valid for the property's syntax.
    */
   defaults?: Record<string, string | number>
+  /**
+   * Optional cap (in Hz) on how often the shared frame loop samples and flushes.
+   * Unset (the default) runs every animation frame. Setting e.g. `30` coalesces
+   * writes to at most 30/sec — fewer custom-property mutations means less style
+   * recalc and a calmer DevTools Styles panel, at the cost of update smoothness.
+   * Throttles the whole loop (sampling included), so per-frame samplers like
+   * `fps`/`scroll-velocity` measure at this rate too.
+   */
+  liveHz?: number
 }
 
 /** Optional `@property` typing for a source's local name, used when `typed` is on. */

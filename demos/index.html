@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light dark" />
-    <title>prop-for-that — CSS reacts, JS just listens</title>
+    <title>prop-for-that: CSS reacts, JS just listens</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -22,62 +22,160 @@
     </aside>
 
     <header class="masthead">
-      <p class="eyebrow">prop&#8202;-&#8202;for&#8202;-&#8202;that</p>
-      <h1 class="display">
-        JavaScript<br />
-        does the<br />
-        <span class="display__accent">minimum</span>.
-      </h1>
-      <p class="masthead__sub">CSS does the reacting.</p>
-      <p class="lede">
-        Runtime state JS knows but CSS can&rsquo;t see (pointer, size,
-        visibility, slider values) written into batched
-        <code>--live-*</code> custom properties. Every effect below is plain
-        CSS &mdash; reading a <code>var()</code> or matching a
-        <code>@container style()</code> query. No JS reads values. No JS sets
-        styles in the animation path.
-      </p>
-      <p class="hint" role="note">
-        <span class="hint__dot" aria-hidden="true"></span>
-        press <kbd>T</kbd> to change theme &middot; the accent tracks your
-        pointer
-      </p>
+      <!-- Hero pointer backdrop: a faint grid + crosshair + glowing dot that
+           track the global pointer (--live-pointer-*-ratio). Scoped to the hero,
+           full-bleed, behind the masthead content. Pure CSS, ambient. -->
+      <div class="viewport-pad" aria-hidden="true">
+        <span class="viewport-pad__grid"></span>
+        <span class="viewport-pad__cross viewport-pad__cross--x"></span>
+        <span class="viewport-pad__cross viewport-pad__cross--y"></span>
+        <span class="viewport-pad__dot"></span>
+      </div>
+
+      <div class="masthead__intro">
+        <p class="eyebrow">prop&#8202;-&#8202;for&#8202;-&#8202;that</p>
+        <h1 class="display">
+          <span class="display__line">What&nbsp;JS knows,</span>
+          <span class="display__line">now&nbsp;CSS</span>
+          <span class="display__line"><span class="display__accent">knows.</span></span>
+        </h1>
+        <p class="masthead__sub">
+          Expose runtime state to CSS.
+          <em>Now there&rsquo;s a Prop For That.</em>
+        </p>
+        <p class="hint" role="note">
+          <span class="hint__dot" aria-hidden="true"></span>
+          every panel below is live &middot; move your pointer, resize, press
+          <kbd>T</kbd>
+        </p>
+      </div>
+
+      <!-- Live props board: every tile reads a real --live-* on :root and reacts
+           in pure CSS. Nothing here is JS-driven; it's a preview of the whole
+           page. Decorative (the demos below carry the accessible copy). -->
+      <div class="hero-stage" aria-hidden="true">
+        <article class="hchip hchip--clock">
+          <p class="hchip__k">clock</p>
+          <p class="hchip__v hero-clock"></p>
+        </article>
+
+        <article class="hchip hchip--fps">
+          <p class="hchip__k">fps</p>
+          <p class="hchip__v hero-fps"></p>
+          <span class="hchip__bar"><i></i></span>
+        </article>
+
+        <article class="hchip hchip--vp">
+          <p class="hchip__k">viewport</p>
+          <p class="hchip__v hero-vp"></p>
+        </article>
+
+        <article class="hchip hchip--vel">
+          <p class="hchip__k">scroll velocity</p>
+          <p class="hchip__v hero-vel"></p>
+          <span class="hchip__shear"><i></i><i></i><i></i></span>
+        </article>
+
+        <!-- Hue control: the ONLY thing that re-points the page hue. Scrub the
+             track and the line sticks to the pointer (set by JS while inside it);
+             leave the track and the hue holds. -->
+        <article class="hchip hchip--hue" id="hue-ctrl">
+          <span class="hue-duotone">
+            <svg viewBox="0 0 24 24">
+              <path
+                class="hue-duotone__bg"
+                d="M12 3c4 6 6.5 9 6.5 11.5a6.5 6.5 0 0 1-13 0C5.5 12 8 9 12 3Z"
+              />
+              <path
+                class="hue-duotone__fg"
+                d="M12 8.5c2.2 3.3 3.4 5 3.4 6.4a3.4 3.4 0 0 1-6.8 0c0-1.4 1.2-3.1 3.4-6.4Z"
+              />
+            </svg>
+          </span>
+          <span class="hue-chip__label">accent hue &middot; scrub me</span>
+          <span class="hero-hue"></span>
+          <span class="hue-track"><span class="hue-track__line"></span></span>
+        </article>
+      </div>
+
       <p class="scroll-hint" aria-hidden="true">scroll</p>
     </header>
 
     <main>
+      <!-- ──────────────────────── 0. AUTO ──────────────────────── -->
+      <section class="demo" id="auto">
+        <p class="watermark" aria-hidden="true">00</p>
+        <div class="demo-head">
+          <p class="index">00 / auto</p>
+          <h2>Zero config: just an attribute</h2>
+          <p class="desc">
+            <code>import 'prop-for-that/auto'</code> once, then tag any element
+            with <code>data-prop</code> &mdash; no <code>propsFor</code> call. The
+            box below is bound by its attribute alone; drag its corner and CSS
+            counts the size. Add or remove the attribute live and it keeps up.
+          </p>
+        </div>
+
+        <div class="demo-body">
+          <div class="stage stage--auto">
+            <div class="auto-box" data-prop="size">
+              <p class="auto-box__tag" aria-hidden="true">data-prop="size"</p>
+              <p class="auto-box__read">
+                <span class="auto-box__w"></span>&thinsp;&times;&thinsp;<span
+                  class="auto-box__h"
+                ></span>
+              </p>
+              <span class="auto-box__grip" aria-hidden="true"></span>
+            </div>
+          </div>
+
+          <figure class="caption">
+            <figcaption>The entire JS</figcaption>
+            <pre><code><span class="tok-key">import</span> <span class="tok-str">'prop-for-that/auto'</span></code></pre>
+            <figcaption>The markup (HTML): bind by attribute</figcaption>
+            <pre><code>&lt;<span class="tok-key">div</span> <span class="tok-prop">data-prop</span>=<span class="tok-str">"size"</span> <span class="tok-prop">style</span>=<span class="tok-str">"resize: both"</span>&gt;&lt;/<span class="tok-key">div</span>&gt;</code></pre>
+            <figcaption>The reaction (CSS)</figcaption>
+            <pre><code><span class="tok-sel">.box::after</span> {
+  <span class="tok-prop">counter-reset</span>: w <span class="tok-fn">calc</span>(<span class="tok-var">var(--live-w)</span>) h <span class="tok-fn">calc</span>(<span class="tok-var">var(--live-h)</span>);
+  <span class="tok-prop">content</span>: <span class="tok-fn">counter</span>(w) <span class="tok-str">' × '</span> <span class="tok-fn">counter</span>(h);
+}</code></pre>
+          </figure>
+        </div>
+      </section>
+
       <!-- ───────────────────────── 1. POINTER ───────────────────────── -->
       <section class="demo" id="pointer">
         <p class="watermark" aria-hidden="true">01</p>
         <div class="demo-head">
           <p class="index">01 / pointer</p>
-          <h2>Pointer-reactive card</h2>
+          <h2>A panel that tracks your pointer</h2>
           <p class="desc">
-            <code>pointer-local</code> is bound to the card&rsquo;s
-            <em>container</em>, so it writes <code>--live-px</code> /
-            <code>--live-py</code> (0&ndash;1 across the panel) and
-            <code>--live-pointer-inside</code>. The panel glow, the 3D tilt, and
-            the circular glare all read those same props &mdash; the whole panel
-            answers to your cursor and rests when you leave. Pure CSS reading
-            <code>--live-*</code>; one line of JS.
+            Bind <code>pointer-local</code> to the card and it gets its own
+            <code>--live-px</code>&thinsp;/&thinsp;<code>--live-py</code>
+            (0&ndash;1 across itself). The glow, the 3D tilt, the glare and a
+            masked texture all read them, then rest when you leave. (The
+            viewport-wide version is the backdrop behind this whole page.)
           </p>
         </div>
 
         <div class="demo-body">
-          <div class="stage stage--pointer">
+          <div class="stage stage--pointer" id="card">
             <article class="tilt-card">
+              <div class="tilt-card__texture" aria-hidden="true"></div>
               <div class="tilt-card__glare" aria-hidden="true"></div>
               <div class="tilt-card__content">
-                <p class="tilt-card__kicker">live</p>
+                <p class="tilt-card__kicker">local</p>
                 <p class="tilt-card__title">move&nbsp;your<br />pointer</p>
-                <p class="tilt-card__sub">the panel follows, in CSS</p>
+                <p class="tilt-card__sub">the panel follows, then rests</p>
               </div>
             </article>
           </div>
 
           <figure class="caption">
+            <figcaption>The markup (HTML)</figcaption>
+            <pre><code>&lt;<span class="tok-key">div</span> <span class="tok-prop">id</span>=<span class="tok-str">"card"</span>&gt;<span class="tok-com">&hellip;</span>&lt;/<span class="tok-key">div</span>&gt;</code></pre>
             <figcaption>The entire JS</figcaption>
-            <pre><code><span class="tok-key">bind</span>(stage, [<span class="tok-str">'pointer-local'</span>])</code></pre>
+            <pre><code><span class="tok-key">propsFor</span>(card, [<span class="tok-str">'pointer-local'</span>])</code></pre>
             <figcaption>The reaction (CSS)</figcaption>
             <pre><code><span class="tok-sel">.tilt-card</span> {
   <span class="tok-prop">--rx</span>: <span class="tok-fn">calc</span>((<span class="tok-num">.5</span> - <span class="tok-var">var(--live-py)</span>) * <span class="tok-num">16deg</span>);
@@ -95,13 +193,9 @@
           <p class="index">02 / scroll</p>
           <h2>Reveal once, then stay</h2>
           <p class="desc">
-            Triggered, not linked: no <code>animation-timeline</code> in sight.
-            Each panel reads two binary signals.
-            <code>--live-visible</code> flips 1&#8202;/&#8202;0 every time it
-            crosses the viewport; <code>--live-has-entered</code> latches the
-            first time it does and never lets go. So a panel develops in once
-            and stays put. Scroll back up: a <code>view()</code> timeline
-            reverses, this won&rsquo;t. One IntersectionObserver feeds all four.
+            Triggered, not linked. <code>--live-has-entered</code> latches once a
+            panel is fully in view, so each reveals once and stays. Scroll back up: a
+            <code>view()</code> timeline would reverse, this won&rsquo;t.
           </p>
         </div>
 
@@ -111,8 +205,8 @@
               <div class="reveal__node" aria-hidden="true">i</div>
               <div class="reveal__body">
                 <p class="reveal__t">
-                  One line wires each panel:
-                  <code>bind(el, ['visibility'])</code>.
+                  One call wires every panel:
+                  <code>propsFor(panels, ['visibility'])</code>.
                 </p>
                 <p class="reveal__state">
                   <span class="reveal__live">in view</span>
@@ -124,8 +218,8 @@
               <div class="reveal__node" aria-hidden="true">ii</div>
               <div class="reveal__body">
                 <p class="reveal__t">
-                  <code>--live-visible</code> tracks you live, flipping
-                  1&#8202;/&#8202;0 as this panel enters and leaves.
+                  <code>--live-visible</code> flips 1&#8202;/&#8202;0 as this
+                  panel enters and leaves.
                 </p>
                 <p class="reveal__state">
                   <span class="reveal__live">in view</span>
@@ -137,8 +231,8 @@
               <div class="reveal__node" aria-hidden="true">iii</div>
               <div class="reveal__body">
                 <p class="reveal__t">
-                  <code>--live-has-entered</code> latches on first sight and
-                  never resets.
+                  <code>--live-has-entered</code> latches once the panel is fully
+                  in view and never resets.
                 </p>
                 <p class="reveal__state">
                   <span class="reveal__live">in view</span>
@@ -163,9 +257,10 @@
 
           <figure class="caption">
             <figcaption>The entire JS</figcaption>
-            <pre><code><span class="tok-key">document</span>.<span class="tok-fn">querySelectorAll</span>(<span class="tok-str">'[data-reveal]'</span>)
-  .<span class="tok-fn">forEach</span>(el => <span class="tok-key">bind</span>(el, [<span class="tok-str">'visibility'</span>]))</code></pre>
-            <figcaption>The reaction (CSS) &mdash; reveal once, never reverse</figcaption>
+            <pre><code><span class="tok-key">propsFor</span>(
+  <span class="tok-fn">document</span>.<span class="tok-fn">querySelectorAll</span>(<span class="tok-str">'[data-reveal]'</span>),
+  [<span class="tok-str">'visibility'</span>])</code></pre>
+            <figcaption>The reaction (CSS): reveal once, never reverse</figcaption>
             <pre><code><span class="tok-sel">.reveal</span> {
   <span class="tok-prop">opacity</span>: <span class="tok-fn">calc</span>(<span class="tok-num">.25</span> + <span class="tok-var">var(--live-has-entered)</span> * <span class="tok-num">.75</span>);
   <span class="tok-prop">translate</span>: <span class="tok-num">0</span> <span class="tok-fn">calc</span>((<span class="tok-num">1</span> - <span class="tok-var">var(--live-has-entered)</span>) * <span class="tok-num">1.5rem</span>);
@@ -182,13 +277,9 @@
           <p class="index">03 / range</p>
           <h2>One value, many readers</h2>
           <p class="desc">
-            Bind the range source to the <em>container</em>. It finds the inner
-            <code>&lt;input&gt;</code> but writes <code>--live-value</code> and
-            <code>--live-value-pct</code> on the container &mdash; so the gauge
-            ring, the counted number, and the slider itself all read the same
-            value (custom properties inherit down). Drag or press
-            <kbd>&larr;</kbd> <kbd>&rarr;</kbd> &mdash; at either end a
-            <code>@container style()</code> query flips a discrete min / max
+            Bind one source to the container; the gauge ring, the number, and
+            the slider all read the same value. At either end, a
+            <code>@container style()</code> query flips a min&thinsp;/&thinsp;max
             state that <code>var()</code> can&rsquo;t express.
           </p>
         </div>
@@ -228,9 +319,13 @@
           </div>
 
           <figure class="caption">
+            <figcaption>The markup (HTML)</figcaption>
+            <pre><code>&lt;<span class="tok-key">div</span> <span class="tok-prop">id</span>=<span class="tok-str">"meter"</span>&gt;
+  &lt;<span class="tok-key">input</span> <span class="tok-prop">type</span>=<span class="tok-str">"range"</span> <span class="tok-prop">min</span>=<span class="tok-str">"0"</span> <span class="tok-prop">max</span>=<span class="tok-str">"100"</span> <span class="tok-prop">value</span>=<span class="tok-str">"42"</span>&gt;
+&lt;/<span class="tok-key">div</span>&gt;</code></pre>
             <figcaption>The entire JS</figcaption>
-            <pre><code><span class="tok-key">bind</span>(<span class="tok-fn">document</span>.<span class="tok-fn">getElementById</span>(<span class="tok-str">'meter'</span>), [<span class="tok-str">'range'</span>])</code></pre>
-            <figcaption>The reaction (CSS) &mdash; gauge + slider, one value</figcaption>
+            <pre><code><span class="tok-key">propsFor</span>(meter, [<span class="tok-str">'range'</span>])</code></pre>
+            <figcaption>The reaction (CSS): gauge + slider, one value</figcaption>
             <pre><code><span class="tok-sel">.gauge__num::after</span> {
   <span class="tok-prop">counter-reset</span>: v <span class="tok-fn">calc</span>(<span class="tok-var">var(--live-value)</span>);
   <span class="tok-prop">content</span>: <span class="tok-fn">counter</span>(v);
@@ -239,9 +334,9 @@
   <span class="tok-prop">background</span>: <span class="tok-fn">conic-gradient</span>(<span class="tok-key">var(--accent)</span>
     <span class="tok-fn">calc</span>(<span class="tok-var">var(--live-value-pct)</span> * <span class="tok-num">360deg</span>), <span class="tok-key">var(--line)</span> <span class="tok-num">0</span>);
 }</code></pre>
-            <figcaption>Discrete state &mdash; a style query, not <code>var()</code></figcaption>
+            <figcaption>Discrete state: a style query, not <code>var()</code></figcaption>
             <pre><code><span class="tok-key">@container</span> <span class="tok-fn">style</span>(<span class="tok-var">--live-value</span>: <span class="tok-num">100</span>) {
-  <span class="tok-sel">.gauge__num</span> { <span class="tok-prop">color</span>: <span class="tok-key">var(--accent)</span>; }
+  <span class="tok-sel">.gauge__num</span> { <span class="tok-prop">color</span>: <span class="tok-key">var(--max-tint)</span>; }
   <span class="tok-sel">.gauge__flag::after</span> { <span class="tok-prop">content</span>: <span class="tok-str">'max'</span>; }
 }</code></pre>
           </figure>
@@ -255,13 +350,10 @@
           <p class="index">04 / style query</p>
           <h2>Discrete state, whole rules</h2>
           <p class="desc">
-            <code>var()</code> can interpolate a number, but it can&rsquo;t turn
-            <code>3</code> into the word &ldquo;High&rdquo; or switch a rule
-            block on at one exact value. That&rsquo;s
-            <code>@container style()</code>. Step through five levels &mdash;
-            drag or press <kbd>&larr;</kbd> <kbd>&rarr;</kbd> &mdash; and each
-            integer flips a different block of CSS on: the label&rsquo;s text,
-            its colour, the lit stop. One bound value, zero JS branches.
+            <code>var()</code> interpolates a number; it can&rsquo;t turn
+            <code>3</code> into the word &ldquo;high&rdquo; or switch a rule on at
+            one exact value. <code>@container style()</code> can: each level
+            lights a different block of CSS, zero JS branches.
           </p>
         </div>
 
@@ -277,21 +369,25 @@
                   <span class="stepper__label">
                     level
                     <span class="stepper__keys" aria-hidden="true">
-                      <kbd>&larr;</kbd><kbd>&rarr;</kbd>
+                      <kbd>&uarr;</kbd><kbd>&darr;</kbd>
                     </span>
                   </span>
-                  <input
-                    id="level-range"
-                    class="steps"
-                    type="range"
-                    min="0"
-                    max="4"
-                    step="1"
-                    value="2"
-                    aria-label="Level, 0 (off) to 4 (max)"
-                  />
-                  <span class="stepper__scale" aria-hidden="true">
-                    <i>off</i><i>low</i><i>mid</i><i>high</i><i>max</i>
+                  <span class="stepper__track">
+                    <span class="steps-wrap">
+                      <input
+                        id="level-range"
+                        class="steps"
+                        type="range"
+                        min="0"
+                        max="4"
+                        step="1"
+                        value="2"
+                        aria-label="Level, 0 (off) to 4 (max)"
+                      />
+                    </span>
+                    <span class="stepper__scale" aria-hidden="true">
+                      <i>off</i><i>low</i><i>mid</i><i>high</i><i>max</i>
+                    </span>
                   </span>
                 </label>
               </div>
@@ -299,15 +395,508 @@
           </div>
 
           <figure class="caption">
+            <figcaption>The markup (HTML)</figcaption>
+            <pre><code>&lt;<span class="tok-key">div</span> <span class="tok-prop">id</span>=<span class="tok-str">"level"</span>&gt;
+  &lt;<span class="tok-key">input</span> <span class="tok-prop">type</span>=<span class="tok-str">"range"</span> <span class="tok-prop">min</span>=<span class="tok-str">"0"</span> <span class="tok-prop">max</span>=<span class="tok-str">"4"</span> <span class="tok-prop">step</span>=<span class="tok-str">"1"</span> <span class="tok-prop">value</span>=<span class="tok-str">"2"</span>&gt;
+&lt;/<span class="tok-key">div</span>&gt;</code></pre>
             <figcaption>The entire JS</figcaption>
-            <pre><code><span class="tok-key">bind</span>(<span class="tok-fn">document</span>.<span class="tok-fn">getElementById</span>(<span class="tok-str">'level'</span>), [<span class="tok-str">'range'</span>])</code></pre>
-            <figcaption>The reaction (CSS) &mdash; a value becomes a word</figcaption>
+            <pre><code><span class="tok-key">propsFor</span>(level, [<span class="tok-str">'range'</span>])</code></pre>
+            <figcaption>The reaction (CSS): a value becomes a word</figcaption>
             <pre><code><span class="tok-key">@container</span> <span class="tok-fn">style</span>(<span class="tok-var">--live-value</span>: <span class="tok-num">0</span>) {
   <span class="tok-sel">.level__word::after</span> { <span class="tok-prop">content</span>: <span class="tok-str">'Off'</span>; }
 }
 <span class="tok-key">@container</span> <span class="tok-fn">style</span>(<span class="tok-var">--live-value</span>: <span class="tok-num">4</span>) {
   <span class="tok-sel">.level__word::after</span> { <span class="tok-prop">content</span>: <span class="tok-str">'Max'</span>; }
   <span class="tok-sel">.level__core</span> { <span class="tok-prop">--tier-h</span>: <span class="tok-num">25</span>; }
+}</code></pre>
+          </figure>
+        </div>
+      </section>
+
+      <!-- ──────────────────────── 5. FIELD ──────────────────────── -->
+      <section class="demo" id="field">
+        <p class="watermark" aria-hidden="true">05</p>
+        <div class="demo-head">
+          <p class="index">05 / field</p>
+          <h2>Length, live as you type</h2>
+          <p class="desc">
+            The limits stay in HTML (<code>minlength</code>,
+            <code>maxlength</code>); CSS reads the live length against them to
+            fill the meter, count up, and name the state. No keystroke handler.
+          </p>
+        </div>
+
+        <div class="demo-body">
+          <div class="stage stage--field">
+            <div class="field" id="note" style="--min: 12; --max: 120">
+              <label class="field__label" for="note-input">
+                short bio
+                <span class="field__req">min&nbsp;12 &middot; max&nbsp;120</span>
+              </label>
+              <textarea
+                id="note-input"
+                class="field__input"
+                minlength="12"
+                maxlength="120"
+                rows="3"
+                placeholder="Type a few words about yourself&hellip;"
+                aria-describedby="note-status"
+              ></textarea>
+              <div class="field__meter" aria-hidden="true"><i></i></div>
+              <p class="field__status" id="note-status">
+                <span class="field__count"></span>
+                <span class="field__word"></span>
+              </p>
+            </div>
+          </div>
+
+          <figure class="caption">
+            <figcaption>The markup (HTML)</figcaption>
+            <pre><code>&lt;<span class="tok-key">div</span> <span class="tok-prop">id</span>=<span class="tok-str">"note"</span> <span class="tok-prop">class</span>=<span class="tok-str">"field"</span> <span class="tok-prop">style</span>=<span class="tok-str">"--min: 12; --max: 120"</span>&gt;
+  &lt;<span class="tok-key">textarea</span> <span class="tok-prop">minlength</span>=<span class="tok-str">"12"</span> <span class="tok-prop">maxlength</span>=<span class="tok-str">"120"</span>&gt;&lt;/<span class="tok-key">textarea</span>&gt;
+&lt;/<span class="tok-key">div</span>&gt;</code></pre>
+            <figcaption>The entire JS</figcaption>
+            <pre><code><span class="tok-key">propsFor</span>(note, [<span class="tok-str">'field'</span>])</code></pre>
+            <figcaption>The reaction (CSS)</figcaption>
+            <pre><code><span class="tok-sel">.field__meter i</span> {
+  <span class="tok-prop">inline-size</span>: <span class="tok-fn">calc</span>(<span class="tok-var">var(--live-length)</span> / <span class="tok-var">var(--max)</span> * <span class="tok-num">100%</span>);
+}
+<span class="tok-key">@container</span> <span class="tok-fn">style</span>(<span class="tok-var">--live-length</span>: <span class="tok-num">120</span>) {
+  <span class="tok-sel">.field__word::after</span> { <span class="tok-prop">content</span>: <span class="tok-str">'max reached'</span>; }
+}</code></pre>
+          </figure>
+        </div>
+      </section>
+
+      <!-- ──────────────────────── 6. CSS TRIG (EYES) ──────────────────────── -->
+      <section class="demo" id="trig">
+        <p class="watermark" aria-hidden="true">06</p>
+        <div class="demo-head">
+          <p class="index">06 / trig</p>
+          <h2>Yes, CSS can do trigonometry</h2>
+          <p class="desc">
+            Each pupil finds the cursor with <code>atan2()</code>, then rides
+            there on <code>cos()</code> and <code>sin()</code>. The trigonometry
+            is all in the stylesheet; JS never computes an angle.
+          </p>
+        </div>
+
+        <div class="demo-body">
+          <div class="stage stage--trig">
+            <div class="eyes">
+              <div class="eye"><span class="eye__pupil"></span></div>
+              <div class="eye"><span class="eye__pupil"></span></div>
+              <div class="eye"><span class="eye__pupil"></span></div>
+            </div>
+          </div>
+
+          <figure class="caption">
+            <figcaption>The entire JS</figcaption>
+            <pre><code><span class="tok-key">propsFor</span>(
+  <span class="tok-fn">document</span>.<span class="tok-fn">querySelectorAll</span>(<span class="tok-str">'.eye'</span>),
+  [<span class="tok-str">'pointer-local'</span>])</code></pre>
+            <figcaption>The reaction (CSS): angle, then place on it</figcaption>
+            <pre><code><span class="tok-sel">.eye</span> {
+  <span class="tok-prop">--a</span>: <span class="tok-fn">atan2</span>(
+    <span class="tok-fn">calc</span>(<span class="tok-var">var(--live-py)</span> - <span class="tok-num">.5</span>),
+    <span class="tok-fn">calc</span>(<span class="tok-var">var(--live-px)</span> - <span class="tok-num">.5</span>));
+}
+<span class="tok-sel">.eye__pupil</span> {
+  <span class="tok-prop">translate</span>:
+    <span class="tok-fn">calc</span>(<span class="tok-fn">cos</span>(<span class="tok-var">var(--a)</span>) * <span class="tok-num">1.1rem</span>)
+    <span class="tok-fn">calc</span>(<span class="tok-fn">sin</span>(<span class="tok-var">var(--a)</span>) * <span class="tok-num">1.1rem</span>);
+}</code></pre>
+          </figure>
+        </div>
+      </section>
+
+      <!-- ──────────────────────── 7. CLOCK ──────────────────────── -->
+      <section class="demo" id="clock">
+        <p class="watermark" aria-hidden="true">07</p>
+        <div class="demo-head">
+          <p class="index">07 / clock</p>
+          <h2>A clock, ticking in pure CSS</h2>
+          <p class="desc">
+            The clock source ticks <code>--live-seconds</code> once a second; the
+            hands rotate by <code>calc()</code> and the readout is a CSS counter.
+            The only JavaScript is one <code>setInterval</code>.
+          </p>
+        </div>
+
+        <div class="demo-body">
+          <div class="stage stage--clock">
+            <div class="clock" aria-hidden="true">
+              <div class="clock__face" id="clock-face">
+                <span class="clock__hand clock__hand--hour"></span>
+                <span class="clock__hand clock__hand--min"></span>
+                <span class="clock__hand clock__hand--sec"></span>
+                <span class="clock__cap"></span>
+              </div>
+              <p class="clock__digital"></p>
+            </div>
+          </div>
+
+          <figure class="caption">
+            <figcaption>The entire JS</figcaption>
+            <pre><code><span class="tok-key">propsFor</span>([<span class="tok-str">'clock'</span>])</code></pre>
+            <figcaption>The reaction (CSS)</figcaption>
+            <pre><code><span class="tok-sel">.clock__hand--sec</span> {
+  <span class="tok-prop">rotate</span>: <span class="tok-fn">calc</span>(<span class="tok-var">var(--live-seconds)</span> * <span class="tok-num">6deg</span>);
+}
+<span class="tok-sel">.clock__hand--hour</span> {
+  <span class="tok-prop">rotate</span>: <span class="tok-fn">calc</span>(<span class="tok-var">var(--live-hours)</span> * <span class="tok-num">30deg</span>
+    + <span class="tok-var">var(--live-minutes)</span> * <span class="tok-num">.5deg</span>);
+}</code></pre>
+          </figure>
+        </div>
+      </section>
+
+      <!-- ──────────────────────── 8. DEVICE & CONNECTION ──────────────────────── -->
+      <section class="demo" id="device">
+        <p class="watermark" aria-hidden="true">08</p>
+        <div class="demo-head">
+          <p class="index">08 / globals</p>
+          <h2>Ambient device state</h2>
+          <p class="desc">
+            The quiet globals: online, link speed, battery, frame rate. Each
+            writes on <code>:root</code> for CSS to read. Toggle offline in
+            DevTools to watch it flip. (Battery and Network are Chromium-only.)
+          </p>
+        </div>
+
+        <div class="demo-body">
+          <div class="stage stage--device">
+            <div class="tiles">
+              <article class="tile tile--online">
+                <p class="tile__k">connection</p>
+                <p class="tile__big">
+                  <span class="tile__dot"></span><span class="tile__online"></span>
+                </p>
+                <p class="tile__sub"><code>navigator.onLine</code></p>
+              </article>
+
+              <article class="tile tile--net">
+                <p class="tile__k">effective type</p>
+                <p class="tile__big tile__net"></p>
+                <p class="tile__sub tile__net-detail">
+                  <span class="tile__downlink"></span>&nbsp;Mbps &middot;
+                  <span class="tile__rtt"></span>&nbsp;ms&nbsp;rtt
+                </p>
+                <p class="tile__na">Chromium only</p>
+              </article>
+
+              <article class="tile tile--battery">
+                <p class="tile__k">battery <span class="tile__bolt">&#9889;</span></p>
+                <p class="tile__big tile__batt"></p>
+                <div class="tile__gauge"><i></i></div>
+                <p class="tile__na">Chromium only</p>
+              </article>
+
+              <article class="tile tile--fps">
+                <p class="tile__k">frame rate</p>
+                <p class="tile__big tile__fps"></p>
+                <div class="tile__gauge tile__gauge--fps"><i></i></div>
+              </article>
+            </div>
+          </div>
+
+          <figure class="caption">
+            <figcaption>The entire JS</figcaption>
+            <pre><code><span class="tok-key">propsFor</span>([<span class="tok-str">'online'</span>, <span class="tok-str">'network'</span>, <span class="tok-str">'battery'</span>, <span class="tok-str">'fps'</span>])</code></pre>
+            <figcaption>The reaction (CSS)</figcaption>
+            <pre><code><span class="tok-key">@container</span> <span class="tok-fn">style</span>(<span class="tok-var">--live-online</span>: <span class="tok-num">0</span>) {
+  <span class="tok-sel">.tile--online</span> { <span class="tok-prop">color</span>: <span class="tok-key">var(--limit)</span>; }
+  <span class="tok-sel">.tile__online::after</span> { <span class="tok-prop">content</span>: <span class="tok-str">'offline'</span>; }
+}
+<span class="tok-sel">.tile__gauge i</span> {
+  <span class="tok-prop">inline-size</span>: <span class="tok-fn">calc</span>(<span class="tok-var">var(--live-battery-level)</span> * <span class="tok-num">100%</span>);
+}</code></pre>
+          </figure>
+        </div>
+      </section>
+
+      <!-- ──────────────────────── 9. SCROLL MOMENTUM ──────────────────────── -->
+      <section class="demo" id="momentum">
+        <p class="watermark" aria-hidden="true">09</p>
+        <div class="demo-head">
+          <p class="index">09 / velocity</p>
+          <h2>Scrolling with momentum</h2>
+          <p class="desc">
+            <code>--live-scroll-velocity</code> is signed, and eases back to zero
+            when you stop. Flick the page: the bars shear and slide with your
+            speed, then settle.
+          </p>
+        </div>
+
+        <div class="demo-body">
+          <div class="stage stage--momentum">
+            <div class="momentum" aria-hidden="true">
+              <div class="momentum__stack">
+                <span style="--m: 0.4"></span>
+                <span style="--m: 0.7"></span>
+                <span style="--m: 1"></span>
+                <span style="--m: 1.3"></span>
+                <span style="--m: 1.6"></span>
+              </div>
+              <p class="momentum__read">
+                <span class="momentum__dir"></span>
+                <span class="momentum__v"></span>&nbsp;px/frame
+              </p>
+            </div>
+          </div>
+
+          <figure class="caption">
+            <figcaption>The entire JS</figcaption>
+            <pre><code><span class="tok-key">propsFor</span>([<span class="tok-str">'scroll-velocity'</span>])</code></pre>
+            <figcaption>The reaction (CSS)</figcaption>
+            <pre><code><span class="tok-sel">.momentum__stack span</span> {
+  <span class="tok-prop">transform</span>:
+    <span class="tok-fn">translateX</span>(<span class="tok-fn">calc</span>(<span class="tok-var">var(--live-scroll-velocity)</span> * <span class="tok-var">var(--m)</span> * <span class="tok-num">1px</span>))
+    <span class="tok-fn">skewX</span>(<span class="tok-fn">calc</span>(<span class="tok-var">var(--live-scroll-velocity)</span> * <span class="tok-num">-.4deg</span>));
+}</code></pre>
+          </figure>
+        </div>
+      </section>
+
+      <!-- ──────────────────────── 10. SIZE ──────────────────────── -->
+      <section class="demo" id="size">
+        <p class="watermark" aria-hidden="true">10</p>
+        <div class="demo-head">
+          <p class="index">10 / size</p>
+          <h2>A card that knows its own shape</h2>
+          <p class="desc">
+            Drag the corner: a ResizeObserver feeds <code>--live-aspect</code>,
+            and a branch-free <code>calc()</code> flips the badge from portrait to
+            landscape at aspect&nbsp;1. No media query.
+          </p>
+        </div>
+
+        <div class="demo-body">
+          <div class="stage stage--size">
+            <div class="sizer" id="sizer">
+              <p class="sizer__badge" aria-hidden="true">
+                <span class="sizer__por">portrait</span>
+                <span class="sizer__land">landscape</span>
+              </p>
+              <p class="sizer__read">
+                <span class="sizer__w"></span>&thinsp;&times;&thinsp;<span class="sizer__h"></span>
+                <span class="sizer__aspect"></span>
+              </p>
+              <span class="sizer__grip" aria-hidden="true"></span>
+            </div>
+          </div>
+
+          <figure class="caption">
+            <figcaption>The markup (HTML)</figcaption>
+            <pre><code>&lt;<span class="tok-key">div</span> <span class="tok-prop">id</span>=<span class="tok-str">"sizer"</span> <span class="tok-prop">style</span>=<span class="tok-str">"resize: both; overflow: auto"</span>&gt;&lt;/<span class="tok-key">div</span>&gt;</code></pre>
+            <figcaption>The entire JS</figcaption>
+            <pre><code><span class="tok-key">propsFor</span>(sizer, [<span class="tok-str">'size'</span>])</code></pre>
+            <figcaption>The reaction (CSS): a branch from <code>calc()</code></figcaption>
+            <pre><code><span class="tok-sel">.sizer</span> {
+  <span class="tok-prop">--landscape</span>: <span class="tok-fn">clamp</span>(<span class="tok-num">0</span>, <span class="tok-fn">calc</span>((<span class="tok-var">var(--live-aspect)</span> - <span class="tok-num">1</span>) * <span class="tok-num">100</span>), <span class="tok-num">1</span>);
+}
+<span class="tok-sel">.sizer__land</span> { <span class="tok-prop">opacity</span>: <span class="tok-var">var(--landscape)</span>; }
+<span class="tok-sel">.sizer__por</span> { <span class="tok-prop">opacity</span>: <span class="tok-fn">calc</span>(<span class="tok-num">1</span> - <span class="tok-var">var(--landscape)</span>); }</code></pre>
+          </figure>
+        </div>
+      </section>
+
+      <!-- ──────────────────────── 11. ORBIT (TRIG) ──────────────────────── -->
+      <section class="demo" id="orbit">
+        <p class="watermark" aria-hidden="true">11</p>
+        <div class="demo-head">
+          <p class="index">11 / orbit</p>
+          <h2>Orbits, placed by sine and cosine</h2>
+          <p class="desc">
+            <code>--live-seconds</code> becomes an angle; <code>cos()</code> and
+            <code>sin()</code> drop each dot onto its ring. Three rings, opposite
+            spins, one sweep a minute.
+          </p>
+        </div>
+
+        <div class="demo-body">
+          <div class="stage stage--orbit">
+            <div class="orbit" aria-hidden="true">
+              <span class="orbit__core"></span>
+              <div class="orbit__ring" style="--r: calc(var(--size) * 0.17); --n: 4; --dir: 1; --spd: 1.6; --dot: 0.95rem; --tint: 85%">
+                <span class="orbit__dot" style="--i: 0"></span>
+                <span class="orbit__dot" style="--i: 1"></span>
+                <span class="orbit__dot" style="--i: 2"></span>
+                <span class="orbit__dot" style="--i: 3"></span>
+              </div>
+              <div class="orbit__ring" style="--r: calc(var(--size) * 0.30); --n: 8; --dir: -1; --spd: 1; --dot: 0.8rem; --tint: 64%">
+                <span class="orbit__dot" style="--i: 0"></span>
+                <span class="orbit__dot" style="--i: 1"></span>
+                <span class="orbit__dot" style="--i: 2"></span>
+                <span class="orbit__dot" style="--i: 3"></span>
+                <span class="orbit__dot" style="--i: 4"></span>
+                <span class="orbit__dot" style="--i: 5"></span>
+                <span class="orbit__dot" style="--i: 6"></span>
+                <span class="orbit__dot" style="--i: 7"></span>
+              </div>
+              <div class="orbit__ring" style="--r: calc(var(--size) * 0.43); --n: 12; --dir: 1; --spd: 0.6; --dot: 0.6rem; --tint: 46%">
+                <span class="orbit__dot" style="--i: 0"></span>
+                <span class="orbit__dot" style="--i: 1"></span>
+                <span class="orbit__dot" style="--i: 2"></span>
+                <span class="orbit__dot" style="--i: 3"></span>
+                <span class="orbit__dot" style="--i: 4"></span>
+                <span class="orbit__dot" style="--i: 5"></span>
+                <span class="orbit__dot" style="--i: 6"></span>
+                <span class="orbit__dot" style="--i: 7"></span>
+                <span class="orbit__dot" style="--i: 8"></span>
+                <span class="orbit__dot" style="--i: 9"></span>
+                <span class="orbit__dot" style="--i: 10"></span>
+                <span class="orbit__dot" style="--i: 11"></span>
+              </div>
+            </div>
+          </div>
+
+          <figure class="caption">
+            <figcaption>The entire JS</figcaption>
+            <pre><code><span class="tok-key">propsFor</span>([<span class="tok-str">'clock'</span>])</code></pre>
+            <figcaption>The reaction (CSS): one dot, any ring</figcaption>
+            <pre><code><span class="tok-sel">.orbit__dot</span> {
+  <span class="tok-prop">--a</span>: <span class="tok-fn">calc</span>(<span class="tok-var">var(--live-seconds)</span> * <span class="tok-num">6deg</span> * <span class="tok-var">var(--spd)</span> * <span class="tok-var">var(--dir)</span>
+    + <span class="tok-var">var(--i)</span> / <span class="tok-var">var(--n)</span> * <span class="tok-num">360deg</span>);
+  <span class="tok-prop">translate</span>:
+    <span class="tok-fn">calc</span>(<span class="tok-fn">cos</span>(<span class="tok-var">var(--a)</span>) * <span class="tok-var">var(--r)</span>)
+    <span class="tok-fn">calc</span>(<span class="tok-fn">sin</span>(<span class="tok-var">var(--a)</span>) * <span class="tok-var">var(--r)</span>);
+}</code></pre>
+          </figure>
+        </div>
+      </section>
+
+      <!-- ──────────────────────── 12. MEDIA ──────────────────────── -->
+      <section class="demo" id="media">
+        <p class="watermark" aria-hidden="true">12</p>
+        <div class="demo-head">
+          <p class="index">12 / media</p>
+          <h2>A progress ring, straight from playback</h2>
+          <p class="desc">
+            A <code>conic-gradient</code> ring fills from
+            <code>--live-progress</code> as the clip plays. Typed as an
+            <code>@property</code>, the value interpolates, so the ring sweeps
+            smoothly between updates.
+          </p>
+        </div>
+
+        <div class="demo-body">
+          <div class="stage stage--media">
+            <div class="player" id="player">
+              <div class="player__ring">
+                <video
+                  class="player__video"
+                  src="https://mdn.github.io/shared-assets/videos/flower.mp4"
+                  muted
+                  loop
+                  autoplay
+                  playsinline
+                  aria-label="Looping sample video"
+                ></video>
+              </div>
+              <p class="player__time">
+                <span class="player__cur"></span>&thinsp;/&thinsp;<span class="player__dur"></span>
+              </p>
+            </div>
+          </div>
+
+          <figure class="caption">
+            <figcaption>The markup (HTML)</figcaption>
+            <pre><code>&lt;<span class="tok-key">div</span> <span class="tok-prop">id</span>=<span class="tok-str">"player"</span>&gt;
+  &lt;<span class="tok-key">video</span> <span class="tok-prop">src</span>=<span class="tok-str">"clip.mp4"</span> <span class="tok-prop">muted</span> <span class="tok-prop">loop</span> <span class="tok-prop">autoplay</span>&gt;&lt;/<span class="tok-key">video</span>&gt;
+&lt;/<span class="tok-key">div</span>&gt;</code></pre>
+            <figcaption>The entire JS</figcaption>
+            <pre><code><span class="tok-key">propsFor</span>(player, [<span class="tok-str">'media'</span>])</code></pre>
+            <figcaption>The setup: typed props become interpolatable</figcaption>
+            <pre><code><span class="tok-key">configure</span>({ <span class="tok-prop">typed</span>: <span class="tok-key">true</span> }) <span class="tok-com">// register --live-* as @property</span></code></pre>
+            <figcaption>The reaction (CSS): transition the live value itself</figcaption>
+            <pre><code><span class="tok-sel">.player</span> { <span class="tok-prop">transition</span>: <span class="tok-var">--live-progress</span> <span class="tok-num">.25s</span> <span class="tok-key">linear</span>; }
+
+<span class="tok-sel">.player__ring</span> {
+  <span class="tok-prop">background</span>: <span class="tok-fn">conic-gradient</span>(<span class="tok-key">var(--accent)</span>
+    <span class="tok-fn">calc</span>(<span class="tok-var">var(--live-progress)</span> * <span class="tok-num">360deg</span>), <span class="tok-key">var(--line)</span> <span class="tok-num">0</span>);
+}</code></pre>
+          </figure>
+        </div>
+      </section>
+
+      <!-- ──────────────────────── 13. AMBIENT ──────────────────────── -->
+      <section class="demo" id="ambient">
+        <p class="watermark" aria-hidden="true">13</p>
+        <div class="demo-head">
+          <p class="index">13 / ambient</p>
+          <h2>UI that saves your battery</h2>
+          <p class="desc">
+            Below 20% battery, a <code>@container style()</code> strips the
+            animation and heavy paint to save power. Flip the switch to simulate
+            it. (Battery Status is Chromium-only.)
+          </p>
+        </div>
+
+        <div class="demo-body">
+          <div class="stage stage--ambient">
+            <div class="ambient" id="ambient-demo">
+              <label class="ambient__switch">
+                <input type="checkbox" class="ambient__sim" />
+                <span>simulate low battery</span>
+              </label>
+              <div class="ambient__card">
+                <p class="ambient__title">now playing</p>
+                <p class="ambient__state"></p>
+              </div>
+            </div>
+          </div>
+
+          <figure class="caption">
+            <figcaption>The reaction (CSS): a branch from the level</figcaption>
+            <pre><code><span class="tok-sel">.ambient</span> {
+  <span class="tok-prop">--low</span>: <span class="tok-fn">clamp</span>(<span class="tok-num">0</span>, <span class="tok-fn">round</span>(<span class="tok-key">up</span>, <span class="tok-fn">calc</span>(<span class="tok-num">.2</span> - <span class="tok-var">var(--live-battery-level, 1)</span>), <span class="tok-num">1</span>), <span class="tok-num">1</span>);
+}
+<span class="tok-key">@container</span> <span class="tok-fn">style</span>(<span class="tok-var">--low</span>: <span class="tok-num">1</span>) {
+  <span class="tok-sel">.ambient__card</span> { <span class="tok-prop">animation</span>: <span class="tok-key">none</span>; }
+  <span class="tok-sel">.ambient__state::after</span> { <span class="tok-prop">content</span>: <span class="tok-str">'low battery'</span>; }
+}</code></pre>
+          </figure>
+        </div>
+      </section>
+
+      <!-- ──────────────────────── 14. DRAG ──────────────────────── -->
+      <section class="demo" id="drag">
+        <p class="watermark" aria-hidden="true">14</p>
+        <div class="demo-head">
+          <p class="index">14 / drag</p>
+          <h2>Drag, with no drag handler</h2>
+          <p class="desc">
+            <code>:active</code> is the interaction gate; while you hold a token
+            its <code>translate</code> is computed straight from
+            <code>--live-px</code>&thinsp;/&thinsp;<code>--live-py</code> and the
+            board&rsquo;s size. Let go and it springs home &mdash; JS never does
+            a drag calculation.
+          </p>
+        </div>
+
+        <div class="demo-body">
+          <div class="stage stage--drag">
+            <div class="dragboard" id="dragboard">
+              <span class="drag-token" style="--hx: 0.22; --hy: 0.28">drag&nbsp;me</span>
+              <span class="drag-token" style="--hx: 0.72; --hy: 0.32">&amp;&nbsp;me</span>
+              <span class="drag-token" style="--hx: 0.4; --hy: 0.72">me&nbsp;too</span>
+            </div>
+          </div>
+
+          <figure class="caption">
+            <figcaption>The markup (HTML)</figcaption>
+            <pre><code>&lt;<span class="tok-key">div</span> <span class="tok-prop">id</span>=<span class="tok-str">"dragboard"</span>&gt;
+  &lt;<span class="tok-key">span</span> <span class="tok-prop">class</span>=<span class="tok-str">"drag-token"</span>&gt;<span class="tok-com">&hellip;</span>&lt;/<span class="tok-key">span</span>&gt;
+&lt;/<span class="tok-key">div</span>&gt;</code></pre>
+            <figcaption>The entire JS</figcaption>
+            <pre><code><span class="tok-key">propsFor</span>(dragboard, [<span class="tok-str">'pointer-local'</span>, <span class="tok-str">'size'</span>])</code></pre>
+            <figcaption>The reaction (CSS): <code>:active</code> gates, pointer drives</figcaption>
+            <pre><code><span class="tok-sel">.drag-token:active</span> {
+  <span class="tok-prop">translate</span>:
+    <span class="tok-fn">calc</span>((<span class="tok-var">var(--live-px)</span> - <span class="tok-var">var(--hx)</span>) * <span class="tok-var">var(--live-w)</span> * <span class="tok-num">1px</span>)
+    <span class="tok-fn">calc</span>((<span class="tok-var">var(--live-py)</span> - <span class="tok-var">var(--hy)</span>) * <span class="tok-var">var(--live-h)</span> * <span class="tok-num">1px</span>);
+  <span class="tok-prop">transition</span>: <span class="tok-key">none</span>; <span class="tok-com">/* follow while held */</span>
 }</code></pre>
           </figure>
         </div>
@@ -320,18 +909,22 @@
           <p class="index">live / :root</p>
           <h2>Everything, live</h2>
           <p class="desc">
-            Every <code>--live-*</code> the page broadcasts on
-            <code>:root</code>, read straight into this panel. The numbers are
-            CSS counters seeded from the values; the bars are
-            <code>calc()</code> widths &mdash; no JS reads anything here, same
-            as the corner readout.
+            Every <code>--live-*</code> on <code>:root</code>, read straight into
+            this panel. Numbers are CSS counters; bars are <code>calc()</code>
+            widths. Still no JS reading values.
           </p>
         </div>
 
         <div class="telemetry__grid">
-          <figure class="xy" aria-hidden="true">
-            <span class="xy__dot"></span>
-            <figcaption>pointer&nbsp;&middot;&nbsp;:root</figcaption>
+          <!-- a radial vitals gauge: the ring fills with the live frame rate,
+               a satellite orbits at the clock's seconds angle. Two sources, no
+               pointer — the ambient state CSS reads straight off :root. -->
+          <figure class="vitals" aria-hidden="true">
+            <span class="vitals__ring"></span>
+            <span class="vitals__orbit"><span class="vitals__sat"></span></span>
+            <p class="vitals__num"></p>
+            <p class="vitals__k">frames / sec</p>
+            <figcaption>fps&nbsp;&middot;&nbsp;clock</figcaption>
           </figure>
 
           <dl class="readout">
@@ -353,18 +946,210 @@
             <div class="readout__row" style="--n: var(--live-vh, 0); --bar: calc(var(--live-vh, 0) / 1400)">
               <dt>viewport.h</dt><dd class="num"></dd><span class="bar"><i></i></span>
             </div>
+            <div class="readout__row" style="--n: var(--live-fps, 0); --bar: calc(var(--live-fps, 0) / 120)">
+              <dt>fps</dt><dd class="num"></dd><span class="bar"><i></i></span>
+            </div>
+            <div class="readout__row" style="--n: var(--live-online, 0); --bar: var(--live-online, 0)">
+              <dt>online</dt><dd class="num"></dd><span class="bar"><i></i></span>
+            </div>
+            <div class="readout__row" style="--n: calc(var(--live-battery-level, 0) * 100); --bar: var(--live-battery-level, 0); --suffix: '%'">
+              <dt>battery.level</dt><dd class="num"></dd><span class="bar"><i></i></span>
+            </div>
+            <div class="readout__row" style="--n: var(--live-net-downlink, 0); --bar: calc(var(--live-net-downlink, 0) / 20)">
+              <dt>net.downlink</dt><dd class="num"></dd><span class="bar"><i></i></span>
+            </div>
+            <div class="readout__row" style="--n: var(--live-net-rtt, 0); --bar: calc(var(--live-net-rtt, 0) / 400)">
+              <dt>net.rtt</dt><dd class="num"></dd><span class="bar"><i></i></span>
+            </div>
           </dl>
+        </div>
+      </section>
+
+      <!-- ───────────────────────── ★. SOURCE GALLERY ───────────────────────── -->
+      <section class="demo gallery" id="gallery">
+        <p class="watermark" aria-hidden="true">&starf;</p>
+        <div class="demo-head">
+          <p class="index">ref / sources</p>
+          <h2>Every source, at a glance</h2>
+          <p class="desc">
+            One key, and a source&rsquo;s values land in <code>--live-*</code>.
+            <b>Global</b> sources write on <code>:root</code>, so they read live
+            here; <b>element</b> sources write on a bound node, so they show
+            <span class="src__dash">&mdash;</span> until you reach their demo.
+          </p>
+        </div>
+
+        <div class="src-grid">
+          <article class="src">
+            <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 3l4.6 16 2.6-6.6 6.8-2.4z"/></svg></span><code class="src__key">pointer</code><span class="src__scope">global</span></header>
+            <dl class="src__vars">
+              <div class="src__var" style="--val: var(--live-pointer-x, 0)"><dt>--live-pointer-x</dt><dd></dd></div>
+              <div class="src__var" style="--val: var(--live-pointer-y, 0)"><dt>--live-pointer-y</dt><dd></dd></div>
+              <div class="src__var" style="--val: calc(var(--live-pointer-x-ratio, 0) * 100); --unit: '%'"><dt>--live-pointer-x-ratio</dt><dd></dd></div>
+              <div class="src__var" style="--val: calc(var(--live-pointer-y-ratio, 0) * 100); --unit: '%'"><dt>--live-pointer-y-ratio</dt><dd></dd></div>
+            </dl>
+            <p class="src__desc">Cursor position and 0&ndash;1 viewport ratios.</p>
+          </article>
+          <article class="src">
+            <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="2"/><path d="M3 9h18"/></svg></span><code class="src__key">viewport</code><span class="src__scope">global</span></header>
+            <dl class="src__vars">
+              <div class="src__var" style="--val: var(--live-vw, 0)"><dt>--live-vw</dt><dd></dd></div>
+              <div class="src__var" style="--val: var(--live-vh, 0)"><dt>--live-vh</dt><dd></dd></div>
+            </dl>
+            <p class="src__desc">Window inner size, on resize.</p>
+          </article>
+          <article class="src">
+            <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 1.8"/></svg></span><code class="src__key">clock</code><span class="src__scope">global</span></header>
+            <dl class="src__vars">
+              <div class="src__var" style="--val: var(--live-hours, 0)"><dt>--live-hours</dt><dd></dd></div>
+              <div class="src__var" style="--val: var(--live-minutes, 0)"><dt>--live-minutes</dt><dd></dd></div>
+              <div class="src__var" style="--val: var(--live-seconds, 0)"><dt>--live-seconds</dt><dd></dd></div>
+              <div class="src__var" style="--val: var(--live-now, 0)"><dt>--live-now</dt><dd></dd></div>
+            </dl>
+            <p class="src__desc">Wall-clock time, every second.</p>
+          </article>
+          <article class="src">
+            <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 12h4l2.5 6 4-13 2.5 7H21"/></svg></span><code class="src__key">fps</code><span class="src__scope">global</span></header>
+            <dl class="src__vars">
+              <div class="src__var" style="--val: var(--live-fps, 0)"><dt>--live-fps</dt><dd></dd></div>
+            </dl>
+            <p class="src__desc">Live rendering frame rate.</p>
+          </article>
+          <article class="src">
+            <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4.5 11a11 11 0 0 1 15 0"/><path d="M8 14.5a6 6 0 0 1 8 0"/><circle cx="12" cy="18.5" r="1" fill="currentColor" stroke="none"/></svg></span><code class="src__key">online</code><span class="src__scope">global</span></header>
+            <dl class="src__vars">
+              <div class="src__var" style="--val: var(--live-online, 0)"><dt>--live-online</dt><dd></dd></div>
+            </dl>
+            <p class="src__desc">Network reachability (0&thinsp;/&thinsp;1).</p>
+          </article>
+          <article class="src">
+            <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 20v-3M9.3 20v-7M14.6 20V9M20 20V5"/></svg></span><code class="src__key">network</code><span class="src__scope">global</span><span class="src__tag">Chromium</span></header>
+            <dl class="src__vars">
+              <div class="src__var" style="--val: var(--live-net-type, 0)"><dt>--live-net-type</dt><dd></dd></div>
+              <div class="src__var" style="--val: calc(var(--live-net-downlink, 0))"><dt>--live-net-downlink</dt><dd></dd></div>
+              <div class="src__var" style="--val: var(--live-net-rtt, 0)"><dt>--live-net-rtt</dt><dd></dd></div>
+              <div class="src__var" style="--val: var(--live-net-save-data, 0)"><dt>--live-net-save-data</dt><dd></dd></div>
+            </dl>
+            <p class="src__desc">Effective connection quality.</p>
+          </article>
+          <article class="src">
+            <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2.5" y="8" width="16" height="8" rx="2"/><path d="M21.5 11v2"/></svg></span><code class="src__key">battery</code><span class="src__scope">global</span><span class="src__tag">Chromium</span></header>
+            <dl class="src__vars">
+              <div class="src__var" style="--val: calc(var(--live-battery-level, 0) * 100); --unit: '%'"><dt>--live-battery-level</dt><dd></dd></div>
+              <div class="src__var" style="--val: var(--live-battery-charging, 0)"><dt>--live-battery-charging</dt><dd></dd></div>
+            </dl>
+            <p class="src__desc">Power level and charging state.</p>
+          </article>
+          <article class="src">
+            <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 5l5 5 5-5M7 13l5 5 5-5"/></svg></span><code class="src__key">scroll-velocity</code><span class="src__scope">global</span></header>
+            <dl class="src__vars">
+              <div class="src__var" style="--val: calc(var(--live-scroll-velocity, 0))"><dt>--live-scroll-velocity</dt><dd></dd></div>
+              <div class="src__var" style="--val: var(--live-scroll-direction, 0)"><dt>--live-scroll-direction</dt><dd></dd></div>
+            </dl>
+            <p class="src__desc">Signed scroll speed, decays to zero.</p>
+          </article>
+          <article class="src">
+            <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.5-4.5"/></svg></span><code class="src__key">visual-viewport</code><span class="src__scope">global</span></header>
+            <dl class="src__vars">
+              <div class="src__var" style="--val: calc(var(--live-vvp-scale, 1) * 100); --unit: '%'"><dt>--live-vvp-scale</dt><dd></dd></div>
+              <div class="src__var" style="--val: var(--live-vvp-offset-top, 0)"><dt>--live-vvp-offset-top</dt><dd></dd></div>
+              <div class="src__var" style="--val: calc(var(--live-vvp-height, 0))"><dt>--live-vvp-height</dt><dd></dd></div>
+            </dl>
+            <p class="src__desc">Pinch-zoom and on-screen keyboard.</p>
+          </article>
+          <article class="src">
+            <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M10.5 18.5h3"/></svg></span><code class="src__key">orientation</code><span class="src__scope">global</span><span class="src__tag">permission</span></header>
+            <dl class="src__vars">
+              <div class="src__var" style="--val: calc(var(--live-orient-alpha, 0)); --unit: '&deg;'"><dt>--live-orient-alpha</dt><dd></dd></div>
+              <div class="src__var" style="--val: calc(var(--live-orient-beta, 0)); --unit: '&deg;'"><dt>--live-orient-beta</dt><dd></dd></div>
+              <div class="src__var" style="--val: calc(var(--live-orient-gamma, 0)); --unit: '&deg;'"><dt>--live-orient-gamma</dt><dd></dd></div>
+            </dl>
+            <p class="src__desc">Device tilt, in degrees.</p>
+          </article>
+          <article class="src">
+            <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3"/></svg></span><code class="src__key">motion</code><span class="src__scope">global</span><span class="src__tag">permission</span></header>
+            <dl class="src__vars">
+              <div class="src__var" style="--val: calc(var(--live-accel-x, 0))"><dt>--live-accel-x</dt><dd></dd></div>
+              <div class="src__var" style="--val: calc(var(--live-accel-y, 0))"><dt>--live-accel-y</dt><dd></dd></div>
+              <div class="src__var" style="--val: calc(var(--live-accel-z, 0))"><dt>--live-accel-z</dt><dd></dd></div>
+            </dl>
+            <p class="src__desc">Accelerometer, m/s&sup2;.</p>
+          </article>
+          <article class="src">
+            <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21s6.5-5.8 6.5-10.5a6.5 6.5 0 1 0-13 0C5.5 15.2 12 21 12 21z"/><circle cx="12" cy="10.5" r="2.3"/></svg></span><code class="src__key">geo</code><span class="src__scope">global</span><span class="src__tag">permission</span></header>
+            <dl class="src__vars">
+              <div class="src__var" style="--val: calc(var(--live-geo-lat, 0))"><dt>--live-geo-lat</dt><dd></dd></div>
+              <div class="src__var" style="--val: calc(var(--live-geo-lng, 0))"><dt>--live-geo-lng</dt><dd></dd></div>
+              <div class="src__var" style="--val: calc(var(--live-geo-accuracy, 0))"><dt>--live-geo-accuracy</dt><dd></dd></div>
+            </dl>
+            <p class="src__desc">Geolocation, watched live.</p>
+          </article>
+
+          <article class="src">
+            <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 8.5l4 8 1.3-3.3 3.2-1.2z"/></svg></span><code class="src__key">pointer-local</code><span class="src__scope src__scope--el">element</span></header>
+            <dl class="src__vars">
+              <div class="src__var src__var--scoped"><dt>--live-px</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-py</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-pointer-inside</dt><dd></dd></div>
+            </dl>
+            <p class="src__desc">Cursor position within the element.</p>
+          </article>
+          <article class="src">
+            <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 0 0-2 2v4M15 3h4a2 2 0 0 1 2 2v4M21 15v4a2 2 0 0 1-2 2h-4M3 15v4a2 2 0 0 0 2 2h4"/></svg></span><code class="src__key">size</code><span class="src__scope src__scope--el">element</span></header>
+            <dl class="src__vars">
+              <div class="src__var src__var--scoped"><dt>--live-w</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-h</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-aspect</dt><dd></dd></div>
+            </dl>
+            <p class="src__desc">Box size, via ResizeObserver.</p>
+          </article>
+          <article class="src">
+            <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg></span><code class="src__key">visibility</code><span class="src__scope src__scope--el">element</span></header>
+            <dl class="src__vars">
+              <div class="src__var src__var--scoped"><dt>--live-visible</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-has-entered</dt><dd></dd></div>
+            </dl>
+            <p class="src__desc">In view, plus a latch once fully entered.</p>
+          </article>
+          <article class="src">
+            <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 8h16M4 16h16"/><circle cx="9" cy="8" r="2.3"/><circle cx="15" cy="16" r="2.3"/></svg></span><code class="src__key">range</code><span class="src__scope src__scope--el">element</span></header>
+            <dl class="src__vars">
+              <div class="src__var src__var--scoped"><dt>--live-value</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-value-pct</dt><dd></dd></div>
+            </dl>
+            <p class="src__desc">A slider or number input&rsquo;s value.</p>
+          </article>
+          <article class="src">
+            <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="2"/><path d="M7 9.5h10M7 13.5h6"/></svg></span><code class="src__key">field</code><span class="src__scope src__scope--el">element</span></header>
+            <dl class="src__vars">
+              <div class="src__var src__var--scoped"><dt>--live-length</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-empty</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-valid</dt><dd></dd></div>
+            </dl>
+            <p class="src__desc">Text field length and validity.</p>
+          </article>
+          <article class="src">
+            <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M10.5 8.5l5.5 3.5-5.5 3.5z" fill="currentColor" stroke="none"/></svg></span><code class="src__key">media</code><span class="src__scope src__scope--el">element</span></header>
+            <dl class="src__vars">
+              <div class="src__var src__var--scoped"><dt>--live-progress</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-current-time</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-duration</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-paused</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-volume</dt><dd></dd></div>
+            </dl>
+            <p class="src__desc">A <code>&lt;video&gt;</code> or <code>&lt;audio&gt;</code> element.</p>
+          </article>
         </div>
       </section>
     </main>
 
     <footer class="colophon">
       <p class="colophon__lead">
-        Four demos, one idea: expose state, then get out of CSS&rsquo;s way.
+        One idea, every demo: expose state, then get out of CSS&rsquo;s way.
       </p>
       <p class="colophon__note">
-        Open DevTools and watch <code>--live-*</code> change on
-        <code>:root</code> and the bound elements.
+        Open DevTools: watch <code>--live-*</code> change on <code>:root</code>
+        and the bound elements.
       </p>
     </footer>
 

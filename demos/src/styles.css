@@ -8,21 +8,21 @@
 :root {
   color-scheme: light dark;
 
-  /* ── neutrals: near-black / near-white, each tinted toward the accent hue
-        (low chroma) so nothing is a dead #000 / #fff. OKLCH throughout. ── */
-  --ink: light-dark(oklch(20% 0.012 280), oklch(93% 0.01 280));
-  --ink-soft: light-dark(oklch(46% 0.012 280), oklch(64% 0.012 280));
-  --ink-faint: light-dark(oklch(53% 0.012 280), oklch(58% 0.012 280));
-  --paper: light-dark(oklch(97% 0.006 280), oklch(16% 0.012 280));
-  --surface: light-dark(oklch(99.5% 0.003 280), oklch(20% 0.013 280));
-  --line: light-dark(oklch(89% 0.008 280), oklch(28% 0.014 280));
-  --line-strong: light-dark(oklch(80% 0.01 280), oklch(36% 0.016 280));
+  /* ── neutrals: near-black / near-white, each tinted toward the LIVE accent
+        hue (--accent-h) — chroma nudged up so the ink/paper/line clearly adopt
+        the theme as the hue sweeps. OKLCH throughout. ── */
+  --ink: light-dark(oklch(20% 0.045 var(--accent-h)), oklch(93% 0.04 var(--accent-h)));
+  --ink-soft: light-dark(oklch(46% 0.052 var(--accent-h)), oklch(64% 0.046 var(--accent-h)));
+  --ink-faint: light-dark(oklch(53% 0.055 var(--accent-h)), oklch(58% 0.05 var(--accent-h)));
+  --paper: light-dark(oklch(97% 0.012 var(--accent-h)), oklch(16% 0.02 var(--accent-h)));
+  --surface: light-dark(oklch(99.5% 0.008 var(--accent-h)), oklch(20% 0.022 var(--accent-h)));
+  --line: light-dark(oklch(89% 0.018 var(--accent-h)), oklch(28% 0.024 var(--accent-h)));
+  --line-strong: light-dark(oklch(80% 0.022 var(--accent-h)), oklch(36% 0.028 var(--accent-h)));
 
   /* ── the live accent ──────────────────────────────────────────────────
-        --accent-h is the hue. It defaults to 280 (electric indigo) but is
-        re-pointed by the pointer in CSS below. Everything that wants the
-        brand colour reads --accent / --accent-soft, so a single mouse move
-        recolours the entire page. No JS involved. */
+        --accent-h is the hue. It defaults to 280 (electric indigo); the ONLY
+        thing that re-points it is scrubbing the hero hue track (JS sets it on
+        :root). Everything — accent, neutrals, scrollbar — recolours from it. */
   --accent-h: 280;
   --accent: light-dark(
     oklch(52% 0.27 var(--accent-h)),
@@ -62,6 +62,10 @@
     Menlo, Consolas, monospace;
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* scrollbars: the thumb IS the live accent (it rides --accent-h, so it tracks
+     the page hue) on a transparent track */
+  --scroll-thumb: color-mix(in oklab, var(--accent) 80%, var(--line));
 }
 
 /* explicit theme override (T key cycles light → dark → system) */
@@ -80,6 +84,14 @@ html[data-theme='dark'] {
 
 html {
   scroll-behavior: smooth;
+  /* the page (root) scroller: default width, transparent track, accent thumb */
+  scrollbar-color: var(--scroll-thumb) transparent;
+}
+/* every nested (non-root) scroller: thin, with the same transparent track and
+   accent thumb as the page scroller */
+:where(.caption pre, .sizer, .field__input) {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scroll-thumb) transparent;
 }
 
 body {
@@ -95,12 +107,6 @@ body {
   overflow-x: hidden;
 }
 
-/* The single mouse-driven recolour. The pointer's horizontal ratio (0–1)
-   sweeps the accent hue across ~150° of the wheel. Quiet on load, alive on
-   move. This is the "small pop of colour wired to a --live-* value". */
-body {
-  --accent-h: calc(255 + var(--live-pointer-x-ratio, 0.5) * 150);
-}
 
 code {
   font-family: var(--font-mono);
@@ -175,9 +181,12 @@ h2 {
 
 /* ─────────────────────────────── masthead ─────────────────────────────── */
 .masthead {
+  position: relative; /* containing block for the hero pointer backdrop */
   width: var(--shell);
   margin-inline: auto;
-  padding: clamp(var(--space-5), 16vh, 12rem) 0 var(--space-6);
+  padding: clamp(var(--space-4), 8vh, 5.5rem) 0 var(--space-6);
+  display: grid;
+  gap: clamp(var(--space-4), 6vh, var(--space-5));
 }
 .eyebrow {
   font-family: var(--font-mono);
@@ -205,12 +214,48 @@ h2 {
 .display__accent {
   color: var(--accent);
 }
+.display__line {
+  display: block;
+}
+
+/* hero entrance: the eyebrow, headline lines, sub and hint rise + unblur in,
+   each staggered by its position via sibling-index(). @starting-style supplies
+   the pre-render state, so it plays once on load. The .display container itself
+   is skipped, so its lines (not the whole block) carry the cascade. */
+.masthead__intro > :not(.display),
+.display__line {
+  transition:
+    opacity 0.7s var(--ease-out),
+    translate 0.7s var(--ease-out),
+    filter 0.7s var(--ease-out);
+  transition-delay: calc(sibling-index() * 0.07s);
+}
+@starting-style {
+  .masthead__intro > :not(.display),
+  .display__line {
+    opacity: 0;
+    translate: 0 0.85rem;
+    filter: blur(5px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .masthead__intro > :not(.display),
+  .display__line {
+    transition: none;
+  }
+}
 .masthead__sub {
   font-size: var(--step-2);
   font-weight: 300;
   letter-spacing: -0.02em;
   color: var(--ink-soft);
   margin: var(--space-3) 0 var(--space-4);
+  text-wrap: balance;
+}
+.masthead__sub em {
+  font-style: normal;
+  font-weight: 500;
+  color: var(--ink);
 }
 .lede {
   max-width: var(--measure);
@@ -219,16 +264,25 @@ h2 {
   font-weight: 350;
   line-height: 1.5;
   margin: 0;
+  text-wrap: pretty;
 }
+/* inline code reads as a real code token, not prose: an editor-grey chip with a
+   hairline rule, and the text in the SAME var-token magenta the code blocks use
+   for --live-* — so a `--live-x` inline matches its highlighted twin in a <pre>.
+   Cloned across line breaks so wrapped snippets keep their box. */
 .lede code,
 .desc code,
 .colophon code,
 .reveal__t code {
-  background: var(--accent-soft);
-  color: var(--accent-ink);
-  padding: 0.08em 0.4em;
-  border-radius: 5px;
-  font-weight: 500;
+  background: light-dark(oklch(96.5% 0.006 300), oklch(26% 0.03 300));
+  color: light-dark(oklch(48% 0.23 350), oklch(85% 0.16 350));
+  padding: 0.12em 0.46em;
+  border-radius: 6px;
+  border: 1px solid light-dark(oklch(88% 0.02 320), oklch(38% 0.04 320));
+  font-weight: 600;
+  font-size: 0.86em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
 }
 
 /* quiet discoverability hint */
@@ -299,6 +353,293 @@ kbd {
   }
 }
 
+/* ════════════════════════ hero: pointer backdrop ═══════════════════════════
+   The pointer "pad" is FIXED to the viewport, so the crosshair/dot stay locked
+   to the cursor no matter how far you've scrolled. It's scoped to the hero by
+   fading out over the first screenful of scroll (so the grid doesn't carry
+   through the rest of the site). */
+.viewport-pad {
+  position: fixed;
+  inset: 0;
+  z-index: -1; /* behind the page content, in front of the paper */
+  overflow: hidden;
+  pointer-events: none;
+  /* a big, soft glow trails the cursor */
+  background: radial-gradient(
+    36rem 36rem at calc(var(--live-pointer-x-ratio, 0.5) * 100vw)
+      calc(var(--live-pointer-y-ratio, 0.5) * 100vh),
+    color-mix(in oklab, var(--accent-soft) 55%, transparent),
+    transparent 55%
+  );
+  animation: viewport-pad-fade linear both;
+  animation-timeline: scroll(root block);
+  animation-range: 0 92vh;
+}
+@keyframes viewport-pad-fade {
+  to {
+    opacity: 0;
+  }
+}
+.viewport-pad__grid {
+  position: absolute;
+  inset: 0;
+  opacity: 0.55;
+  background:
+    repeating-linear-gradient(
+      to right,
+      transparent 0 calc(7vw - 1px),
+      color-mix(in oklab, var(--line) 45%, transparent) calc(7vw - 1px) 7vw
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0 calc(7vw - 1px),
+      color-mix(in oklab, var(--line) 45%, transparent) calc(7vw - 1px) 7vw
+    );
+}
+.viewport-pad__cross {
+  position: absolute;
+  background: color-mix(in oklab, var(--accent) 26%, transparent);
+}
+.viewport-pad__cross--x {
+  inset-block: 0;
+  inline-size: 1px;
+  left: calc(var(--live-pointer-x-ratio, 0.5) * 100vw);
+}
+.viewport-pad__cross--y {
+  inset-inline: 0;
+  block-size: 1px;
+  top: calc(var(--live-pointer-y-ratio, 0.5) * 100vh);
+}
+.viewport-pad__dot {
+  position: absolute;
+  inline-size: 0.85rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--accent);
+  left: calc(var(--live-pointer-x-ratio, 0.5) * 100vw);
+  top: calc(var(--live-pointer-y-ratio, 0.5) * 100vh);
+  translate: -50% -50%;
+  box-shadow:
+    0 0 0 5px color-mix(in oklab, var(--accent) 20%, transparent),
+    0 0 1.6rem color-mix(in oklab, var(--accent) 45%, transparent);
+}
+
+/* ════════════════════════ hero: live props strip ═══════════════════════════
+   A compact, fully reactive preview. Every tile reads a real --live-* on :root
+   and reacts in pure CSS. Frosted, so the backdrop pad glows through. */
+.hero-stage {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: clamp(0.5rem, 1vw, 0.85rem);
+}
+.hero-stage > * {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: color-mix(in oklab, var(--surface) 80%, transparent);
+  backdrop-filter: blur(7px);
+}
+
+/* the small live chips */
+.hchip {
+  position: relative;
+  display: grid;
+  align-content: space-between;
+  gap: 0.45rem;
+  padding: 0.7rem 0.85rem;
+  min-block-size: 4.7rem;
+}
+/* per-panel border shine: pointer-local is bound to every chip, so each carries
+   its own --live-px / --live-py (0–1 within the panel) + --live-pointer-inside. A
+   conic gradient rotated to the pointer's angle around the panel centre lights the
+   rim nearest the cursor as it circles the edge; the padding-box mask trick leaves
+   only the 1px border lit. Brightness scales with --edge (0 at centre → 1 at any
+   edge, the Chebyshev distance to the nearest side) and is gated by
+   --live-pointer-inside, so the shine is invisible until the pointer enters and
+   peaks as it nears the rim. */
+.hchip::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  padding: 1px;
+  --edge-ang: atan2(calc(var(--live-py, 0.5) - 0.5), calc(var(--live-px, 0.5) - 0.5));
+  --edge: clamp(
+    0,
+    calc(max(abs(var(--live-px, 0.5) - 0.5), abs(var(--live-py, 0.5) - 0.5)) * 2),
+    1
+  );
+  background: conic-gradient(
+    from calc(var(--edge-ang) + 90deg),
+    color-mix(in oklab, var(--accent) 85%, white),
+    color-mix(in oklab, var(--accent) 14%, transparent) 60deg,
+    color-mix(in oklab, var(--accent) 14%, transparent) 300deg,
+    color-mix(in oklab, var(--accent) 85%, white)
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: calc(var(--live-pointer-inside, 0) * (0.12 + var(--edge) * 0.8));
+  transition: opacity 200ms var(--ease-out);
+  pointer-events: none;
+}
+.hchip__k {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.hchip__v {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--step-1);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  color: var(--accent-ink);
+}
+.hero-clock::after {
+  counter-reset: h var(--live-hours, 0) m var(--live-minutes, 0) s var(--live-seconds, 0);
+  content: counter(h) ':' counter(m, decimal-leading-zero) ':'
+    counter(s, decimal-leading-zero);
+}
+.hero-fps::after {
+  counter-reset: f var(--live-fps, 0);
+  content: counter(f) ' fps';
+}
+.hero-vp::after {
+  counter-reset: w calc(var(--live-vw, 0)) h calc(var(--live-vh, 0));
+  content: counter(w) ' × ' counter(h);
+}
+.hero-vel::after {
+  counter-reset: v calc(var(--live-scroll-velocity, 0));
+  content: counter(v) ' px';
+}
+.hchip__bar {
+  block-size: 0.3rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--line) 80%, transparent);
+  overflow: hidden;
+}
+.hchip__bar i {
+  display: block;
+  block-size: 100%;
+  border-radius: inherit;
+  inline-size: clamp(0%, calc(var(--live-fps, 0) / 120 * 100%), 100%);
+  background: var(--accent);
+  transition: inline-size 200ms var(--ease-out);
+}
+.hchip__shear {
+  display: grid;
+  gap: 0.22rem;
+}
+.hchip__shear i {
+  block-size: 0.28rem;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    var(--accent),
+    color-mix(in oklab, var(--accent) 30%, var(--surface))
+  );
+  transform: translateX(
+      clamp(-1.4rem, calc(var(--live-scroll-velocity, 0) * 0.6px), 1.4rem)
+    )
+    skewX(clamp(-14deg, calc(var(--live-scroll-velocity, 0) * -0.45deg), 14deg));
+  transition: transform 160ms var(--ease-out);
+}
+
+/* ── hue control chip: a duotone mark + the live hue + a scrub TRACK. JS sets
+   --accent-h from the pointer's x WITHIN the track while it's inside, and the
+   line is placed from --accent-h itself, so it sticks to the pointer over the
+   track and holds where you left it. Full 360° wheel. */
+.hchip--hue {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.45rem 0.6rem;
+  min-block-size: 0;
+}
+.hue-duotone {
+  display: grid;
+  place-items: center;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+}
+.hue-duotone svg {
+  inline-size: 100%;
+  block-size: 100%;
+}
+.hue-duotone__bg {
+  fill: var(--accent);
+  opacity: 0.3;
+}
+.hue-duotone__fg {
+  fill: var(--accent);
+}
+.hue-chip__label {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.hchip--hue .hero-hue {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--accent-ink);
+  font-variant-numeric: tabular-nums;
+}
+.hero-hue::after {
+  counter-reset: h calc(round(var(--accent-h, 280), 1));
+  content: 'h ' counter(h);
+}
+.hue-track {
+  grid-column: 1 / -1;
+  position: relative;
+  block-size: 0.9rem;
+  border-radius: 999px;
+  cursor: ew-resize;
+  background: linear-gradient(
+    90deg in oklch,
+    oklch(70% 0.2 0),
+    oklch(70% 0.2 60),
+    oklch(70% 0.2 120),
+    oklch(70% 0.2 180),
+    oklch(70% 0.2 240),
+    oklch(70% 0.2 300),
+    oklch(70% 0.2 360)
+  );
+}
+/* the line is positioned from the live hue (--accent-h / 360), which JS only
+   updates while the pointer is over the track — so it follows the pointer there
+   and holds on exit */
+.hue-track__line {
+  position: absolute;
+  inset-block: -3px;
+  inline-size: 3px;
+  left: calc(var(--accent-h, 280) / 360 * 100%);
+  translate: -50% 0;
+  border-radius: 2px;
+  background: light-dark(oklch(16% 0 0), oklch(98% 0 0));
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--surface) 70%, transparent);
+}
+
+@media (max-width: 52rem) {
+  .hero-stage {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 /* ─────────────────────────────── sections ─────────────────────────────── */
 main {
   display: flow-root;
@@ -329,6 +670,31 @@ main {
   user-select: none;
   z-index: 0;
 }
+/* the big index numerals develop in as their section scrolls up into view —
+   a scroll-TRIGGERED entry that holds once in view (no reverse while reading) */
+@keyframes watermark-enter {
+  from {
+    opacity: 0;
+    translate: 0 2.5rem;
+    scale: 0.9;
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    translate: none;
+    scale: 1;
+    filter: blur(0);
+  }
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .watermark {
+      animation: watermark-enter linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 80%;
+    }
+  }
+}
 .demo-head {
   position: relative;
   z-index: 1;
@@ -356,6 +722,7 @@ main {
   line-height: 1.5;
   margin: 0;
   max-width: 34rem;
+  text-wrap: balance;
 }
 
 /* asymmetric body: demo stage left, code caption right, breakpoint-free */
@@ -380,47 +747,145 @@ main {
   background: var(--surface);
 }
 
-/* ═══════════════════════ 1. POINTER-REACTIVE CARD ═════════════════════════
-   pointer-local is bound to this stage (the card's container), so --live-px /
-   --live-py (0–1 across the panel) and --live-pointer-inside live here and
-   inherit into the card. The panel glow, the tilt, and the glare all read them,
-   so the whole panel answers to the pointer. --act gates it: rests on leave. */
-.stage--pointer {
-  --act: var(--live-pointer-inside, 0);
-  min-height: 22rem;
+/* ════════════════════════════════ 0. AUTO ═════════════════════════════════
+   No imperative call: `import 'prop-for-that/auto'` binds [data-prop] elements.
+   The box carries data-prop="size", so the size source writes --live-w/h on it
+   and CSS counts them — bound by an attribute alone. */
+.stage--auto {
+  min-height: 18rem;
   padding: clamp(var(--space-4), 6vw, 4rem);
+}
+.auto-box {
+  position: relative;
+  inline-size: 15rem;
+  block-size: 10rem;
+  min-inline-size: 8rem;
+  min-block-size: 6.5rem;
+  max-inline-size: 100%;
+  resize: both;
+  overflow: auto;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4) var(--space-3) var(--space-3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: color-mix(in oklab, var(--accent-soft) 32%, var(--surface));
+}
+.auto-box__tag {
+  position: absolute;
+  inset: 0.6rem auto auto 0.8rem;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--accent-ink);
+}
+.auto-box__read {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--step-2);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.auto-box__w::after {
+  counter-reset: w calc(var(--live-w, 0));
+  content: counter(w);
+}
+.auto-box__h::after {
+  counter-reset: h calc(var(--live-h, 0));
+  content: counter(h);
+}
+.auto-box__grip {
+  position: absolute;
+  right: 0.3rem;
+  bottom: 0.3rem;
+  inline-size: 0.7rem;
+  block-size: 0.7rem;
+  border-right: 2px solid var(--line-strong);
+  border-bottom: 2px solid var(--line-strong);
+  pointer-events: none;
+}
+
+/* ═══════════════════════ 1. POINTER-REACTIVE CARD ═════════════════════════
+   pointer-local is bound to the FRAME (#card), so --live-px / --live-py (0–1
+   across the frame) + --live-pointer-inside live there and inherit into the
+   card. The frame carries the glow + a border shine; the card parallaxes from
+   the frame's pointer and its own glow fades in as soon as you enter the frame
+   (~the frame padding, ≈50px) before reaching the card. */
+.stage--pointer {
+  --px: var(--live-px, 0.5);
+  --py: var(--live-py, 0.5);
+  --act: var(--live-pointer-inside, 0);
+  position: relative;
+  min-height: 21rem;
+  padding: clamp(var(--space-3), 5vw, 3.25rem);
   perspective: 1000px;
-  /* a soft glow tracks the pointer across the panel — it aligns because the
-     glow and pointer-local share this element. It fades in only while inside. */
-  background: radial-gradient(
-    9rem 9rem at calc(var(--live-px, 0.5) * 100%) calc(var(--live-py, 0.5) * 100%),
-    color-mix(in oklab, var(--accent-soft) calc(var(--act) * 100%), var(--surface)),
-    var(--surface) 72%
+  /* the gradient inside the frame, behind the card, tracking the frame pointer */
+  background:
+    radial-gradient(
+      22rem 22rem at calc(var(--px) * 100%) calc(var(--py) * 100%),
+      color-mix(in oklab, var(--accent-soft) calc(var(--act) * 85%), transparent),
+      transparent 68%
+    ),
+    var(--surface);
+}
+/* the CONTAINER border shine: a conic gradient revealing the rim nearest the
+   pointer, same idea as the card's. Only the 1px border is lit (mask trick). */
+.stage--pointer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius);
+  padding: 1px;
+  --edge-ang: atan2(calc(var(--py, 0.5) - 0.5), calc(var(--px, 0.5) - 0.5));
+  background: conic-gradient(
+    from calc(var(--edge-ang) + 90deg),
+    color-mix(in oklab, var(--accent) 80%, white),
+    color-mix(in oklab, var(--accent) 12%, transparent) 70deg,
+    color-mix(in oklab, var(--accent) 12%, transparent) 290deg,
+    color-mix(in oklab, var(--accent) 80%, white)
   );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: calc(0.2 + var(--act) * 0.6);
+  transition: opacity 220ms var(--ease-out);
+  pointer-events: none;
 }
 
 .tilt-card {
-  --w: min(16rem, 60vw);
-  /* --gx / --gy (0–1) are the pointer's position in the panel, recentered to
-     (-.5 … .5) and scaled to degrees. --act (inherited) gates the motion so the
-     card lies flat when the pointer is outside the panel. */
-  --gx: var(--live-px, 0.5);
-  --gy: var(--live-py, 0.5);
-  --rx: calc((0.5 - var(--gy, 0.5)) * 16deg * var(--act, 1));
-  --ry: calc((var(--gx, 0.5) - 0.5) * 16deg * var(--act, 1));
-  --glare-r: calc(var(--w) * 0.45);
+  --w: min(16rem, 66vw);
+  /* The parallax tilt follows the GLOBAL pointer (root --live-pointer-*-ratio,
+     0–1 across the viewport), so the card leans toward the cursor anywhere on the
+     page — ambient, not gated to the frame. The inner glow / shine / texture still
+     read the frame's local --px / --py / --act (inherited from #card). */
+  --rx: calc((0.5 - var(--live-pointer-y-ratio, 0.5)) * 16deg);
+  --ry: calc((var(--live-pointer-x-ratio, 0.5) - 0.5) * 16deg);
+  --glare-r: calc(var(--w) * 0.5);
 
   position: relative;
   inline-size: var(--w);
   aspect-ratio: 5 / 7;
   border-radius: 20px;
   overflow: hidden;
-  /* the card face carries the live accent hue in its lower stop */
-  background: linear-gradient(
-    155deg,
-    oklch(28% 0.12 var(--accent-h)),
-    oklch(13% 0.08 var(--accent-h))
-  );
+  /* the inner glow — gated by --act, so it begins fading in the moment the
+     pointer enters the frame, ~50px before it reaches the card */
+  background:
+    radial-gradient(
+      11rem 11rem at calc(var(--px, 0.5) * 100%) calc(var(--py, 0.5) * 100%),
+      color-mix(in oklab, oklch(72% 0.2 var(--accent-h)) calc(var(--act) * 55%), transparent),
+      transparent 62%
+    ),
+    linear-gradient(
+      155deg,
+      oklch(28% 0.12 var(--accent-h)),
+      oklch(13% 0.08 var(--accent-h))
+    );
   color: oklch(97% 0.02 var(--accent-h));
   transform-style: preserve-3d;
   transform: rotateX(var(--rx)) rotateY(var(--ry));
@@ -431,16 +896,69 @@ main {
   transition: transform 220ms var(--ease-out);
   will-change: transform;
 }
+/* the border shine REVEALS at the edge nearest the cursor: a conic gradient
+   rotated to the pointer's angle around the card centre, so a bright arc rides
+   the rim as the mouse goes around the edges. The padding-box mask trick leaves
+   only the 1.5px border lit. */
+.tilt-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  padding: 1.5px;
+  --edge-ang: atan2(calc(var(--py, 0.5) - 0.5), calc(var(--px, 0.5) - 0.5));
+  background: conic-gradient(
+    from calc(var(--edge-ang) + 90deg),
+    color-mix(in oklab, var(--accent) 92%, white),
+    color-mix(in oklab, var(--accent) 20%, transparent) 70deg,
+    color-mix(in oklab, var(--accent) 20%, transparent) 290deg,
+    color-mix(in oklab, var(--accent) 92%, white)
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: calc(0.3 + var(--act) * 0.6);
+  transition: opacity 220ms var(--ease-out);
+  pointer-events: none;
+}
 
-/* The glare: a circular highlight at (--gx, --gy) on the card face. inset:0 maps
+/* a dot-grid texture, revealed only in a soft disc around the pointer — like a
+   light catching the surface grain. Driven by the same --px/--py. */
+.tilt-card__texture {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background-image: radial-gradient(oklch(100% 0 0) 1px, transparent 1.4px);
+  background-size: 11px 11px;
+  opacity: calc(0.22 * var(--act, 1) + 0.04);
+  mix-blend-mode: soft-light;
+  -webkit-mask: radial-gradient(
+    circle var(--glare-r) at calc(var(--px) * 100%) calc(var(--py) * 100%),
+    #000,
+    transparent 72%
+  );
+  mask: radial-gradient(
+    circle var(--glare-r) at calc(var(--px) * 100%) calc(var(--py) * 100%),
+    #000,
+    transparent 72%
+  );
+  transition: opacity 220ms var(--ease-out);
+}
+
+/* The glare: a circular highlight at (--px, --py) on the card face. inset:0 maps
    those 0–1 fractions onto the face; --act fades it with the motion. */
 .tilt-card__glare {
   position: absolute;
   inset: 0;
+  z-index: 2;
   pointer-events: none;
   background: radial-gradient(
-    circle var(--glare-r, 6rem) at calc(var(--gx, 0.5) * 100%)
-      calc(var(--gy, 0.5) * 100%),
+    circle var(--glare-r, 6rem) at calc(var(--px, 0.5) * 100%)
+      calc(var(--py, 0.5) * 100%),
     #ffffffcc,
     #ffffff00 70%
   );
@@ -456,7 +974,8 @@ main {
   flex-direction: column;
   justify-content: flex-end;
   padding: var(--space-3);
-  transform: translateZ(40px);
+  /* modest depth — too much pushes the text past the clipped card edges */
+  transform: translateZ(18px);
 }
 .tilt-card__kicker {
   font-family: var(--font-mono);
@@ -474,6 +993,7 @@ main {
   line-height: 0.92;
   letter-spacing: -0.03em;
   margin: 0 0 var(--space-1);
+  text-wrap: balance;
 }
 .tilt-card__sub {
   font-size: var(--step--1);
@@ -519,6 +1039,9 @@ main {
     opacity 650ms var(--ease-out),
     translate 650ms var(--ease-out),
     filter 650ms var(--ease-out);
+  /* hold a beat after the panel latches, so the reveal plays once it's a little
+     into view rather than the instant it touches the viewport edge */
+  transition-delay: 180ms;
 }
 /* index coin: fills with accent the moment the panel latches, and wears a
    halo while it's live in view. One element carries both signals at once. */
@@ -573,7 +1096,7 @@ main {
   font-weight: 400;
   line-height: 1.4;
   margin: 0;
-  text-wrap: pretty;
+  text-wrap: balance;
 }
 .reveal__t code {
   white-space: nowrap;
@@ -654,6 +1177,10 @@ main {
 /* the separate gauge: a conic ring + a big counted number, both reading the
    value inherited from #meter — the readout the leaf <input> couldn't host. */
 .gauge {
+  /* a fresh, warm "you hit the ceiling" tint — it echoes the slider track, which
+     also warms toward amber at the top of the range, so the gauge + dial agree */
+  --max-tint: light-dark(oklch(60% 0.19 62), oklch(81% 0.17 78));
+  position: relative;
   display: grid;
   place-items: center;
   inline-size: clamp(11rem, 38vw, 15rem);
@@ -664,11 +1191,12 @@ main {
 }
 .gauge__arc {
   --p: var(--live-value-pct, 0);
+  --arc-color: var(--accent);
   inline-size: 100%;
   aspect-ratio: 1;
   border-radius: 50%;
   background: conic-gradient(
-    var(--accent) calc(var(--p) * 360deg),
+    var(--arc-color) calc(var(--p) * 360deg),
     var(--line) 0
   );
   -webkit-mask: radial-gradient(
@@ -686,13 +1214,15 @@ main {
 .gauge__num {
   margin: 0;
   font-family: var(--font-display);
-  font-size: var(--step-4);
+  /* capped so three digits ("100") never crowd the ring's inline edges */
+  font-size: clamp(2.8rem, 1.8rem + 4.5vw, 5rem);
   font-weight: 900;
   font-stretch: 110%;
   letter-spacing: -0.04em;
   line-height: 1;
   font-variant-numeric: tabular-nums;
   color: var(--ink);
+  transition: color 200ms var(--ease-out);
 }
 .gauge__num::after {
   counter-reset: v calc(var(--live-value, 0));
@@ -703,17 +1233,30 @@ main {
    --live-value lands on an exact end, @container style() switches whole rules on.
    #meter carries --live-value; .gauge inherits it, so its descendants can match.
    (var()/calc() can interpolate the value but can't express "=== 100".) */
+/* the min/max chip sits in the lower hollow of the ring on its own surface pill,
+   lifted clear of the ring stroke and raised above the number so it never hides
+   behind either */
 .gauge__flag {
-  align-self: end;
-  margin-bottom: -0.5rem;
+  position: absolute;
+  left: 50%;
+  bottom: 1.5rem;
+  z-index: 2;
+  translate: -50% 0;
+  margin: 0;
+  padding: 0.2em 0.7em;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--surface) 80%, transparent);
+  backdrop-filter: blur(2px);
   font-family: var(--font-mono);
-  font-size: var(--step--1);
-  font-weight: 600;
-  letter-spacing: 0.3em;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.26em;
   text-transform: uppercase;
-  color: var(--accent-ink);
+  color: var(--ink-faint);
   opacity: 0;
-  transition: opacity 160ms var(--ease-out);
+  transition:
+    opacity 200ms var(--ease-out),
+    color 200ms var(--ease-out);
 }
 .gauge__flag::after {
   content: '';
@@ -727,15 +1270,21 @@ main {
     content: 'min';
   }
 }
+/* at the top of the range, the ring, number and chip all take the fresh max tint
+   so the whole gauge reads as one celebratory state */
 @container style(--live-value: 100) {
+  .gauge__arc {
+    --arc-color: var(--max-tint);
+  }
+  .gauge__num {
+    color: var(--max-tint);
+  }
   .gauge__flag {
     opacity: 1;
+    color: var(--max-tint);
   }
   .gauge__flag::after {
     content: 'max';
-  }
-  .gauge__num {
-    color: var(--accent);
   }
 }
 
@@ -873,7 +1422,7 @@ main {
    Note: #level holds --live-value, so it can't style-query ITSELF — every rule
    below targets a DESCENDANT (.level__core / .level__word / the stops). */
 .stage--state {
-  min-height: 26rem;
+  min-height: 32rem;
   padding: clamp(var(--space-4), 8vw, 6rem) var(--space-4);
 }
 .level {
@@ -915,6 +1464,7 @@ main {
 
 .stepper {
   display: grid;
+  justify-items: center;
   gap: var(--space-3);
   inline-size: 100%;
 }
@@ -922,6 +1472,7 @@ main {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
+  gap: var(--space-3);
   font-family: var(--font-mono);
   font-size: var(--step--1);
   font-weight: 600;
@@ -935,15 +1486,39 @@ main {
   letter-spacing: 0;
   text-transform: none;
 }
+/* the vertical control: the thin stepped track stands upright, the scale labels
+   run beside it bottom-to-top (off → max) */
+.stepper__track {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: var(--space-3);
+  block-size: 15rem;
+}
 
-/* a thin, stepped track; fill + thumb take the inherited tier colour */
+/* a thin, UPRIGHT stepped track, max at top. Built as a normal HORIZONTAL range
+   (which centres its thumb perfectly) then rotated −90° — bulletproof centring
+   across engines, unlike writing-mode's cross-axis thumb quirks. */
+.steps-wrap {
+  position: relative;
+  inline-size: 2.4rem;
+  block-size: 15rem;
+}
 .steps {
   --p: var(--live-value-pct, 0);
-  inline-size: 100%;
-  height: 2.4rem;
+  /* absolutely centred in the wrap so the 15rem-wide layout box (rotated to
+     vertical) overflows symmetrically without shoving the flex layout. translate
+     centres it, then rotate spins it upright around that centre. */
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  rotate: -90deg; /* min at bottom, max at top */
+  inline-size: 15rem; /* the travel length — becomes the height once rotated */
+  block-size: 2.4rem;
   margin: 0;
   background: transparent;
-  cursor: pointer;
+  cursor: ns-resize;
   -webkit-appearance: none;
   appearance: none;
 }
@@ -971,8 +1546,8 @@ main {
 .steps::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  inline-size: 1.4rem;
-  block-size: 1.4rem;
+  width: 1.4rem;
+  height: 1.4rem;
   margin-top: calc((0.5rem - 1.4rem) / 2);
   border-radius: 50%;
   background: var(--surface);
@@ -983,8 +1558,8 @@ main {
     border-color 200ms var(--ease-out);
 }
 .steps::-moz-range-thumb {
-  inline-size: 1.4rem;
-  block-size: 1.4rem;
+  width: 1.4rem;
+  height: 1.4rem;
   border-radius: 50%;
   background: var(--surface);
   border: 3px solid var(--tier);
@@ -1007,28 +1582,33 @@ main {
   outline: none;
 }
 
-/* the five discrete stops; each dot uses currentColor so the lit one (recoloured
-   by its style query) tints automatically */
+/* the five discrete stops, stacked beside the track (off at bottom, max at top);
+   each dot uses currentColor so the lit one (recoloured by its style query) tints
+   automatically */
 .stepper__scale {
   display: flex;
+  flex-direction: column-reverse;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-block: 0.1rem;
   font-family: var(--font-mono);
   font-size: 0.62rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 .stepper__scale i {
-  flex: 1;
-  display: grid;
-  justify-items: center;
-  gap: 0.45rem;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex: 0 0 auto;
   font-style: normal;
   color: var(--ink-faint);
   transition: color 200ms var(--ease-out);
 }
 .stepper__scale i::before {
   content: '';
-  inline-size: 0.32rem;
-  block-size: 0.32rem;
+  inline-size: 0.4rem;
+  block-size: 0.4rem;
   border-radius: 50%;
   background: currentColor;
   opacity: 0.55;
@@ -1155,6 +1735,935 @@ main {
   color: light-dark(oklch(52% 0.22 350), oklch(82% 0.16 350));
   font-weight: 600;
 }
+.tok-com {
+  color: var(--ink-faint);
+  font-style: italic;
+}
+
+/* ═══════════════════════════ 5. FORM FIELD LENGTH ═════════════════════════
+   The field source writes --live-length / --live-empty / --live-valid on the
+   textarea. The minlength/maxlength live in HTML; their numbers are mirrored
+   into --min / --max so CSS can size the meter and name the state. */
+.stage--field {
+  padding: clamp(var(--space-4), 5vw, 3rem);
+}
+.field {
+  --warn: light-dark(oklch(64% 0.16 65), oklch(78% 0.15 70));
+  --limit: light-dark(oklch(55% 0.21 25), oklch(72% 0.18 25));
+  inline-size: min(30rem, 100%);
+  display: grid;
+  gap: var(--space-2);
+}
+.field__label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.field__req {
+  color: var(--ink-faint);
+  letter-spacing: 0.04em;
+}
+.field__input {
+  width: 100%;
+  resize: vertical;
+  min-block-size: 4.5rem;
+  padding: var(--space-3);
+  font-family: var(--font-sans);
+  font-size: var(--step-0);
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  transition: border-color 200ms var(--ease-out);
+}
+.field__input::placeholder {
+  color: var(--ink-faint);
+}
+.field__input:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+/* the meter fills with the live length, capped at max */
+.field__meter {
+  block-size: 0.4rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--line) 80%, transparent);
+  overflow: hidden;
+}
+.field__meter i {
+  display: block;
+  block-size: 100%;
+  border-radius: inherit;
+  inline-size: clamp(0%, calc(var(--live-length, 0) / var(--max, 1) * 100%), 100%);
+  background: var(--accent);
+  transition:
+    inline-size 120ms var(--ease-out),
+    background 200ms linear;
+}
+.field__status {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  font-weight: 600;
+}
+.field__count {
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+.field__count::after {
+  counter-reset: c var(--live-length, 0) m var(--max, 0);
+  content: counter(c) ' / ' counter(m);
+}
+.field__word {
+  color: var(--accent-ink);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+/* default state word = valid + non-empty + under the cap */
+.field__word::after {
+  content: 'looks good';
+}
+/* empty: nothing typed yet (--live-empty 1) */
+@container style(--live-empty: 1) {
+  .field__word {
+    color: var(--ink-faint);
+  }
+  .field__word::after {
+    content: 'waiting';
+  }
+}
+/* below minlength: the constraint API reports invalid as you type */
+@container style(--live-valid: 0) {
+  .field__word {
+    color: var(--warn);
+  }
+  .field__word::after {
+    content: 'keep typing';
+  }
+  .field__meter i {
+    background: var(--warn);
+  }
+}
+/* at maxlength: the live length equals the known cap */
+@container style(--live-length: 120) {
+  .field__word {
+    color: var(--limit);
+  }
+  .field__word::after {
+    content: 'max reached';
+  }
+  .field__meter i {
+    background: var(--limit);
+  }
+}
+
+/* ══════════════════════════════ 6. CSS TRIG (EYES) ════════════════════════
+   Each eye is bound to pointer-local, so --live-px / --live-py are relative to
+   THAT eye. atan2(py - .5, px - .5) is the heading from the eye's centre to the
+   cursor; cos()/sin() drop the pupil onto a circle along that heading. */
+.stage--trig {
+  min-height: 18rem;
+  padding: clamp(var(--space-4), 6vw, 4rem);
+}
+.eyes {
+  display: flex;
+  gap: clamp(var(--space-2), 3vw, var(--space-4));
+}
+.eye {
+  --a: atan2(calc(var(--live-py, 0.5) - 0.5), calc(var(--live-px, 0.5) - 0.5));
+  position: relative;
+  display: grid;
+  place-items: center;
+  inline-size: clamp(3.5rem, 12vw, 5.5rem);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: light-dark(oklch(99% 0.004 280), oklch(96% 0.01 280));
+  border: 2px solid var(--line-strong);
+  box-shadow:
+    inset 0 -0.4rem 1rem #0001,
+    0 8px 20px -12px #0008;
+}
+.eye__pupil {
+  position: relative;
+  inline-size: 40%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, oklch(38% 0.04 280), oklch(12% 0.02 280) 70%);
+  translate: calc(cos(var(--a)) * 1.1rem) calc(sin(var(--a)) * 1.1rem);
+  transition: translate 90ms var(--ease-out);
+}
+/* the catch-light, offset toward the cursor too */
+.eye__pupil::after {
+  content: '';
+  position: absolute;
+  inset: 18% auto auto 18%;
+  inline-size: 28%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: oklch(100% 0 0 / 0.85);
+}
+
+/* ════════════════════════════════ 7. CLOCK ════════════════════════════════
+   The clock source writes --live-hours / minutes / seconds on :root each
+   second. Hands rotate by calc(); the digital line is a CSS counter. */
+.stage--clock {
+  min-height: 18rem;
+  padding: clamp(var(--space-4), 6vw, 4rem);
+}
+.clock {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+}
+/* --magnet-x/y ease toward the live pointer; the gradient centre reads them, so
+   the glow lags and drifts toward the cursor instead of snapping — magnetic */
+@property --magnet-x {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0.5;
+}
+@property --magnet-y {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0.5;
+}
+.clock__face {
+  /* pointer-local is bound to this face, so --live-px/py are the cursor's spot
+     INSIDE the watch. The glow is pulled ~82% of the way toward it while the
+     pointer is in (--live-pointer-inside), and eases back to centre on leave —
+     so the mouse feels like it's tugging the gradient around inside the dial. */
+  --magnet-x: calc(
+    0.5 + (var(--live-px, 0.5) - 0.5) * 0.82 * var(--live-pointer-inside, 0)
+  );
+  --magnet-y: calc(
+    0.5 + (var(--live-py, 0.5) - 0.5) * 0.82 * var(--live-pointer-inside, 0)
+  );
+  position: relative;
+  inline-size: clamp(8rem, 30vw, 11rem);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at calc(var(--magnet-x) * 100%) calc(var(--magnet-y) * 100%),
+    color-mix(in oklab, var(--accent) 34%, var(--surface)),
+    var(--surface) 62%
+  );
+  border: 2px solid var(--line-strong);
+  transition:
+    --magnet-x 450ms var(--ease-out),
+    --magnet-y 450ms var(--ease-out);
+}
+/* 12 tick marks: a conic ring of spokes, masked to just the rim */
+.clock__face::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: repeating-conic-gradient(
+    from -1deg,
+    var(--line-strong) 0 2deg,
+    transparent 2deg 30deg
+  );
+  -webkit-mask: radial-gradient(circle, transparent 62%, #000 64%);
+  mask: radial-gradient(circle, transparent 62%, #000 64%);
+}
+.clock__hand {
+  position: absolute;
+  left: 50%;
+  bottom: 50%;
+  transform-origin: bottom center;
+  border-radius: 999px;
+  background: var(--ink);
+}
+.clock__hand--hour {
+  inline-size: 4px;
+  block-size: 26%;
+  rotate: calc(var(--live-hours, 0) * 30deg + var(--live-minutes, 0) * 0.5deg);
+  translate: -50% 0;
+}
+.clock__hand--min {
+  inline-size: 3px;
+  block-size: 36%;
+  rotate: calc(var(--live-minutes, 0) * 6deg);
+  translate: -50% 0;
+}
+.clock__hand--sec {
+  inline-size: 2px;
+  block-size: 40%;
+  background: var(--accent);
+  rotate: calc(var(--live-seconds, 0) * 6deg);
+  translate: -50% 0;
+}
+.clock__cap {
+  position: absolute;
+  inset: 50%;
+  inline-size: 0.7rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--accent);
+  translate: -50% -50%;
+}
+.clock__digital {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--step-1);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.06em;
+  color: var(--accent-ink);
+}
+.clock__digital::after {
+  counter-reset: h var(--live-hours, 0) m var(--live-minutes, 0) s var(--live-seconds, 0);
+  /* zero-padded H:MM:SS via decimal-leading-zero on the minute/second counters */
+  content: counter(h) ':' counter(m, decimal-leading-zero) ':'
+    counter(s, decimal-leading-zero);
+}
+
+/* ════════════════════════ 8. DEVICE & CONNECTION ══════════════════════════
+   Global sources (online / network / battery / fps) write on :root; the tiles
+   read them. Battery + Network Information are Chromium-only, so they're gated
+   on the [data-has-*] capability flags set once in JS. */
+.stage--device {
+  padding: clamp(var(--space-3), 4vw, 2.5rem);
+}
+.tiles {
+  --warn: light-dark(oklch(64% 0.16 65), oklch(78% 0.15 70));
+  --limit: light-dark(oklch(55% 0.21 25), oklch(72% 0.18 25));
+  --ok: light-dark(oklch(56% 0.15 150), oklch(76% 0.16 150));
+  inline-size: 100%;
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+}
+.tile {
+  display: grid;
+  gap: 0.4rem;
+  align-content: start;
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.tile__k {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4ch;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.tile__big {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5ch;
+  min-block-size: 1.4em;
+  font-family: var(--font-display);
+  font-size: var(--step-2);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: var(--accent-ink);
+}
+.tile__sub {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+}
+.tile__sub code {
+  background: none;
+  padding: 0;
+  color: var(--ink-faint);
+}
+.tile__na {
+  display: none;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  font-style: italic;
+  color: var(--ink-faint);
+}
+
+/* online */
+.tile__dot {
+  inline-size: 0.6rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--ok);
+}
+.tile__online::after {
+  content: 'online';
+}
+@container style(--live-online: 0) {
+  .tile--online {
+    color: var(--limit);
+  }
+  .tile--online .tile__dot {
+    background: var(--limit);
+  }
+  .tile__online::after {
+    content: 'offline';
+  }
+}
+
+/* network (Chromium) */
+.tile__net::after {
+  content: '\2014';
+}
+@container style(--live-net-type: 1) {
+  .tile__net::after {
+    content: 'slow-2g';
+  }
+}
+@container style(--live-net-type: 2) {
+  .tile__net::after {
+    content: '2g';
+  }
+}
+@container style(--live-net-type: 3) {
+  .tile__net::after {
+    content: '3g';
+  }
+}
+@container style(--live-net-type: 4) {
+  .tile__net::after {
+    content: '4g';
+  }
+}
+.tile__downlink::after {
+  counter-reset: d calc(var(--live-net-downlink, 0));
+  content: counter(d);
+}
+.tile__rtt::after {
+  counter-reset: r var(--live-net-rtt, 0);
+  content: counter(r);
+}
+:root:not([data-has-network]) .tile--net .tile__net,
+:root:not([data-has-network]) .tile--net .tile__net-detail {
+  display: none;
+}
+:root:not([data-has-network]) .tile--net .tile__na {
+  display: block;
+}
+
+/* battery (Chromium) */
+.tile__bolt {
+  opacity: 0;
+  color: var(--ok);
+  transition: opacity 200ms var(--ease-out);
+}
+@container style(--live-battery-charging: 1) {
+  .tile__bolt {
+    opacity: 1;
+  }
+}
+.tile__batt::after {
+  counter-reset: b calc(var(--live-battery-level, 0) * 100);
+  content: counter(b) '%';
+}
+.tile__gauge {
+  block-size: 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--line) 80%, transparent);
+  overflow: hidden;
+}
+.tile__gauge i {
+  display: block;
+  block-size: 100%;
+  border-radius: inherit;
+  inline-size: clamp(0%, calc(var(--live-battery-level, 0) * 100%), 100%);
+  background: var(--accent);
+  transition: inline-size 300ms var(--ease-out);
+}
+:root:not([data-has-battery]) .tile--battery .tile__batt,
+:root:not([data-has-battery]) .tile--battery .tile__gauge,
+:root:not([data-has-battery]) .tile--battery .tile__bolt {
+  display: none;
+}
+:root:not([data-has-battery]) .tile--battery .tile__na {
+  display: block;
+}
+
+/* fps */
+.tile__fps::after {
+  counter-reset: f var(--live-fps, 0);
+  content: counter(f) ' fps';
+}
+.tile__gauge--fps i {
+  inline-size: clamp(0%, calc(var(--live-fps, 0) / 120 * 100%), 100%);
+  background: var(--ok);
+}
+
+/* ════════════════════════════ 9. SCROLL MOMENTUM ══════════════════════════
+   scroll-velocity writes a signed --live-scroll-velocity (px/frame) and
+   --live-scroll-direction. The bars shear + slide with it, then ease back. */
+.stage--momentum {
+  min-height: 16rem;
+  padding: clamp(var(--space-4), 6vw, 4rem);
+  overflow: hidden;
+}
+.momentum {
+  display: grid;
+  gap: var(--space-4);
+  justify-items: center;
+}
+.momentum__stack {
+  display: grid;
+  gap: 0.6rem;
+}
+.momentum__stack span {
+  display: block;
+  inline-size: clamp(8rem, 30vw, 14rem);
+  block-size: 0.7rem;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    var(--accent),
+    color-mix(in oklab, var(--accent) 35%, var(--surface))
+  );
+  transform: translateX(
+      clamp(-3rem, calc(var(--live-scroll-velocity, 0) * var(--m, 1) * 1px), 3rem)
+    )
+    skewX(clamp(-16deg, calc(var(--live-scroll-velocity, 0) * -0.5deg), 16deg));
+  /* real motion blur, scaled by |velocity| (max(v,-v) = abs) and capped */
+  filter: blur(
+    clamp(
+      0px,
+      calc(max(var(--live-scroll-velocity, 0), -1 * var(--live-scroll-velocity, 0)) * 0.14px),
+      5px
+    )
+  );
+  transition:
+    transform 180ms var(--ease-out),
+    filter 180ms var(--ease-out);
+}
+.momentum__read {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6ch;
+  font-family: var(--font-mono);
+  font-size: var(--step-1);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent-ink);
+}
+.momentum__v::after {
+  counter-reset: v calc(var(--live-scroll-velocity, 0));
+  content: counter(v);
+}
+.momentum__dir::after {
+  content: '\00B7';
+  color: var(--ink-faint);
+}
+@container style(--live-scroll-direction: 1) {
+  .momentum__dir::after {
+    content: '\2193';
+  }
+}
+@container style(--live-scroll-direction: -1) {
+  .momentum__dir::after {
+    content: '\2191';
+  }
+}
+
+/* ════════════════════════════════ 10. SIZE ════════════════════════════════
+   size writes --live-w / --live-h / --live-aspect on the resizable card itself.
+   --landscape is a branch-free boolean: 1 when aspect > 1, else 0. */
+.stage--size {
+  min-height: 20rem;
+  padding: clamp(var(--space-4), 6vw, 4rem);
+}
+.sizer {
+  --landscape: clamp(0, calc((var(--live-aspect, 1) - 1) * 100), 1);
+  position: relative;
+  inline-size: 16rem;
+  block-size: 11rem;
+  min-inline-size: 8rem;
+  min-block-size: 6rem;
+  max-inline-size: 100%;
+  resize: both;
+  overflow: auto;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: color-mix(
+    in oklab,
+    var(--accent-soft) calc(var(--landscape) * 55% + 18%),
+    var(--surface)
+  );
+  transition: background 200ms var(--ease-out);
+}
+.sizer__badge {
+  margin: 0;
+  display: grid;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+}
+.sizer__por,
+.sizer__land {
+  grid-area: 1 / 1; /* stack both words in one cell, opacity decides */
+}
+.sizer__land {
+  opacity: var(--landscape);
+}
+.sizer__por {
+  opacity: calc(1 - var(--landscape));
+}
+.sizer__read {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.1rem 0.8rem;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+.sizer__w::after {
+  counter-reset: w calc(var(--live-w, 0));
+  content: counter(w);
+}
+.sizer__h::after {
+  counter-reset: h calc(var(--live-h, 0));
+  content: counter(h);
+}
+.sizer__aspect::after {
+  counter-reset: whole calc(round(down, var(--live-aspect, 1), 1))
+    frac calc(round(mod(var(--live-aspect, 1), 1) * 100, 1));
+  content: 'aspect ' counter(whole) '.' counter(frac, decimal-leading-zero);
+  color: var(--accent-ink);
+}
+.sizer__grip {
+  position: absolute;
+  right: 0.3rem;
+  bottom: 0.3rem;
+  inline-size: 0.7rem;
+  block-size: 0.7rem;
+  border-right: 2px solid var(--line-strong);
+  border-bottom: 2px solid var(--line-strong);
+  pointer-events: none;
+}
+
+/* ════════════════════════════════ 11. ORBIT ═══════════════════════════════
+   --live-seconds → an angle; cos()/sin() drop each dot onto the circle. */
+.stage--orbit {
+  min-height: 20rem;
+  padding: clamp(var(--space-4), 6vw, 4rem);
+}
+.orbit {
+  --size: clamp(13rem, 50vw, 17rem);
+  position: relative;
+  inline-size: var(--size);
+  aspect-ratio: 1;
+}
+.orbit__core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  inline-size: 1rem;
+  aspect-ratio: 1;
+  margin: -0.5rem;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 1.6rem color-mix(in oklab, var(--accent) 60%, transparent);
+}
+.orbit__ring {
+  position: absolute;
+  inset: 0;
+}
+/* a dashed guide circle at each ring's radius */
+.orbit__ring::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  inline-size: calc(var(--r) * 2);
+  aspect-ratio: 1;
+  margin: calc(var(--r) * -1);
+  border-radius: 50%;
+  border: 1px dashed color-mix(in oklab, var(--line) 85%, transparent);
+}
+.orbit__dot {
+  /* the heading: clock seconds scaled by this ring's speed + direction, then
+     each dot offset to its evenly-spaced slot (i of n) around the circle. */
+  --a: calc(
+    var(--live-seconds, 0) * 6deg * var(--spd, 1) * var(--dir, 1) +
+      var(--i) / var(--n, 1) * 360deg
+  );
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  inline-size: var(--dot, 0.8rem);
+  aspect-ratio: 1;
+  margin: calc(var(--dot, 0.8rem) / -2);
+  border-radius: 50%;
+  background: color-mix(in oklab, var(--accent) var(--tint, 70%), var(--surface));
+  box-shadow: 0 0 0.7rem color-mix(in oklab, var(--accent) 40%, transparent);
+  translate: calc(cos(var(--a)) * var(--r)) calc(sin(var(--a)) * var(--r));
+  transition: translate 500ms var(--ease-out);
+}
+
+/* ════════════════════════════════ 12. MEDIA ═══════════════════════════════
+   media writes --live-progress on the player container; the conic ring fills. */
+.stage--media {
+  min-height: 20rem;
+  padding: clamp(var(--space-4), 6vw, 4rem);
+}
+.player {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+  /* media writes --live-progress here in discrete steps (~4×/sec on timeupdate).
+     configure({ typed: true }) registers it as an interpolatable @property, so
+     transitioning it makes the conic ring sweep smoothly between samples; the
+     ring inherits the eased value. */
+  transition: --live-progress 250ms linear;
+}
+.player__ring {
+  inline-size: clamp(10rem, 36vw, 14rem);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  padding: 0.55rem;
+  background: conic-gradient(
+    var(--accent) calc(var(--live-progress, 0) * 360deg),
+    var(--line) 0
+  );
+}
+.player__video {
+  inline-size: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  background: var(--surface);
+}
+.player__time {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+.player__cur,
+.player__dur {
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+.player__cur::after {
+  counter-reset: c calc(var(--live-current-time, 0));
+  content: counter(c) 's';
+}
+.player__dur::after {
+  counter-reset: d calc(var(--live-duration, 0));
+  content: counter(d) 's';
+}
+
+/* ═══════════════════════════════ 13. AMBIENT ══════════════════════════════
+   --low is a branch-free boolean: 1 when the battery is under 20%, else 0
+   (round(up, .2 - level) snaps it). The simulate switch (:has) forces it on.
+   A style() query strips the animation + heavy paint when --low is 1. */
+.stage--ambient {
+  min-height: 18rem;
+  padding: clamp(var(--space-4), 6vw, 4rem);
+}
+.ambient {
+  --low: clamp(0, round(up, calc(0.2 - var(--live-battery-level, 1)), 1), 1);
+  display: grid;
+  gap: var(--space-3);
+  inline-size: min(26rem, 100%);
+}
+.ambient:has(.ambient__sim:checked) {
+  --low: 1;
+}
+.ambient__switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+/* a real toggle switch: a pill track with a sliding knob, lit accent when on */
+.ambient__sim {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  flex: 0 0 auto;
+  inline-size: 2.5rem;
+  block-size: 1.4rem;
+  margin: 0;
+  border-radius: 999px;
+  background: var(--line-strong);
+  cursor: pointer;
+  transition: background 200ms var(--ease-out);
+}
+.ambient__sim::after {
+  content: '';
+  position: absolute;
+  inset-block: 0.18rem;
+  inset-inline-start: 0.18rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: 0 1px 3px #0006;
+  transition: translate 200ms var(--ease-out);
+}
+.ambient__sim:checked {
+  background: var(--accent);
+}
+.ambient__sim:checked::after {
+  translate: calc(2.5rem - 1.4rem) 0;
+}
+.ambient__sim:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.ambient__card {
+  position: relative;
+  overflow: hidden;
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: oklch(98% 0.02 var(--accent-h));
+  background: linear-gradient(
+    110deg,
+    oklch(46% 0.2 var(--accent-h)),
+    oklch(30% 0.16 calc(var(--accent-h) + 40)),
+    oklch(46% 0.2 var(--accent-h))
+  );
+  background-size: 220% 100%;
+  animation: ambient-sheen 4s linear infinite;
+}
+@keyframes ambient-sheen {
+  to {
+    background-position: 220% 0;
+  }
+}
+.ambient__title {
+  margin: 0 0 var(--space-1);
+  font-family: var(--font-display);
+  font-size: var(--step-2);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.ambient__state {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  font-weight: 600;
+  opacity: 0.85;
+}
+.ambient__state::after {
+  content: 'full power \00B7 effects on';
+}
+@container style(--low: 1) {
+  .ambient__card {
+    animation: none;
+    background: var(--surface);
+    color: var(--ink);
+    border-color: var(--line-strong);
+  }
+  .ambient__state::after {
+    content: 'low battery \00B7 effects off';
+  }
+}
+
+/* ════════════════════════════════ 14. DRAG ════════════════════════════════
+   No drag handler: :active gates the motion; while a token is held, its
+   translate is computed from --live-px/--live-py (pointer-local) and
+   --live-w/--live-h (size), both bound to the board. Release → the :active rule
+   drops → it springs home. */
+.stage--drag {
+  min-height: 24rem;
+  padding: clamp(var(--space-4), 6vw, 4rem);
+}
+.dragboard {
+  position: relative;
+  inline-size: min(34rem, 100%);
+  block-size: 19rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  overflow: hidden;
+  touch-action: none;
+  background:
+    radial-gradient(circle at center, var(--accent-soft), transparent 72%),
+    radial-gradient(
+        color-mix(in oklab, var(--line) 70%, transparent) 1px,
+        transparent 1.6px
+      )
+      0 0 / 18px 18px,
+    var(--surface);
+}
+.drag-token {
+  position: absolute;
+  left: calc(var(--hx) * 100%);
+  top: calc(var(--hy) * 100%);
+  translate: -50% -50%;
+  display: grid;
+  place-items: center;
+  padding: 0.7rem 1.1rem;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  color: light-dark(oklch(99% 0.02 var(--accent-h)), oklch(18% 0.03 var(--accent-h)));
+  background: var(--accent);
+  box-shadow: 0 6px 18px -8px color-mix(in oklab, var(--accent) 70%, transparent);
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  /* spring home on release (a little overshoot) */
+  transition:
+    translate 0.55s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.2s var(--ease-out),
+    scale 0.2s var(--ease-out);
+}
+/* :active is the gate. The drag offset = (cursor − home) × board size; the −50%
+   keeps the token centred on the cursor. transition:none → it tracks instantly. */
+.drag-token:active {
+  translate:
+    calc(-50% + (var(--live-px, 0.5) - var(--hx)) * var(--live-w, 0) * 1px)
+    calc(-50% + (var(--live-py, 0.5) - var(--hy)) * var(--live-h, 0) * 1px);
+  transition: none;
+  cursor: grabbing;
+  scale: 1.08;
+  z-index: 2;
+  box-shadow: 0 16px 32px -10px color-mix(in oklab, var(--accent) 80%, transparent);
+}
 
 /* ════════════════════════════ ∑. LIVE TELEMETRY ═══════════════════════════
    A full readout of every --live-* on :root. Each number is a CSS counter
@@ -1171,60 +2680,87 @@ main {
 /* 2D pointer plot — the dot sits at (x-ratio, y-ratio); it aligns because the
    plot box maps 0–1 across its own size, just like the viewport ratios. A faint
    measure grid sits behind live crosshair lines that track the pointer. */
-.xy {
+/* a radial vitals gauge — the ring fills with live fps, a satellite orbits at
+   the clock's seconds angle. Two ambient sources, no pointer. */
+.vitals {
   position: relative;
   margin: 0;
+  display: grid;
+  place-items: center;
   aspect-ratio: 1;
   max-inline-size: 18rem;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   overflow: hidden;
   background:
-    repeating-linear-gradient(
-      to right,
-      transparent 0 calc(12.5% - 1px),
-      color-mix(in oklab, var(--line) 55%, transparent) calc(12.5% - 1px) 12.5%
-    ),
-    repeating-linear-gradient(
-      to bottom,
-      transparent 0 calc(12.5% - 1px),
-      color-mix(in oklab, var(--line) 55%, transparent) calc(12.5% - 1px) 12.5%
-    ),
-    var(--surface);
+    radial-gradient(circle at 50% 42%, var(--accent-soft), var(--surface) 70%);
 }
-/* the live crosshair — vertical + horizontal lines through the dot */
-.xy::before,
-.xy::after {
-  content: '';
-  position: absolute;
-  background: color-mix(in oklab, var(--accent) 32%, transparent);
-  pointer-events: none;
+.vitals > * {
+  grid-area: 1 / 1;
 }
-.xy::before {
-  inset-block: 0;
-  inline-size: 1px;
-  left: calc(var(--live-pointer-x-ratio, 0.5) * 100%);
-}
-.xy::after {
-  inset-inline: 0;
-  block-size: 1px;
-  top: calc(var(--live-pointer-y-ratio, 0.5) * 100%);
-}
-.xy__dot {
-  position: absolute;
-  z-index: 1;
-  inline-size: 0.8rem;
+.vitals__ring {
+  --p: clamp(0, calc(var(--live-fps, 0) / 120), 1);
+  inline-size: 74%;
   aspect-ratio: 1;
   border-radius: 50%;
-  background: var(--accent);
-  box-shadow:
-    0 0 0 5px color-mix(in oklab, var(--accent) 22%, transparent),
-    0 0 1.4rem color-mix(in oklab, var(--accent) 45%, transparent);
-  left: calc(var(--live-pointer-x-ratio, 0.5) * 100%);
-  top: calc(var(--live-pointer-y-ratio, 0.5) * 100%);
-  translate: -50% -50%;
+  background: conic-gradient(var(--accent) calc(var(--p) * 360deg), var(--line) 0);
+  -webkit-mask: radial-gradient(
+    farthest-side,
+    #0000 calc(100% - 0.82rem),
+    #000 calc(100% - 0.77rem)
+  );
+  mask: radial-gradient(
+    farthest-side,
+    #0000 calc(100% - 0.82rem),
+    #000 calc(100% - 0.77rem)
+  );
+  transition: background 200ms linear;
 }
-.xy figcaption {
+/* the satellite rides the clock: one sweep a minute (--live-seconds × 6°) */
+.vitals__orbit {
+  inline-size: 74%;
+  aspect-ratio: 1;
+  rotate: calc(var(--live-seconds, 0) * 6deg);
+  transition: rotate 400ms var(--ease-out);
+}
+.vitals__sat {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  inline-size: 0.7rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--accent-ink);
+  translate: -50% -50%;
+  box-shadow: 0 0 0.8rem color-mix(in oklab, var(--accent) 60%, transparent);
+}
+.vitals__num {
+  margin: 0;
+  align-self: center;
+  font-family: var(--font-display);
+  font-size: var(--step-3);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--ink);
+}
+.vitals__num::after {
+  counter-reset: f var(--live-fps, 0);
+  content: counter(f);
+}
+.vitals__k {
+  margin: 0;
+  align-self: end;
+  margin-block-end: 16%;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.vitals figcaption {
   position: absolute;
   z-index: 1;
   inset: auto auto var(--space-2) var(--space-3);
@@ -1261,7 +2797,9 @@ main {
   font-weight: 600;
 }
 .readout__row .num::after {
-  counter-reset: n var(--n, 0);
+  /* calc() rounds the value — without it a fractional global (sub-pixel
+     clientX, fractional Mbps) is an invalid <integer> and voids the counter */
+  counter-reset: n calc(var(--n, 0));
   content: counter(n) var(--suffix, '');
 }
 .bar {
@@ -1276,6 +2814,207 @@ main {
   inline-size: clamp(0%, calc(var(--bar, 0) * 100%), 100%);
   border-radius: inherit;
   background: var(--accent);
+}
+
+/* ════════════════════════════ ★. SOURCE GALLERY ═══════════════════════════
+   A spec-sheet of every source and the --live-* props it writes. Cards earn
+   their place here: this is reference data, one record per source. */
+.src-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: var(--space-3);
+  /* cap at three columns so each card keeps generous inline space: every track
+     is at least 15rem AND at least a third of the row (minus the two gaps). */
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(max(15rem, calc((100% - 2 * var(--space-3)) / 3)), 1fr)
+  );
+  /* three implicit row bands per card row (head / vars / desc); each card is a
+     subgrid that spans them, so heads, var lists, and descriptions line up and
+     every description sits at the same block-end across the row. */
+  grid-auto-rows: auto;
+}
+.src {
+  grid-row: span 3;
+  display: grid;
+  grid-template-rows: subgrid;
+  row-gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  overflow: hidden; /* clip the full-bleed footer chin to the card radius */
+  transition:
+    border-color 200ms var(--ease-out),
+    box-shadow 200ms var(--ease-out);
+}
+.src:hover {
+  border-color: color-mix(in oklab, var(--accent) 40%, var(--line));
+  box-shadow: 0 14px 30px -24px color-mix(in oklab, var(--accent) 55%, transparent);
+}
+.src:hover .src__key {
+  color: var(--accent);
+}
+/* each card develops in as it scrolls into view — a cascade down the grid */
+@keyframes src-enter {
+  from {
+    opacity: 0;
+    translate: 0 1.6rem;
+    scale: 0.97;
+  }
+  to {
+    opacity: 1;
+    translate: none;
+    scale: 1;
+  }
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .src {
+      animation: src-enter linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 28%;
+    }
+  }
+}
+.src__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.6rem;
+  padding-block-end: 0.7rem;
+  border-block-end: 1px solid var(--line);
+}
+/* a small tinted glyph badge naming each source's domain at a glance */
+.src__icon {
+  display: grid;
+  place-items: center;
+  inline-size: 1.6rem;
+  block-size: 1.6rem;
+  flex: 0 0 auto;
+  border-radius: 7px;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+.src__icon svg {
+  inline-size: 0.95rem;
+  block-size: 0.95rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.src__key {
+  font-family: var(--font-mono);
+  font-size: var(--step-0);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--accent-ink);
+  background: none;
+  padding: 0;
+  overflow-wrap: anywhere;
+  transition: color 200ms var(--ease-out);
+}
+.src__scope,
+.src__tag {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  padding: 0.2em 0.6em;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+/* global lives on :root → filled accent; element binds to a node → outlined */
+.src__scope {
+  margin-inline-start: auto;
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+  border-color: color-mix(in oklab, var(--accent) 25%, transparent);
+}
+.src__scope--el {
+  color: var(--ink-soft);
+  background: transparent;
+  border-color: var(--line-strong);
+}
+.src__tag {
+  color: var(--ink-faint);
+  border-color: var(--line);
+}
+.src__vars {
+  margin: 0;
+  display: grid;
+  align-content: start;
+}
+/* the variable ledger: name on the left, live value right-aligned, hairline
+   rules between rows so the eye pairs each name with its number */
+.src__var {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  column-gap: 0.8rem;
+  padding-block: 0.22rem;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  line-height: 1.45;
+}
+.src__var + .src__var {
+  border-block-start: 1px solid color-mix(in oklab, var(--line) 40%, transparent);
+}
+.src__var dt {
+  margin: 0;
+  /* the --live-* names wear the same var-token colour as the code captions */
+  color: light-dark(oklch(52% 0.22 350), oklch(82% 0.16 350));
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.src__var dd {
+  margin: 0;
+  text-align: right;
+  color: var(--accent-ink);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.src__var dd::after {
+  /* calc() rounds so fractional globals still render as an integer counter */
+  counter-reset: v calc(var(--val, 0));
+  content: counter(v) var(--unit, '');
+}
+/* element sources write per-element, so they read as a dash in this :root panel */
+.src__var--scoped dd {
+  color: var(--ink-faint);
+  font-weight: 500;
+}
+.src__var--scoped dd::after {
+  content: '\2014';
+}
+.src__dash {
+  color: var(--ink-faint);
+}
+.src__desc {
+  align-self: end; /* pin to the card's block-end */
+  /* a full-bleed footer "chin": tinted base, ruled off, edge-to-edge across the
+     card. Larger, more readable type than the old fine print. */
+  margin: 0 calc(-1 * var(--space-3)) calc(-1 * var(--space-3));
+  padding: var(--space-2) var(--space-3);
+  border-block-start: 1px solid var(--line);
+  background: color-mix(in oklab, var(--paper) 55%, transparent);
+  font-size: var(--step-0);
+  line-height: 1.45;
+  color: var(--ink-soft);
+  text-wrap: balance;
+}
+.src__desc code {
+  background: none;
+  padding: 0;
+  border: 0;
+  color: var(--ink);
+  font-weight: 500;
 }
 
 /* ─────────────────────────────── colophon ─────────────────────────────── */
@@ -1301,6 +3040,7 @@ main {
   color: var(--ink-soft);
   max-width: var(--measure);
   margin: 0;
+  text-wrap: balance;
 }
 
 /* ─────────────────────────── reduced motion ───────────────────────────
@@ -1335,6 +3075,27 @@ main {
   .dial::-webkit-slider-runnable-track,
   .steps::-webkit-slider-thumb,
   .steps::-moz-range-thumb {
+    transition: none;
+  }
+  /* still place the orbit dots (their position IS the data), just don't ease */
+  .orbit__dot {
+    transition: none;
+  }
+  /* the ring still fills to the right level; it just snaps instead of sweeping */
+  .player {
+    transition: none;
+  }
+  /* the clock glow still tracks the pointer, it just doesn't ease toward it */
+  .clock__face {
+    transition: none;
+  }
+  .momentum__stack span {
+    filter: none;
+  }
+  .ambient__card {
+    animation: none;
+  }
+  .hchip__shear i {
     transition: none;
   }
 }

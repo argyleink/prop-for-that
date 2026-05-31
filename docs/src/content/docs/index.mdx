@@ -3,30 +3,83 @@ title: prop-for-that
 description: Expose what JavaScript knows but CSS can't see.
 template: splash
 hero:
-  tagline: Expose what JavaScript knows but CSS can't see.
+  tagline: Expose runtime state JavaScript can read but CSS can't — slider values, pointer position, element size, visibility, battery, network — as batched, diffed CSS custom properties.
   actions:
     - text: Get started
       link: /start/introduction/
       icon: right-arrow
+    - text: See it live
+      link: /demos/pointer/
+      icon: laptop
+      variant: secondary
     - text: API reference
       link: /reference/api/
       icon: open-book
       variant: minimal
 ---
 
-import { Card, CardGrid } from '@astrojs/starlight/components';
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+## Write it in JS, react to it in CSS
+
+```js
+import { propsFor } from 'prop-for-that'
+
+propsFor(['pointer'])        // --live-pointer-x-ratio … on :root
+propsFor(card, ['size'])     // <div id="card"> → --live-w, --live-h, --live-aspect
+```
+
+```css
+.card {
+  /* lean toward the cursor — no JS in your styles */
+  transform: rotateY(calc((var(--live-pointer-x-ratio) - 0.5) * 16deg));
+  /* fluid type from the element's own measured width */
+  font-size: calc(var(--live-w) * 0.04px);
+}
+```
+
+Any element with an `id` is already a global in JS, so `propsFor(card, …)` needs no query selector.
 
 <CardGrid stagger>
   <Card title="Zero-config auto mode" icon="rocket">
-    Import `prop-for-that/auto` and add `data-prop` attributes. No JavaScript required beyond the import.
+    Import `prop-for-that/auto`, add `data-prop` attributes, done. A `MutationObserver` binds new elements as they appear — no JavaScript beyond the import.
   </Card>
   <Card title="Batched & diffed" icon="approve-check">
-    One `setProperty` flush per animation frame. Only writes when a value actually changed.
+    One `setProperty` flush per animation frame, and only when a value actually changed. A hundred `pointermove` events in a frame collapse to one write.
   </Card>
   <Card title="Five core sources" icon="list-format">
-    Viewport, pointer, size, visibility, and range. All in the main bundle.
+    `viewport`, `pointer`, `size`, `visibility`, and `range` ship in the main bundle. 14+ exotic sources are opt-in, tree-shakeable plugins.
   </Card>
-  <Card title="Lean by default" icon="puzzle">
-    Zero runtime dependencies. Tree-shakeable. Exotic sources are opt-in plugins.
+  <Card title="One loop, one observer" icon="analytics">
+    A single shared rAF, one `ResizeObserver`, one `IntersectionObserver`, and ref-counted passive listeners drive the whole page — bind a thousand elements, pay for one of each.
   </Card>
 </CardGrid>
+
+## Built for real stylesheets
+
+<CardGrid>
+  <Card title="Discrete state, real rules" icon="puzzle">
+    Pair continuous numbers with `var()` / `calc()`, then flip whole rule blocks with `@container style(--live-value: 100)`. Threshold styling that works today — no range queries needed.
+  </Card>
+  <Card title="Typed & interpolatable" icon="setting">
+    Opt into `@property` registration and `--live-*` values animate with `transition` / `@keyframes` and resolve to a guaranteed initial value.
+  </Card>
+  <Card title="Calm DevTools" icon="magnifier">
+    Global values are written into one adopted stylesheet rule, not `<html>` inline `style` — so the DevTools Styles panel stays usable while values change every frame.
+  </Card>
+  <Card title="Freeze & throttle" icon="clock">
+    `pause()` / `resume()` the whole loop to inspect a frozen frame, or cap the rate with `configure({ liveHz: 30 })` for fewer writes and less style recalc.
+  </Card>
+  <Card title="SSR-safe & guarded" icon="padlock">
+    Browser globals are feature-detected; sensor and permission sources (`geo`, `orientation`, `battery`) no-op cleanly when unavailable.
+  </Card>
+  <Card title="TypeScript, ESM + CJS" icon="document">
+    A fully typed API, both module formats, `.d.ts` shipped, MIT licensed, zero runtime dependencies.
+  </Card>
+</CardGrid>
+
+<LinkCard
+  title="Play with the live demos →"
+  description="Cursor-tilt cards, fluid type from an element's own width, scroll-triggered reveals, and a slider driving CSS — all reacting in real time, with the wiring shown for each."
+  href="/demos/pointer/"
+/>

@@ -106,6 +106,12 @@ One `requestAnimationFrame` flush per frame, write-on-change diffing, passive
 listeners, and a single shared `ResizeObserver` / `IntersectionObserver` for the
 whole page. Tree-shakeable: you only ship the sources you use.
 
+Global `--live-*` values are written into one adopted stylesheet rule rather than
+the `<html>` inline `style`, so per-frame churn doesn't make the DevTools Styles
+panel unusable — inheritance is unchanged, `var()` / `calc()` resolve the same.
+Freeze the loop with `pause()` / `resume()` (e.g. to inspect values in DevTools),
+or cap its rate with `configure({ liveHz: 30 })`.
+
 See [`llms.txt`](./llms.txt) for an agent-oriented reference.
 
 ## License

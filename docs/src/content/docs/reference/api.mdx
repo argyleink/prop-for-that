@@ -1,13 +1,17 @@
 ---
 title: API
-description: configure, register, unregister, propsFor, unbind, and reset.
+description: configure, register, unregister, propsFor, unbind, reset, pause, and resume.
 ---
 
 All functions are exported from `prop-for-that`.
 
 ```ts
-import { configure, register, unregister, propsFor, unbind, reset } from 'prop-for-that'
+import { configure, register, unregister, propsFor, unbind, reset, pause, resume } from 'prop-for-that'
 ```
+
+:::tip[Prefer attributes?]
+For zero-config, declarative usage, the [`auto` entry](/start/getting-started/#1-auto-zero-config) binds elements straight from a `data-prop` attribute — no `propsFor()` call per element. The functions on this page are for explicit, programmatic control and teardown.
+:::
 
 ---
 
@@ -24,10 +28,13 @@ interface Config {
   root: HTMLElement    // default: document.documentElement (:root)
   typed: boolean       // default: false; register --live-* with @property
   defaults?: Record<string, string | number>  // typed initial values, by local name
+  liveHz?: number      // default: unset (every frame); cap loop sampling+flush rate
 }
 ```
 
 Set `typed: true` to register written `--live-*` properties with `@property`, making them interpolatable and giving them a guaranteed initial value. Pass `defaults` (keyed by a source's local name, e.g. `'pointer-x-ratio'`) to choose those initial values. See [Typed properties](/concepts/typed-properties/).
+
+Set `liveHz` to cap how often the shared loop samples and flushes — e.g. `30` coalesces writes to at most 30/sec. Fewer custom-property mutations means less style recalc and a calmer DevTools Styles panel, at the cost of update smoothness. It throttles the whole loop, so per-frame samplers like `fps` and `scroll-velocity` measure at this rate too.
 
 **Example**
 
@@ -113,7 +120,8 @@ dispose()
 **Per element**:
 
 ```js
-const slider = document.querySelector('input[type="range"]')
+// an element's id is already a global in JS — no query selector needed
+// (here, <input id="slider" type="range">)
 const dispose = propsFor(slider, ['range'])
 
 // later, clean up
@@ -169,4 +177,25 @@ function reset(): void
 import { reset } from 'prop-for-that'
 
 reset()
+```
+
+---
+
+## `pause()` / `resume()`
+
+Freeze and unfreeze the shared frame loop. While paused, no source samples and no writes flush, so every live value holds its current state — useful for inspecting them in DevTools without the per-frame churn, or for halting work in a backgrounded tab. Bindings stay attached; `resume()` picks sampling back up and flushes anything queued meanwhile. Both are idempotent.
+
+```ts
+function pause(): void
+function resume(): void
+```
+
+**Example**
+
+```js
+import { pause, resume } from 'prop-for-that'
+
+document.addEventListener('visibilitychange', () => {
+  document.hidden ? pause() : resume()
+})
 ```

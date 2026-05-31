@@ -5,16 +5,19 @@ description: A live demo of the visibility source, exposing binary in/out state 
 
 import VisibilityDemo from '../../../components/VisibilityDemo.astro';
 
-The `visibility` source is scroll-triggered, not scroll-linked. It writes two binary signals per bound element: `--live-visible` (1 while any part is on screen) and `--live-has-entered` (latches to 1 on first entry, never resets). The continuous ratio is left to native `view()` timelines; the one-way latch is the part those can't express. Scroll the panels below into and out of view.
+The `visibility` source is scroll-triggered, not scroll-linked. It writes two binary signals per bound element: `--live-visible` (1 while any part is on screen) and `--live-has-entered` (latches to 1 once the element is entirely in view, never resets). The continuous ratio is left to native `view()` timelines; the one-way latch is the part those can't express. Scroll the panels below into and out of view.
 
 <VisibilityDemo />
 
 ## The wiring
 
-```js
-import { propsFor } from 'prop-for-that'
+Each panel opts in with its own attribute — no list to query, and panels added later are picked up automatically:
 
-propsFor(document.querySelectorAll('[data-reveal]'), ['visibility'])
+```html
+<script type="module">import 'prop-for-that/auto'</script>
+
+<section data-prop="visibility">…</section>
+<section data-prop="visibility">…</section>
 ```
 
 ```css

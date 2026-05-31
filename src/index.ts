@@ -1,5 +1,7 @@
 import { config } from './core/config'
 import { writer } from './core/writer'
+import { styleFor } from './core/root-style'
+import { pause, resume } from './core/frame'
 import { registerTyped } from './core/property'
 import { coreSources } from './sources'
 import type {
@@ -64,8 +66,9 @@ function disposeEntry(target: HTMLElement, key: string, active: Map<string, Entr
   const entry = active.get(key)
   if (!entry) return
   entry.dispose()
+  const style = styleFor(target)
   for (const prop of entry.written) {
-    target.style.removeProperty(prop)
+    style.removeProperty(prop)
     writer.forget(target, prop)
   }
   active.delete(key)
@@ -171,3 +174,12 @@ export function reset(): void {
   }
   bindings.clear()
 }
+
+/**
+ * Freeze (`pause`) / unfreeze (`resume`) the shared frame loop. While paused,
+ * samplers stop running and no writes flush, so the current property values
+ * hold steady — handy for inspecting them in DevTools without the live churn,
+ * or for halting work in a backgrounded tab. Bindings stay attached; `resume()`
+ * picks up sampling and flushes anything queued meanwhile. Idempotent.
+ */
+export { pause, resume }

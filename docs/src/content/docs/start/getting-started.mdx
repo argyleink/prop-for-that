@@ -17,7 +17,7 @@ Import `prop-for-that/auto` and it wires everything for you:
 
 - Attaches the default global sources (`viewport`, `pointer`) to `:root`.
 - Scans the DOM for `[data-prop]` attributes and binds the named sources to those elements.
-- Watches the DOM with a `MutationObserver`, so dynamically added elements are handled automatically.
+- Keeps everything in sync with a single `MutationObserver`: elements added later are bound, removed elements are torn down and their properties cleaned up, and editing an element's `data-prop` value re-syncs just the keys that changed — so you can add or drop a source at runtime by changing the attribute alone.
 
 ```html
 <script type="module">import 'prop-for-that/auto'</script>
@@ -47,8 +47,9 @@ import { propsFor, configure } from 'prop-for-that'
 // write viewport + pointer to :root
 propsFor(['viewport', 'pointer'])
 
-// write the range source to a specific element; returns a disposer
-const slider = document.querySelector('input[type="range"]')
+// write the range source to a specific element; returns a disposer.
+// an element's id is a ready-made global in JS — no query selector needed.
+// here, <input id="slider" type="range" min="0" max="100">
 const dispose = propsFor(slider, ['range'])
 
 // later, tear it down cleanly

@@ -1,0 +1,85 @@
+---
+// Local pointer demo: the pointer-local PLUGIN is bound to the box, so
+// --live-px / --live-py (0–1 within the box) and --live-pointer-inside (0/1)
+// land on that element and only its descendants inherit them. Contrast with the
+// global pointer source, which writes viewport ratios to :root.
+---
+<div class="pft-stage pointer-local-demo">
+  <div class="pointer-local-demo__box" data-pft-pointer-local>
+    <p class="pft-readout">
+      <span class="pft-chip">--live-px <b class="pointer-local-demo__x"></b></span>
+      <span class="pft-chip">--live-py <b class="pointer-local-demo__y"></b></span>
+      <span class="pft-chip">--live-pointer-inside <b class="pointer-local-demo__in"></b></span>
+    </p>
+    <span class="pointer-local-demo__dot" aria-hidden="true"></span>
+    <span class="pointer-local-demo__label" aria-hidden="true">move inside this box</span>
+  </div>
+  <p class="pft-hint">
+    Move over the box. Its <code>--live-px</code> / <code>--live-py</code> are the
+    pointer's position <em>within this element</em> (0–1), and
+    <code>--live-pointer-inside</code> flips to <code>1</code> while you're over it.
+    They're written to this box alone by <code>propsFor(box, ['pointer-local'])</code>,
+    so the readout and spotlight inside it inherit them and nothing outside does.
+  </p>
+</div>
+
+<style>
+  .pointer-local-demo__box {
+    position: relative;
+    min-block-size: 15rem;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 0.75rem;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    /* border lights up only while the pointer is inside */
+    border: 1px solid color-mix(in oklab,
+      var(--sl-color-accent) calc(var(--live-pointer-inside, 0) * 100%),
+      var(--sl-color-gray-4));
+    background:
+      radial-gradient(
+        7rem 7rem at calc(var(--live-px, 0.5) * 100%) calc(var(--live-py, 0.5) * 100%),
+        color-mix(in oklab,
+          var(--sl-color-accent) calc(var(--live-pointer-inside, 0) * 50%),
+          transparent),
+        transparent 70%
+      ),
+      var(--sl-color-black);
+    transition: border-color 0.15s;
+  }
+  .pointer-local-demo__dot {
+    position: absolute;
+    inline-size: 1rem;
+    block-size: 1rem;
+    border-radius: 50%;
+    background: var(--sl-color-text-accent);
+    left: calc(var(--live-px, 0.5) * 100%);
+    top: calc(var(--live-py, 0.5) * 100%);
+    translate: -50% -50%;
+    /* hide the dot until the pointer enters the box */
+    opacity: var(--live-pointer-inside, 0);
+    box-shadow: 0 0 0 0.4rem color-mix(in oklab, var(--sl-color-accent) 30%, transparent);
+    transition: opacity 0.15s;
+  }
+  .pointer-local-demo__label {
+    font-family: var(--sl-font-mono, ui-monospace, monospace);
+    font-size: 0.8rem;
+    color: var(--sl-color-gray-3);
+  }
+  .pointer-local-demo__x::after { counter-reset: x calc(var(--live-px, 0) * 100); content: counter(x) '%'; }
+  .pointer-local-demo__y::after { counter-reset: y calc(var(--live-py, 0) * 100); content: counter(y) '%'; }
+  /* inside is a discrete state — read it with a style query, not a var() */
+  .pointer-local-demo__in::after { content: 'no'; }
+  @container style(--live-pointer-inside: 1) {
+    .pointer-local-demo__in::after { content: 'yes'; }
+  }
+</style>
+
+<script>
+  import { propsFor, register } from 'prop-for-that'
+  import { pointerLocal } from 'prop-for-that/plugins'
+
+  register(pointerLocal)
+  propsFor(document.querySelectorAll<HTMLElement>('[data-pft-pointer-local]'), ['pointer-local'])
+</script>
