@@ -32,7 +32,7 @@ interface Config {
 }
 ```
 
-Set `typed: true` to register written `--live-*` properties with `@property`, making them interpolatable and giving them a guaranteed initial value. Pass `defaults` (keyed by a source's local name, e.g. `'pointer-x-ratio'`) to choose those initial values. See [Typed properties](/concepts/typed-properties/).
+Set `typed: true` to register written `--live-*` properties with `@property`, making them interpolatable and giving them a guaranteed initial value. Pass `defaults` (keyed by a source's local name, e.g. `'pointer-x-ratio'`) to choose those initial values. See [Typed properties](/concepts/typed-properties/). With the [`auto` entry](/start/getting-started/#1-auto-zero-config), `<html data-props-typed>` is the markup equivalent of `typed: true`.
 
 Set `liveHz` to cap how often the shared loop samples and flushes — e.g. `30` coalesces writes to at most 30/sec. Fewer custom-property mutations means less style recalc and a calmer DevTools Styles panel, at the cost of update smoothness. It throttles the whole loop, so per-frame samplers like `fps` and `scroll-velocity` measure at this rate too.
 

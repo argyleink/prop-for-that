@@ -138,7 +138,7 @@ if (fstate && fstateWrap) {
 // ── Demo 15 (img-color): the first two swatches are real photos from a CORS-
 // enabled placeholder API (crossorigin so img-color can read their pixels); the
 // other two are canvas-generated gradients (same-origin, no taint). Picking one
-// swaps the <img>; img-color re-reads the dominant colour into --live-img-r/g/b
+// swaps the <img>; img-color re-reads the dominant colour into --live-img (hex)
 // on the card, which tints the drop shadow. pointer-local on the stage drives
 // --live-px/py, and CSS casts the shadow AWAY from the cursor — the cursor is the sun.
 const SUN_IMAGES = [

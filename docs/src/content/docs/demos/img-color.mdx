@@ -5,33 +5,36 @@ description: A live demo of the img-color plugin — the dominant color of an im
 
 import ImgColorDemo from '../../../components/ImgColorDemo.astro';
 
-CSS can't read an image's pixels, so it can't tint a card, scrim, or caption to match the artwork inside it. The `img-color` plugin extracts a small **palette** from an `<img>` — the dominant color plus an accent, a darkest, a lightest, an average, and a warm/cool reading — and writes each as channels you compose with `rgb()`, plus a luminance you branch on to keep text legible.
+CSS can't read an image's pixels, so it can't tint a card, scrim, or caption to match the artwork inside it. The `img-color` plugin extracts a small **palette** from an `<img>` — the dominant color plus an accent, a darkest, a lightest, an average, and a warm/cool reading — and writes each as a single `#rrggbb` color you drop straight into `var()`.
 
 It's the heavier sibling of the [`img`](/reference/plugins/#element-plugins) plugin (which does load state and natural size) — kept separate so the pixel-reading cost is opt-in.
 
 <ImgColorDemo />
 
-Each card above is themed from its own artwork: the caption is painted with the **dominant** color, the glow is the **accent**, the chips show the full palette, and the bar reads its **temperature** — all in CSS, with text flipping black or white from each color's luminance.
+Each card above is themed from its own artwork: the caption is painted with the **dominant** color, the glow is the **accent**, the chips show the full palette, and the bar reads its **temperature** — all in CSS, with text flipping black or white based on the background color's lightness.
 
 ## The props
 
-Written on the bound element on the [`live`](/concepts/naming-and-cadence/) cadence, recomputed whenever the image loads (so a `src` swap updates them). Every swatch shares the same shape: `r` / `g` / `b` channels (`0`–`255`) and an `l` luminance (`0`–`1`, Rec. 709 weights — threshold it for light/dark text).
+Written on the bound element on the [`live`](/concepts/naming-and-cadence/) cadence, recomputed whenever the image loads (so a `src` swap updates them). The pixels are sRGB, so each swatch is a single hex color — no separate `r`/`g`/`b` channel props, because CSS already pulls channels out of a color for you (relative color syntax, `color-mix()`).
 
 | Property | What it is |
 | --- | --- |
-| `--live-img-r`, `-g`, `-b`, `--live-img-l` | the **dominant** color (the most common one) |
-| `--live-img-accent-r`, `-g`, `-b`, `-l` | the **most vibrant** color — a punchy, mid-toned accent (reuses the dominant for a grayscale image) |
-| `--live-img-dark-r`, `-g`, `-b`, `-l` | the **darkest** color that isn't black |
-| `--live-img-light-r`, `-g`, `-b`, `-l` | the **lightest** color that isn't white |
-| `--live-img-avg-r`, `-g`, `-b`, `-l` | the **average** (mean of every pixel) — distinct from the dominant (the mode) |
+| `--live-img` | the **dominant** color (the most common one) |
+| `--live-img-accent` | the **most vibrant** color — a punchy, mid-toned accent (reuses the dominant for a grayscale image) |
+| `--live-img-dark` | the **darkest** color that isn't black |
+| `--live-img-light` | the **lightest** color that isn't white |
+| `--live-img-avg` | the **average** (mean of every pixel) — distinct from the dominant (the mode) |
 | `--live-img-temp` | the image's **temperature**, `−1` (cool) … `+1` (warm), from its red-vs-blue balance |
 
 ```css
-.card { background: rgb(var(--live-img-r) var(--live-img-g) var(--live-img-b)); }
-.tag  { background: rgb(var(--live-img-accent-r) var(--live-img-accent-g) var(--live-img-accent-b)); }
+.card { background: var(--live-img); }
 
-/* contrasting text: round() snaps luminance to 0 or 1 → white or black */
-.card { color: hsl(0 0% calc((1 - round(var(--live-img-l), 1)) * 100%)); }
+/* need an alpha, a tint, or a single channel? take it from the color */
+.tag   { background: oklch(from var(--live-img-accent) l c h / 50%); }
+.wash  { background: color-mix(in oklab, var(--live-img) 20%, white); }
+
+/* contrasting text: flip black/white from the background's own lightness */
+.card  { color: oklch(from var(--live-img) clamp(0, (0.6 - l) * 100, 1) 0 0); }
 
 /* warmer images lean the UI warmer */
 .frame { --hue: calc(220deg - var(--live-img-temp) * 200deg); border-color: hsl(var(--hue) 60% 50%); }
@@ -43,12 +46,12 @@ The whole palette is found by **downsampling**, not by scanning every pixel — 
 
 1. `createImageBitmap(img, { resizeWidth: 16, resizeHeight: 16 })` decodes and shrinks the image **off the main thread**.
 2. It's drawn to a 16×16 `OffscreenCanvas` (no DOM node), and those 256 pixels are read back once.
-3. One loop buckets the colors into a coarse grid and tallies the pixel sum; the dominant is the most-populated bucket, the accent/dark/light fall out of the same buckets by saturation and luminance, and the average and temperature come from the running sum. Transparent pixels are skipped.
+3. One loop buckets the colors into a coarse grid and tallies the pixel sum; the dominant is the most-populated bucket, the accent/dark/light fall out of the same buckets by saturation and luminance, the average and temperature come from the running sum, and each is serialized to a hex string. Transparent pixels are skipped.
 
 Both `OffscreenCanvas` and `createImageBitmap` are feature-detected, with a plain `<canvas>` / direct-draw fallback, so it runs wherever canvas does and no-ops where it doesn't.
 
 :::caution[Cross-origin images need CORS]
-Reading pixels from a cross-origin image taints the canvas and throws. For images from another origin, add `crossorigin="anonymous"` **and** serve them with permissive CORS headers. Without that the plugin simply **writes nothing** — so always give `var()` a fallback: `rgb(var(--live-img-r, 128) …)`. Same-origin and `data:` images (like this demo's) just work.
+Reading pixels from a cross-origin image taints the canvas and throws. For images from another origin, add `crossorigin="anonymous"` **and** serve them with permissive CORS headers. Without that the plugin simply **writes nothing** — so always give `var()` a fallback: `var(--live-img, #888)`. Same-origin and `data:` images (like this demo's) just work.
 :::
 
 ## The wiring

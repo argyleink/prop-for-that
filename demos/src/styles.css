@@ -62,6 +62,34 @@
     Menlo, Consolas, monospace;
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Open Props' spring-3 easing (a soft springy overshoot ~16%) */
+  --ease-spring-3: linear(
+    0,
+    0.009,
+    0.035 2.1%,
+    0.141 4.4%,
+    0.723 12.9%,
+    0.938 16.7%,
+    1.017,
+    1.077,
+    1.121,
+    1.149 24.3%,
+    1.159,
+    1.163,
+    1.161,
+    1.154 29.9%,
+    1.129 32.8%,
+    1.051 39.6%,
+    1.017 43.1%,
+    0.991,
+    0.977 51%,
+    0.974 53.8%,
+    0.98 57.1%,
+    1.018 69.2%,
+    1.006 81.4%,
+    0.997 94.7%,
+    1
+  );
 
   /* scrollbars: the thumb IS the live accent (it rides --accent-h, so it tracks
      the page hue) on a transparent track */
@@ -257,6 +285,42 @@ h2 {
   font-weight: 500;
   color: var(--ink);
 }
+/* prominent GitHub link, shared by the hero and the footer */
+.masthead__cta {
+  margin: 0 0 var(--space-4);
+}
+.colophon__cta {
+  margin: var(--space-4) 0 0;
+}
+.btn-gh {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65ch;
+  padding: 0.7rem 1.25rem;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--paper);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  text-decoration: none;
+  transition:
+    background 200ms var(--ease-out),
+    border-color 200ms var(--ease-out),
+    translate 150ms var(--ease-out);
+}
+.btn-gh__mark {
+  inline-size: 1.2em;
+  block-size: 1.2em;
+  fill: currentColor;
+}
+.btn-gh:hover {
+  background: var(--accent-ink);
+  border-color: var(--accent-ink);
+  translate: 0 -1px;
+}
 .lede {
   max-width: var(--measure);
   color: var(--ink-soft);
@@ -266,19 +330,27 @@ h2 {
   margin: 0;
   text-wrap: pretty;
 }
-/* inline code reads as a real code token, not prose: an editor-grey chip with a
-   hairline rule, and the text in the SAME var-token magenta the code blocks use
-   for --live-* — so a `--live-x` inline matches its highlighted twin in a <pre>.
-   Cloned across line breaks so wrapped snippets keep their box. */
+/* inline code reads as a real code token, not prose: a tinted chip with a hairline
+   rule, the text in the SAME var-token colour the code blocks use for --live-* —
+   both rotated off the live theme hue (--accent-h) — so a `--live-x` inline matches
+   its highlighted twin in a <pre>, and the chip tracks whatever hue the page is set
+   to. Cloned across line breaks so wrapped snippets keep their box. */
 .lede code,
 .desc code,
 .colophon code,
 .reveal__t code {
-  background: light-dark(oklch(96.5% 0.006 300), oklch(26% 0.03 300));
-  color: light-dark(oklch(48% 0.23 350), oklch(85% 0.16 350));
+  background: light-dark(
+    oklch(96.5% 0.006 var(--accent-h)),
+    oklch(26% 0.03 var(--accent-h))
+  );
+  color: light-dark(
+    oklch(48% 0.23 calc(var(--accent-h) - 55)),
+    oklch(85% 0.16 calc(var(--accent-h) - 55))
+  );
   padding: 0.12em 0.46em;
   border-radius: 6px;
-  border: 1px solid light-dark(oklch(88% 0.02 320), oklch(38% 0.04 320));
+  border: 1px solid
+    light-dark(oklch(88% 0.02 var(--accent-h)), oklch(38% 0.04 var(--accent-h)));
   font-weight: 600;
   font-size: 0.86em;
   box-decoration-break: clone;
@@ -717,9 +789,9 @@ main {
 }
 .desc {
   color: var(--ink-soft);
-  font-size: var(--step-1);
+  font-size: var(--step-0);
   font-weight: 350;
-  line-height: 1.5;
+  line-height: 1.55;
   margin: 0;
   max-width: 34rem;
   text-wrap: balance;
@@ -1736,17 +1808,32 @@ main {
 .caption code {
   font-family: var(--font-mono);
 }
+/* Token colours rotate off the live theme hue (--accent-h): each is an analogous
+   offset from the accent, so the snippet palette shifts with whatever hue the page
+   is set to and stays harmonious, instead of a fixed pink that can clash. */
 .tok-key {
-  color: light-dark(oklch(48% 0.2 300), oklch(80% 0.14 300));
+  color: light-dark(
+    oklch(49% 0.18 calc(var(--accent-h) + 25)),
+    oklch(80% 0.14 calc(var(--accent-h) + 25))
+  );
 }
 .tok-fn {
-  color: light-dark(oklch(52% 0.13 230), oklch(80% 0.11 230));
+  color: light-dark(
+    oklch(53% 0.12 calc(var(--accent-h) - 25)),
+    oklch(81% 0.1 calc(var(--accent-h) - 25))
+  );
 }
 .tok-str {
-  color: light-dark(oklch(48% 0.14 150), oklch(80% 0.13 150));
+  color: light-dark(
+    oklch(50% 0.13 calc(var(--accent-h) + 55)),
+    oklch(80% 0.12 calc(var(--accent-h) + 55))
+  );
 }
 .tok-num {
-  color: light-dark(oklch(55% 0.13 60), oklch(82% 0.12 70));
+  color: light-dark(
+    oklch(56% 0.11 calc(var(--accent-h) + 90)),
+    oklch(82% 0.1 calc(var(--accent-h) + 90))
+  );
 }
 .tok-sel {
   color: var(--accent-ink);
@@ -1755,7 +1842,10 @@ main {
   color: var(--ink-soft);
 }
 .tok-var {
-  color: light-dark(oklch(52% 0.22 350), oklch(82% 0.16 350));
+  color: light-dark(
+    oklch(52% 0.19 calc(var(--accent-h) - 55)),
+    oklch(82% 0.15 calc(var(--accent-h) - 55))
+  );
   font-weight: 600;
 }
 .tok-com {
@@ -2610,11 +2700,12 @@ main {
   user-select: none;
   -webkit-user-select: none;
   touch-action: none;
-  /* spring home on release (a little overshoot) */
+  /* spring home on release: a soft, springy settle (Open Props spring-3). The
+     longer duration lets the overshoot read; translate + scale spring together. */
   transition:
-    translate 0.55s cubic-bezier(0.34, 1.56, 0.64, 1),
-    box-shadow 0.2s var(--ease-out),
-    scale 0.2s var(--ease-out);
+    translate 0.8s var(--ease-spring-3),
+    scale 0.8s var(--ease-spring-3),
+    box-shadow 0.3s var(--ease-out);
 }
 /* :active is the gate. The drag offset = (cursor − home) × board size; the −50%
    keeps the token centred on the cursor. transition:none → it tracks instantly. */
@@ -2693,29 +2784,22 @@ main {
 .fstate__chips {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: 0.9rem;
   margin: 0;
   padding: 0;
   list-style: none;
   font-family: var(--font-mono);
-  font-size: var(--step--1);
+  font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.04em;
 }
+/* just a dot + label — no pill, no padding */
 .fstate__chip {
   display: inline-flex;
   align-items: center;
   gap: 0.5ch;
-  padding: 0.25em 0.75em;
-  border: 1px solid;
-  border-radius: 999px;
   color: color-mix(in oklab, var(--accent-ink) calc(var(--s, 0) * 100%), var(--ink-faint));
-  border-color: color-mix(in oklab, var(--accent) calc(var(--s, 0) * 55%), var(--line));
-  background: color-mix(in oklab, var(--accent-soft) calc(var(--s, 0) * 100%), transparent);
-  transition:
-    color 200ms linear,
-    border-color 200ms linear,
-    background 200ms linear;
+  transition: color 200ms linear;
 }
 .fstate__chip span {
   inline-size: 0.5rem;
@@ -2852,7 +2936,7 @@ main {
 }
 
 /* ════════════════════════════ 15. IMG COLOR ══════════════════════════════
-   img-color writes the <img>'s dominant colour into --live-img-r/g/b on the card;
+   img-color writes the <img>'s dominant colour (a hex) into --live-img on the card;
    pointer-local writes --live-px/py on the stage. CSS casts a drop shadow in the
    image's colour AWAY from the cursor (offset clamped, growing with distance), so
    the cursor reads as the sun. The stage clips that shadow inside its own box. */
@@ -2875,14 +2959,10 @@ main {
   aspect-ratio: 4 / 5;
   border-radius: 18px;
   /* the only reactive thing: the image-coloured shadow, cast opposite the cursor.
-     oklch(from …) restates the read RGB as oklch, so the colour is an oklch value. */
+     --live-img is a hex colour; oklch(from …) restates it with alpha. */
   box-shadow:
     calc(var(--dx) * -2 * var(--reach)) calc(var(--dy) * -2 * var(--reach)) 2.5rem
-      0.25rem
-      oklch(
-        from rgb(var(--live-img-r, 130) var(--live-img-g, 95) var(--live-img-b, 60))
-          l c h / 0.6
-      );
+      0.25rem oklch(from var(--live-img, #825f3c) l c h / 0.6);
   transition: box-shadow 120ms linear;
 }
 .sun-card__img {
@@ -2926,19 +3006,19 @@ main {
   transition: background 280ms linear;
 }
 .sun-sw--dominant {
-  --sw: rgb(var(--live-img-r, 130) var(--live-img-g, 95) var(--live-img-b, 60));
+  --sw: var(--live-img, #825f3c);
 }
 .sun-sw--accent {
-  --sw: rgb(var(--live-img-accent-r, 210) var(--live-img-accent-g, 120) var(--live-img-accent-b, 40));
+  --sw: var(--live-img-accent, #d27828);
 }
 .sun-sw--dark {
-  --sw: rgb(var(--live-img-dark-r, 38) var(--live-img-dark-g, 30) var(--live-img-dark-b, 28));
+  --sw: var(--live-img-dark, #261e1c);
 }
 .sun-sw--light {
-  --sw: rgb(var(--live-img-light-r, 232) var(--live-img-light-g, 222) var(--live-img-light-b, 210));
+  --sw: var(--live-img-light, #e8ded2);
 }
 .sun-sw--avg {
-  --sw: rgb(var(--live-img-avg-r, 150) var(--live-img-avg-g, 120) var(--live-img-avg-b, 100));
+  --sw: var(--live-img-avg, #967864);
 }
 /* the picker — click a swatch and img-color re-reads the new artwork's colours */
 .sun-picker {
@@ -2967,28 +3047,29 @@ main {
 }
 
 /* ════════════════════════════ 16. VIDEO COLOR ════════════════════════════
-   video-color samples the playing <video> into --live-video-* (dominant) and
-   --live-video-accent-* on the stage. The ACCENT drives a soft box-shadow glow,
-   eased between the ~4 Hz samples, so the player looks backlit; both colours show
-   as swatches below. overflow:hidden rounds the video but NOT the card's own
-   outset shadow, so the glow spills. The accent falls back to the dominant. */
+   video-color samples the playing <video> into --live-video (dominant) and
+   --live-video-accent on the stage, both hex. The DOMINANT drives a box-shadow glow
+   (steadier than the accent), eased between the ~4 Hz samples, so the player looks
+   backlit; both colours show as swatches below. overflow:hidden rounds the video
+   but NOT the card's own outset shadow, so the glow spills. */
+/* no .stage card here — the video sits free so the glow has room to breathe */
 .stage--vid {
-  min-height: 22rem;
-  padding: clamp(var(--space-5), 8vw, 5rem);
-  gap: var(--space-4);
+  display: grid;
+  place-items: center;
+  gap: var(--space-5);
+  padding: clamp(var(--space-4), 7vw, 4.5rem);
 }
 .vid-card {
-  /* the glow colour: the video's accent, falling back to its dominant */
-  --vr: var(--live-video-accent-r, var(--live-video-r, 60));
-  --vg: var(--live-video-accent-g, var(--live-video-g, 70));
-  --vb: var(--live-video-accent-b, var(--live-video-b, 120));
+  /* the glow colour: the video's dominant (a hex colour) — steadier than the
+     accent, which jumps around too much frame to frame */
+  --vid: var(--live-video, #3c4678);
   position: relative;
   inline-size: min(30rem, 100%);
   border-radius: 16px;
   overflow: hidden;
   box-shadow:
-    0 0 3rem -0.25rem oklch(from rgb(var(--vr) var(--vg) var(--vb)) l c h / 0.55),
-    0 0 7rem 0.5rem oklch(from rgb(var(--vr) var(--vg) var(--vb)) l c h / 0.32);
+    0 0 3rem -0.25rem oklch(from var(--vid) l c h / 0.55),
+    0 0 7rem 0.5rem oklch(from var(--vid) l c h / 0.32);
   transition: box-shadow 320ms linear;
 }
 .vid-card__v {
@@ -3027,14 +3108,10 @@ main {
   transition: background 280ms linear;
 }
 .vid-sw--dominant {
-  --sw: rgb(var(--live-video-r, 60) var(--live-video-g, 70) var(--live-video-b, 120));
+  --sw: var(--live-video, #3c4678);
 }
 .vid-sw--accent {
-  --sw: rgb(
-    var(--live-video-accent-r, var(--live-video-r, 60))
-      var(--live-video-accent-g, var(--live-video-g, 70))
-      var(--live-video-accent-b, var(--live-video-b, 120))
-  );
+  --sw: var(--live-video-accent, var(--live-video, #3c4678));
 }
 
 /* ════════════════════════════ ★. SOURCE GALLERY ═══════════════════════════

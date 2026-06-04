@@ -3,7 +3,7 @@ import { netTypeToNumber } from '../src/plugins/network'
 import { field } from '../src/plugins/field'
 import { fieldState } from '../src/plugins/field-state'
 import { formState } from '../src/plugins/form-state'
-import { palette } from '../src/plugins/_color'
+import { palette, toHex } from '../src/plugins/_color'
 import { scrollVelocity } from '../src/plugins/scroll-velocity'
 import { cpuPressure } from '../src/plugins/cpu-pressure'
 import { img } from '../src/plugins/img'
@@ -329,6 +329,12 @@ describe('img-color palette', () => {
   it('returns null when nothing is opaque', () => {
     expect(palette(new Uint8ClampedArray([10, 20, 30, 0]))).toBeNull()
   })
+
+  it('serialises a swatch to a zero-padded sRGB hex string', () => {
+    expect(toHex({ r: 255, g: 0, b: 0, l: 0 })).toBe('#ff0000')
+    expect(toHex({ r: 0, g: 0, b: 0, l: 0 })).toBe('#000000') // padding, not "#0"
+    expect(toHex({ r: 31, g: 158, b: 138, l: 0 })).toBe('#1f9e8a')
+  })
 })
 
 describe('img', () => {
@@ -440,10 +446,7 @@ describe('video-color', () => {
     const { ctx, values } = makeRecorder(v.el)
 
     const dispose = videoColor.start(ctx)
-    expect(values['video-r']).toBe(255)
-    expect(values['video-g']).toBe(0)
-    expect(values['video-b']).toBe(0)
-    expect(values['video-l']).toBeCloseTo(0.2126, 3)
+    expect(values['video']).toBe('#ff0000') // a single sRGB hex colour
 
     dispose()
     v.el.remove()
@@ -461,9 +464,8 @@ describe('video-color', () => {
     const { ctx, values } = makeRecorder(v.el)
 
     const dispose = videoColor.start(ctx)
-    expect(values['video-r']).toBe(90) // dominant = the muted majority
-    expect(values['video-accent-r']).toBe(230) // accent = the vivid minority
-    expect(values['video-accent-g']).toBe(40)
+    expect(values['video']).toBe('#5a5a6e') // dominant = the muted majority
+    expect(values['video-accent']).toBe('#e62828') // accent = the vivid minority
 
     dispose()
     v.el.remove()
@@ -480,12 +482,11 @@ describe('video-color', () => {
     frame = BLUE
 
     v.fire(100) // within 250 ms of the seed → throttled, still red
-    expect(values['video-b']).toBe(0)
+    expect(values['video']).toBe('#ff0000')
     expect((v.el as any).requestVideoFrameCallback).toHaveBeenCalledTimes(2) // re-armed
 
     v.fire(400) // past the interval → re-samples blue
-    expect(values['video-b']).toBe(255)
-    expect(values['video-r']).toBe(0)
+    expect(values['video']).toBe('#0000ff')
 
     v.el.remove()
   })
@@ -503,7 +504,7 @@ describe('video-color', () => {
 
     frame = BLUE
     v.fire(1000) // disposed → ignored
-    expect(values['video-b']).toBe(0)
+    expect(values['video']).toBe('#ff0000') // still the seeded red
 
     v.el.remove()
   })
@@ -528,7 +529,7 @@ describe('video-color', () => {
     const { ctx, values } = makeRecorder(v.el)
 
     const dispose = videoColor.start(ctx)
-    expect(values['video-r']).toBeUndefined()
+    expect(values['video']).toBeUndefined()
 
     dispose()
     v.el.remove()
@@ -540,7 +541,7 @@ describe('video-color', () => {
     const { ctx, values } = makeRecorder(div)
 
     const dispose = videoColor.start(ctx)
-    expect(values['video-r']).toBeUndefined()
+    expect(values['video']).toBeUndefined()
 
     dispose()
     div.remove()

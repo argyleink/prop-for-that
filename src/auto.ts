@@ -1,4 +1,4 @@
-import { propsFor, unbind } from './index'
+import { propsFor, unbind, configure } from './index'
 
 /**
  * Zero-config entry: attaches a default set of global sources and binds any
@@ -7,6 +7,12 @@ import { propsFor, unbind } from './index'
  *   import 'prop-for-that/auto'
  *   <input type="range" data-props-for="range">
  *   <div data-props-for="size visibility">…</div>
+ *
+ * Add `data-props-typed` to the root `<html>` to opt the whole document into
+ * typed, interpolatable `@property` values — the HTML mirror of
+ * `configure({ typed: true })`:
+ *
+ *   <html data-props-typed>
  */
 const DEFAULT_GLOBALS = ['viewport', 'pointer']
 
@@ -50,6 +56,14 @@ function clearTree(node: Node): void {
 }
 
 function init(): void {
+  // Document-level opt-in: `<html data-props-typed>` mirrors `configure({ typed: true })`.
+  // Read once, before any source attaches — `@property` registration is global per
+  // name, so typing is all-or-nothing for the document (see the typed-properties docs),
+  // and `config.typed` must be set before the first write. The attribute is a boolean;
+  // any value is ignored (there is no per-key subset, just as there isn't in JS).
+  if (document.documentElement.hasAttribute('data-props-typed')) {
+    configure({ typed: true })
+  }
   propsFor(DEFAULT_GLOBALS)
   document.querySelectorAll<HTMLElement>('[data-props-for]').forEach(sync)
 

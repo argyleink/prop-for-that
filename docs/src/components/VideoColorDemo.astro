@@ -13,17 +13,17 @@
     <figcaption class="vc__cap">
       <span class="vc__name">Now playing</span>
       <span class="vc__meta">
-        <span class="vc__rgb">rgb(<b class="vc__r"></b> <b class="vc__g"></b> <b class="vc__b"></b>)</span>
-        <i class="vc__accent" title="accent"></i>
+        <i class="vc__sw vc__sw--dom" title="dominant"></i>
+        <i class="vc__sw vc__sw--accent" title="accent"></i>
       </span>
     </figcaption>
   </figure>
 
   <p class="pft-hint">
     The frame is read 16×16 on <code>requestVideoFrameCallback</code> (throttled
-    to ~4&nbsp;Hz), so the caption — <code>rgb(var(--live-video-r) …)</code>, the
-    dominant colour, text flipped by <code>--live-video-l</code> — and the glow and
-    chip — <code>--live-video-accent-*</code>, the vibrant blob — both track the
+    to ~4&nbsp;Hz), so the caption — <code>var(--live-video)</code>, the dominant
+    colour, with text flipped from its own lightness — and the glow and accent chip
+    — <code>var(--live-video-accent)</code>, the vibrant blob — both track the
     picture and stop the moment the video pauses or scrolls offscreen. The video is
     a canvas-captured stream, so there's no file and no cross-origin taint.
   </p>
@@ -37,8 +37,7 @@
     overflow: hidden;
     border: 1px solid var(--sl-color-gray-5);
     /* an ambient glow in the video's accent colour, smoothed across samples */
-    box-shadow: 0 0 3rem -0.4rem
-      rgb(var(--live-video-accent-r, 128) var(--live-video-accent-g, 128) var(--live-video-accent-b, 128));
+    box-shadow: 0 0 3rem -0.4rem var(--live-video-accent, #808080);
     transition: box-shadow 0.3s ease;
   }
   .vc__video {
@@ -54,26 +53,23 @@
     justify-content: space-between;
     gap: 0.5rem;
     padding: 0.5rem 0.7rem;
-    background: rgb(var(--live-video-r, 128) var(--live-video-g, 128) var(--live-video-b, 128));
-    /* round(luminance) → 0 or 1 → black or white text, full contrast either way */
-    color: hsl(0 0% calc((1 - round(var(--live-video-l, 0.5), 1)) * 100%));
+    background: var(--live-video, #808080);
+    /* flip black/white text from the background colour's own oklch lightness */
+    color: oklch(from var(--live-video, #808080) clamp(0, (0.6 - l) * 100, 1) 0 0);
     font-family: var(--sl-font-mono, ui-monospace, monospace);
     transition: background 0.3s ease;
   }
   .vc__name { font-weight: 700; font-size: 0.85rem; }
-  .vc__meta { display: inline-flex; align-items: center; gap: 0.5rem; }
-  .vc__rgb { font-size: 0.7rem; opacity: 0.85; font-variant-numeric: tabular-nums; }
-  .vc__r::after { counter-reset: c calc(var(--live-video-r, 0)); content: counter(c); }
-  .vc__g::after { counter-reset: c calc(var(--live-video-g, 0)); content: counter(c); }
-  .vc__b::after { counter-reset: c calc(var(--live-video-b, 0)); content: counter(c); }
-  /* a chip of the live accent colour, sitting on the dominant-coloured caption */
-  .vc__accent {
+  .vc__meta { display: inline-flex; align-items: center; gap: 0.4rem; }
+  /* chips of the live dominant + accent colours, on the dominant-coloured caption */
+  .vc__sw {
     inline-size: 1.1rem;
     block-size: 1.1rem;
     border-radius: 0.25rem;
-    background: rgb(var(--live-video-accent-r, 128) var(--live-video-accent-g, 128) var(--live-video-accent-b, 128));
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3);
   }
+  .vc__sw--dom { background: var(--live-video, #808080); }
+  .vc__sw--accent { background: var(--live-video-accent, #808080); }
 </style>
 
 <script>

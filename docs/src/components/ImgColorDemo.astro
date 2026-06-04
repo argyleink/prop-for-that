@@ -1,136 +1,153 @@
 ---
 // Img-color demo: img-color is bound to each card (it resolves the inner <img>),
-// so the whole palette lands on the card. The caption background is the dominant
-// colour, the card glow is the accent, the chips are dominant/accent/dark/light/
-// average, and the bar reads --live-img-temp. Text colour flips black/white from
-// each swatch's luminance. The images are inline SVG data URIs (muted base + a
-// vivid accent blob + a dark and a light corner) so the canvas read isn't
-// cross-origin tainted and every swatch is visibly distinct.
+// so the whole palette lands on the card. One vertical hierarchy per card —
+// image (hero), a flush bar of the four supporting swatches (accent, darkest,
+// lightest, average), then a footer painted the dominant colour whose text
+// auto-flips legible from that colour's own lightness. A soft accent glow is the
+// only ambient touch. The images are inline SVG data URIs (muted base + a vivid
+// accent blob + a dark and a light corner) so the canvas read isn't cross-origin
+// tainted and every swatch is visibly distinct.
 ---
 <div class="pft-stage img-color-demo">
   <div class="ic__grid">
     <figure class="ic__card" data-pft-imgcolor
       data-base="#8a5a50" data-accent="#ff7a18" data-dark="#241a16" data-light="#f3e9e0">
       <img class="ic__img" alt="" />
-      <figcaption class="ic__cap">
-        <span class="ic__name">Ember</span>
-        <span class="ic__temp" title="warm ↔ cool"></span>
-      </figcaption>
-      <div class="ic__palette" role="img" aria-label="extracted palette">
-        <i class="ic__sw ic__sw--dom" title="dominant"></i>
+      <div class="ic__strip" role="img" aria-label="accent, darkest, lightest and average swatches">
         <i class="ic__sw ic__sw--accent" title="accent"></i>
         <i class="ic__sw ic__sw--dark" title="darkest"></i>
         <i class="ic__sw ic__sw--light" title="lightest"></i>
         <i class="ic__sw ic__sw--avg" title="average"></i>
       </div>
+      <figcaption class="ic__cap">
+        <span class="ic__name">Ember</span>
+        <span class="ic__temp" title="warm ↔ cool"></span>
+      </figcaption>
     </figure>
 
     <figure class="ic__card" data-pft-imgcolor
       data-base="#4a6670" data-accent="#16c5e8" data-dark="#11202a" data-light="#e6f3f6">
       <img class="ic__img" alt="" />
-      <figcaption class="ic__cap">
-        <span class="ic__name">Ocean</span>
-        <span class="ic__temp" title="warm ↔ cool"></span>
-      </figcaption>
-      <div class="ic__palette" role="img" aria-label="extracted palette">
-        <i class="ic__sw ic__sw--dom" title="dominant"></i>
+      <div class="ic__strip" role="img" aria-label="accent, darkest, lightest and average swatches">
         <i class="ic__sw ic__sw--accent" title="accent"></i>
         <i class="ic__sw ic__sw--dark" title="darkest"></i>
         <i class="ic__sw ic__sw--light" title="lightest"></i>
         <i class="ic__sw ic__sw--avg" title="average"></i>
       </div>
+      <figcaption class="ic__cap">
+        <span class="ic__name">Ocean</span>
+        <span class="ic__temp" title="warm ↔ cool"></span>
+      </figcaption>
     </figure>
 
     <figure class="ic__card" data-pft-imgcolor
       data-base="#b9a988" data-accent="#1f9e8a" data-dark="#3a2f22" data-light="#f7f1e4">
       <img class="ic__img" alt="" />
-      <figcaption class="ic__cap">
-        <span class="ic__name">Sand</span>
-        <span class="ic__temp" title="warm ↔ cool"></span>
-      </figcaption>
-      <div class="ic__palette" role="img" aria-label="extracted palette">
-        <i class="ic__sw ic__sw--dom" title="dominant"></i>
+      <div class="ic__strip" role="img" aria-label="accent, darkest, lightest and average swatches">
         <i class="ic__sw ic__sw--accent" title="accent"></i>
         <i class="ic__sw ic__sw--dark" title="darkest"></i>
         <i class="ic__sw ic__sw--light" title="lightest"></i>
         <i class="ic__sw ic__sw--avg" title="average"></i>
       </div>
+      <figcaption class="ic__cap">
+        <span class="ic__name">Sand</span>
+        <span class="ic__temp" title="warm ↔ cool"></span>
+      </figcaption>
     </figure>
   </div>
 
   <p class="pft-hint">
-    Each card is themed from its art in one 16×16 pass: the caption is the
-    <code>dominant</code> colour, the glow is the <code>accent</code> (most
-    vibrant), the chips are dominant / accent / darkest / lightest / average, and
-    the bar marker rides <code>--live-img-temp</code> (cool ↔ warm). Caption text
-    flips black/white from <code>--live-img-l</code> so it stays legible.
+    Each card is themed from its art in one 16×16 pass. The footer is painted the
+    <code>--live-img</code> dominant colour, its text flipped black or white from
+    that colour's own lightness; the glow and the strip lead with
+    <code>--live-img-accent</code>, then darkest, lightest and average; and the
+    footer marker rides <code>--live-img-temp</code> (cool ↔ warm). All single hex
+    colours, no separate channels.
   </p>
 </div>
 
 <style>
   .ic__grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    gap: 1.1rem;
   }
   .ic__card {
     margin: 0;
-    border-radius: 0.6rem;
+    border-radius: 0.7rem;
     overflow: hidden;
     border: 1px solid var(--sl-color-gray-5);
-    /* a faint wash of the dominant, and a glow in the accent colour */
-    background: color-mix(in oklab,
-      rgb(var(--live-img-r, 128) var(--live-img-g, 128) var(--live-img-b, 128)) 16%,
-      var(--sl-color-black));
-    box-shadow: 0 0 1.6rem -0.4rem
-      rgb(var(--live-img-accent-r, 128) var(--live-img-accent-g, 128) var(--live-img-accent-b, 128));
-    transition: box-shadow 0.3s ease;
+    background: var(--sl-color-gray-6);
+    /* one ambient signal: a soft glow grounded in the accent colour */
+    box-shadow: 0 0.4rem 1.6rem -0.7rem var(--live-img-accent, transparent);
+    transition: box-shadow 0.4s ease;
   }
-  .ic__img { display: block; inline-size: 100%; block-size: 7rem; object-fit: cover; }
+  .ic__img {
+    display: block;
+    inline-size: 100%;
+    block-size: 7.5rem;
+    object-fit: cover;
+  }
+  /* the supporting palette as one flush bar: accent · darkest · lightest · average */
+  .ic__strip {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    block-size: 1.1rem;
+    border-block-start: 1px solid oklch(0 0 0 / 0.22);
+  }
+  .ic__sw {
+    transition: background 0.4s ease;
+  }
+  .ic__sw--accent { background: var(--live-img-accent, oklch(0.62 0.02 60)); }
+  .ic__sw--dark { background: var(--live-img-dark, oklch(0.28 0.01 60)); }
+  .ic__sw--light { background: var(--live-img-light, oklch(0.88 0.01 80)); }
+  .ic__sw--avg { background: var(--live-img-avg, oklch(0.6 0.015 70)); }
+  /* the dominant colour themes the footer; text auto-flips legible from its lightness */
   .ic__cap {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.5rem;
-    padding: 0.45rem 0.7rem;
-    background: rgb(var(--live-img-r, 128) var(--live-img-g, 128) var(--live-img-b, 128));
-    /* round(luminance) → 0 or 1 → black or white text, full contrast either way */
-    color: hsl(0 0% calc((1 - round(var(--live-img-l, 0.5), 1)) * 100%));
+    gap: 0.6rem;
+    padding: 0.55rem 0.75rem;
+    background: var(--live-img, oklch(0.62 0.02 60));
+    color: oklch(from var(--live-img, oklch(0.62 0.02 60)) clamp(0, (0.6 - l) * 100, 1) 0 0);
     font-family: var(--sl-font-mono, ui-monospace, monospace);
+    transition: background 0.4s ease;
   }
-  .ic__name { font-weight: 700; font-size: 0.85rem; }
-  /* temperature gauge: a cool→warm track with a marker positioned from −1…+1 */
+  .ic__name { font-weight: 650; font-size: 0.9rem; letter-spacing: 0.01em; }
+  /* temperature: a small cool→warm track with a marker positioned from −1…+1 */
   .ic__temp {
     position: relative;
-    inline-size: 3.5rem;
-    block-size: 0.4rem;
+    inline-size: 3rem;
+    block-size: 0.3rem;
     border-radius: 1rem;
-    background: linear-gradient(to right, #4aa3ff, #d9d9d9, #ff8a3d);
+    background: linear-gradient(
+      to right,
+      oklch(0.7 0.13 240),
+      oklch(0.86 0.02 90),
+      oklch(0.75 0.15 55)
+    );
   }
   .ic__temp::after {
     content: '';
     position: absolute;
-    inset-block: -0.15rem;
-    inline-size: 0.45rem;
+    inset-block: -0.2rem;
+    inline-size: 0.36rem;
     border-radius: 1rem;
     background: currentColor;
-    outline: 1px solid rgb(var(--live-img-r, 0) var(--live-img-g, 0) var(--live-img-b, 0));
+    box-shadow: 0 0 0 2px var(--live-img, oklch(0.62 0.02 60)); /* halo punches it off the track */
     /* −1 → 0%, 0 → 50%, +1 → 100% */
     inset-inline-start: calc((var(--live-img-temp, 0) + 1) * 50%);
     transform: translateX(-50%);
   }
-  .ic__palette { display: flex; gap: 0.35rem; padding: 0.5rem 0.7rem 0.6rem; }
-  .ic__sw {
-    inline-size: 1.1rem;
-    block-size: 1.1rem;
-    border-radius: 0.25rem;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+  @media (prefers-reduced-motion: reduce) {
+    .ic__card,
+    .ic__sw,
+    .ic__cap {
+      transition: none;
+    }
   }
-  .ic__sw--dom { background: rgb(var(--live-img-r, 128) var(--live-img-g, 128) var(--live-img-b, 128)); }
-  .ic__sw--accent { background: rgb(var(--live-img-accent-r, 128) var(--live-img-accent-g, 128) var(--live-img-accent-b, 128)); }
-  .ic__sw--dark { background: rgb(var(--live-img-dark-r, 64) var(--live-img-dark-g, 64) var(--live-img-dark-b, 64)); }
-  .ic__sw--light { background: rgb(var(--live-img-light-r, 220) var(--live-img-light-g, 220) var(--live-img-light-b, 220)); }
-  .ic__sw--avg { background: rgb(var(--live-img-avg-r, 128) var(--live-img-avg-g, 128) var(--live-img-avg-b, 128)); }
 </style>
 
 <script>

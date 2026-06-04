@@ -24,6 +24,8 @@ input { background: hsl(calc(var(--live-value-pct) * 120) 80% 50%); }
 section { opacity: var(--const-has-entered); }
 ```
 
+Add `data-props-typed` to `<html>` to register every `--live-*` as an interpolatable `@property` — the markup form of `configure({ typed: true })`.
+
 **Imperative.** Explicit control and cleanup:
 
 ```js
@@ -93,8 +95,8 @@ registerPlugins(fps, clock)   // or registerPlugins() for everything
 | `fieldState` | element | `--live-dirty`, `--live-pristine`, `--live-touched`, `--live-untouched`, `--live-changed`, `--live-submitted` |
 | `formState` | element | `--live-field-count`, `--live-valid-count`, `--live-invalid-count`, `--live-all-valid`, `--live-completion` |
 | `img` | element | `--live-natural-w`, `--live-natural-h`, `--live-loaded`, `--live-broken` |
-| `imgColor` | element | dominant `--live-img-r/g/b/l`, plus `--live-img-accent-*`, `--live-img-dark-*`, `--live-img-light-*`, `--live-img-avg-*` (each `r/g/b/l`) and `--live-img-temp` (−1 cool…+1 warm) |
-| `videoColor` | element | dominant `--live-video-r/g/b/l` + accent `--live-video-accent-r/g/b/l` |
+| `imgColor` | element | hex colors `--live-img` (dominant), `--live-img-accent`, `--live-img-dark`, `--live-img-light`, `--live-img-avg`, plus `--live-img-temp` (−1 cool…+1 warm) |
+| `videoColor` | element | hex colors `--live-video` (dominant) + `--live-video-accent` |
 | `orientation` | global | `--live-orient-alpha/beta/gamma` |
 | `motion` | global | `--live-accel-x/y/z` |
 | `geo` | global | `--live-geo-lat/lng/accuracy` |

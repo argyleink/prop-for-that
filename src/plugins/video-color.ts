@@ -1,7 +1,6 @@
 import type { Source } from '../core/types'
 import { resolveTarget } from '../core/find'
-import { round4 } from '../core/num'
-import { palette, createSampler } from './_color'
+import { palette, toHex, colorProp, createSampler } from './_color'
 
 /**
  * Minimum ms between pixel reads. The video drives the cadence via
@@ -20,15 +19,15 @@ type RvfcVideo = HTMLVideoElement & {
 const HAVE_CURRENT_DATA = 2
 
 /**
- * The live colours of a playing `<video>`: the **dominant** colour as
- * `--live-video-r` / `--live-video-g` / `--live-video-b` (0–255) plus
- * `--live-video-l` (relative luminance 0–1), and the most vibrant **accent** as
- * `--live-video-accent-r` / `-g` / `-b` / `-l` (it reuses the dominant when a
- * frame is essentially grayscale). Compose them with `rgb()` for an ambient glow,
- * scrim, or theme that tracks the footage, and branch on each `…-l` to keep
- * overlaid text legible:
+ * The live colours of a playing `<video>`, each a single `#rrggbb` colour: the
+ * **dominant** colour as `--live-video`, and the most vibrant **accent** as
+ * `--live-video-accent` (it reuses the dominant when a frame is essentially
+ * grayscale). The pixels are sRGB, so a hex colour is enough — drop them into
+ * `var()` for an ambient glow, scrim, or theme that tracks the footage, and pull
+ * channels out with relative colour syntax or mix them, no separate channel props:
  *
- *   .player { box-shadow: 0 0 4rem rgb(var(--live-video-accent-r) var(--live-video-accent-g) var(--live-video-accent-b)); }
+ *   .player { box-shadow: 0 0 4rem var(--live-video-accent); }
+ *   .scrim  { background: oklch(from var(--live-video) l c h / 50%); }
  *
  * Bind the `<video>` or a container holding one (props land on the container, so
  * a caption or chrome can theme itself from the picture). Both colours come from
@@ -41,11 +40,12 @@ const HAVE_CURRENT_DATA = 2
  *
  * Cross-origin video needs `crossorigin="anonymous"` **and** permissive CORS
  * headers, else the canvas is tainted and the plugin no-ops (writes nothing, so
- * `var(--live-video-r, …)` fallbacks stay safe). Feature-detects canvas support.
+ * `var(--live-video, …)` fallbacks stay safe). Feature-detects canvas support.
  */
 export const videoColor: Source = {
   key: 'video-color',
   scope: 'element',
+  props: { video: colorProp, 'video-accent': colorProp },
   start(ctx) {
     const video = resolveTarget<RvfcVideo>(ctx.target, 'video')
     if (!video) return () => {}
@@ -64,14 +64,8 @@ export const videoColor: Source = {
       const pal = palette(data)
       if (!pal) return
       lastSample = now
-      ctx.write('video-r', pal.dominant.r)
-      ctx.write('video-g', pal.dominant.g)
-      ctx.write('video-b', pal.dominant.b)
-      ctx.write('video-l', round4(pal.dominant.l))
-      ctx.write('video-accent-r', pal.accent.r)
-      ctx.write('video-accent-g', pal.accent.g)
-      ctx.write('video-accent-b', pal.accent.b)
-      ctx.write('video-accent-l', round4(pal.accent.l))
+      ctx.write('video', toHex(pal.dominant))
+      ctx.write('video-accent', toHex(pal.accent))
     }
 
     measure(0) // seed from the current frame (covers a paused / poster'd video)

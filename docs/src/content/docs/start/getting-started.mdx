@@ -57,6 +57,12 @@ article {
 Order doesn't matter and duplicates are ignored. You can mix core and registered plugin keys. Because the list is re-synced whenever the attribute changes, adding or removing a key at runtime binds or tears down just that one source — the others keep running.
 :::
 
+Want the values to **interpolate**? Add `data-props-typed` to the root `<html>` and every `--live-*` this page writes is registered as an [`@property`](/concepts/typed-properties/) — the markup equivalent of `configure({ typed: true })`:
+
+```html
+<html data-props-typed>…</html>
+```
+
 ### 2. Imperative
 
 Import individual functions for explicit control over which sources are active and when they're torn down:

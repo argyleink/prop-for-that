@@ -1,8 +1,7 @@
 import type { Source } from '../core/types'
-import type { Rgb } from './_color'
 import { resolveTarget } from '../core/find'
 import { round4 } from '../core/num'
-import { palette, SAMPLE, createSampler } from './_color'
+import { palette, toHex, colorProp, SAMPLE, createSampler } from './_color'
 
 /** Read the image's downscaled pixels, preferring an off-main-thread decode. */
 async function samplePixels(img: HTMLImageElement): Promise<Uint8ClampedArray | null> {
@@ -31,23 +30,22 @@ async function samplePixels(img: HTMLImageElement): Promise<Uint8ClampedArray | 
 }
 
 /**
- * A small colour palette extracted from an `<img>`. The **dominant** colour is
- * `--live-img-r` / `--live-img-g` / `--live-img-b` (0–255) plus `--live-img-l`
- * (relative luminance 0–1); four more swatches follow the same `r`/`g`/`b`/`l`
- * shape under a name:
+ * A small colour palette extracted from an `<img>`, each swatch a single
+ * `#rrggbb` colour you drop straight into `var()`:
  *
- *   - `--live-img-accent-*` — the most vibrant colour (an extracted accent)
- *   - `--live-img-dark-*`   — the darkest colour that isn't black
- *   - `--live-img-light-*`  — the lightest colour that isn't white
- *   - `--live-img-avg-*`    — the average (mean) of every pixel
+ *   - `--live-img`        — the dominant colour (the most common one)
+ *   - `--live-img-accent` — the most vibrant colour (an extracted accent)
+ *   - `--live-img-dark`   — the darkest colour that isn't black
+ *   - `--live-img-light`  — the lightest colour that isn't white
+ *   - `--live-img-avg`    — the average (mean) of every pixel
  *
- * plus `--live-img-temp` (−1 cool … +1 warm), the image's warm/cool bias.
- * Compose any of them with `rgb()`, and branch on each swatch's `…-l` to pick
- * legible text on top of it:
+ * plus `--live-img-temp` (−1 cool … +1 warm), the image's warm/cool bias. The
+ * pixels are sRGB, so a hex colour is enough — pull whatever channels you need
+ * out of it with relative colour syntax or mix it, no separate channel props:
  *
- *   .card { background: rgb(var(--live-img-r) var(--live-img-g) var(--live-img-b)); }
- *   .tag  { background: rgb(var(--live-img-accent-r) var(--live-img-accent-g) var(--live-img-accent-b)); }
- *   @container style(--live-img-l: 0) { ... }   // or read it with calc()
+ *   .card { background: var(--live-img); }
+ *   .tag  { background: oklch(from var(--live-img-accent) l c h / 50%); }
+ *   .text { color: oklch(from var(--live-img) clamp(0, (0.6 - l) * 9, 1) 0 0); } // legible on the bg
  *
  * Bind the `<img>` or a container holding one (props land on the container, so a
  * caption or overlay can theme itself from the artwork). Recomputed whenever the
@@ -56,22 +54,23 @@ async function samplePixels(img: HTMLImageElement): Promise<Uint8ClampedArray | 
  *
  * Cross-origin images need `crossorigin="anonymous"` **and** permissive CORS
  * headers, else the canvas is tainted and the plugin no-ops (writes nothing, so
- * `var(--live-img-r, …)` fallbacks stay safe). Feature-detects canvas support.
+ * `var(--live-img, …)` fallbacks stay safe). Feature-detects canvas support.
  */
 export const imgColor: Source = {
   key: 'img-color',
   scope: 'element',
+  props: {
+    img: colorProp,
+    'img-accent': colorProp,
+    'img-dark': colorProp,
+    'img-light': colorProp,
+    'img-avg': colorProp,
+    'img-temp': { syntax: '<number>', initial: '0' },
+  },
   start(ctx) {
     const img = resolveTarget<HTMLImageElement>(ctx.target, 'img')
     if (!img) return () => {}
     let disposed = false
-
-    const swatch = (name: string, c: Rgb) => {
-      ctx.write(`img-${name}-r`, c.r)
-      ctx.write(`img-${name}-g`, c.g)
-      ctx.write(`img-${name}-b`, c.b)
-      ctx.write(`img-${name}-l`, round4(c.l))
-    }
 
     const compute = async () => {
       if (!img.complete || img.naturalWidth === 0) return // not loaded yet, or broken
@@ -79,15 +78,11 @@ export const imgColor: Source = {
       if (disposed || !data) return
       const pal = palette(data)
       if (!pal) return
-      // dominant keeps the bare `--live-img-*` names; the rest are qualified
-      ctx.write('img-r', pal.dominant.r)
-      ctx.write('img-g', pal.dominant.g)
-      ctx.write('img-b', pal.dominant.b)
-      ctx.write('img-l', round4(pal.dominant.l))
-      swatch('accent', pal.accent)
-      swatch('dark', pal.dark)
-      swatch('light', pal.light)
-      swatch('avg', pal.average)
+      ctx.write('img', toHex(pal.dominant)) // dominant keeps the bare name
+      ctx.write('img-accent', toHex(pal.accent))
+      ctx.write('img-dark', toHex(pal.dark))
+      ctx.write('img-light', toHex(pal.light))
+      ctx.write('img-avg', toHex(pal.average))
       ctx.write('img-temp', round4(pal.temp))
     }
     compute() // seed from an already-loaded/cached image

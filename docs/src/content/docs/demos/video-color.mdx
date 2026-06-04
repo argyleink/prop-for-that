@@ -5,7 +5,7 @@ description: A live demo of the video-color plugin — the dominant color of a p
 
 import VideoColorDemo from '../../../components/VideoColorDemo.astro';
 
-CSS can't read a video's pixels, so it can't tint a player's chrome, glow, or caption to match what's on screen. The `video-color` plugin samples a playing `<video>` every few frames and writes its **dominant color** and a vibrant **accent** as channels you compose with `rgb()`, plus a luminance you branch on to keep overlaid text legible.
+CSS can't read a video's pixels, so it can't tint a player's chrome, glow, or caption to match what's on screen. The `video-color` plugin samples a playing `<video>` every few frames and writes its **dominant color** and a vibrant **accent**, each as a single `#rrggbb` color you drop straight into `var()`.
 
 It's the moving-picture sibling of [`img-color`](/demos/img-color/): the same 16×16 downsample and bucketing, but driven by the video's own frames instead of a one-shot `load`. (It keeps to these two colors rather than the full image palette — a six-swatch extraction isn't worth it 4×/second for an ambient glow.)
 
@@ -15,19 +15,22 @@ The player's caption is painted with the video's **dominant** color and the glow
 
 ## The props
 
-Written on the bound element on the [`live`](/concepts/naming-and-cadence/) cadence. Both colors share the same shape: `r` / `g` / `b` channels (`0`–`255`) and an `l` luminance (`0`–`1`, Rec. 709 weights — threshold it for light/dark text).
+Written on the bound element on the [`live`](/concepts/naming-and-cadence/) cadence. The pixels are sRGB, so each is a single hex color — no separate channel props, since CSS pulls channels out of a color for you (relative color syntax, `color-mix()`).
 
 | Property | What it is |
 | --- | --- |
-| `--live-video-r`, `-g`, `-b`, `--live-video-l` | the **dominant** color (the most common one) |
-| `--live-video-accent-r`, `-g`, `-b`, `-l` | the **most vibrant** color (reuses the dominant when a frame is essentially grayscale) |
+| `--live-video` | the **dominant** color (the most common one) |
+| `--live-video-accent` | the **most vibrant** color (reuses the dominant when a frame is essentially grayscale) |
 
 ```css
-.player  { box-shadow: 0 0 4rem rgb(var(--live-video-accent-r) var(--live-video-accent-g) var(--live-video-accent-b)); }
-.caption { background: rgb(var(--live-video-r) var(--live-video-g) var(--live-video-b)); }
+.player  { box-shadow: 0 0 4rem var(--live-video-accent); }
+.caption { background: var(--live-video); }
 
-/* contrasting text: round() snaps luminance to 0 or 1 → white or black */
-.caption { color: hsl(0 0% calc((1 - round(var(--live-video-l), 1)) * 100%)); }
+/* tint, fade, or mix straight from the color */
+.scrim   { background: oklch(from var(--live-video) l c h / 50%); }
+
+/* contrasting text: flip black/white from the background's own lightness */
+.caption { color: oklch(from var(--live-video) clamp(0, (0.6 - l) * 100, 1) 0 0); }
 ```
 
 ## How it stays cheap
@@ -39,7 +42,7 @@ A video is a moving picture, so the cost is in *when* you sample, not just how:
 3. Each read draws the current frame to a 16×16 canvas and buckets those 256 pixels once — the dominant and the accent both fall out of that single pass, the same path as `img-color`. A paused/poster frame is seeded on attach, and where `requestVideoFrameCallback` is missing it falls back to the `timeupdate` event (~4 Hz while playing).
 
 :::caution[Cross-origin video needs CORS]
-Reading pixels from a cross-origin video taints the canvas and throws. For video from another origin, add `crossorigin="anonymous"` **and** serve it with permissive CORS headers. Without that the plugin simply **writes nothing** — so always give `var()` a fallback: `rgb(var(--live-video-r, 128) …)`. Same-origin, `data:`, `blob:`, and canvas-captured streams (like this demo's) just work.
+Reading pixels from a cross-origin video taints the canvas and throws. For video from another origin, add `crossorigin="anonymous"` **and** serve it with permissive CORS headers. Without that the plugin simply **writes nothing** — so always give `var()` a fallback: `var(--live-video, #888)`. Same-origin, `data:`, `blob:`, and canvas-captured streams (like this demo's) just work.
 :::
 
 ## The wiring

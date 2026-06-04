@@ -8,6 +8,36 @@ backwards-compatible change (semver's `1.0.0`+ rules kick in at v1).
 Only the published library (`dist/`) is versioned here; the demo and docs site
 are repo-only and not part of the npm package.
 
+## [0.5.1]
+
+### Added
+- **`data-props-typed` on the root `<html>`** — the markup equivalent of
+  `configure({ typed: true })` for the `auto` entry. Read once on load, it
+  registers every written `--live-*` as an interpolatable `@property`, so
+  HTML-only (`data-props-for`) pages can opt into typed values without touching
+  JS. It's a boolean: `@property` is registered per name for the whole document,
+  so typing is all-or-nothing and any attribute value is ignored (there's no
+  per-key subset, matching the JS API). For per-property initial values, use the
+  JS `configure({ defaults })`.
+
+## [0.5.0]
+
+### Changed
+- **BREAKING: `imgColor` and `videoColor` now emit single `#rrggbb` colours, not
+  RGB channels.** The canvas pixels are sRGB, so a hex colour is sufficient — and
+  CSS already extracts whatever channels you need from a colour with relative
+  colour syntax (`oklch(from var(--live-img) l c h)`) or `color-mix()`, so sharing
+  separate channel props was redundant. This replaces the per-channel `r` / `g` /
+  `b` props and the `l` luminance prop:
+  - `imgColor`: `--live-img`, `--live-img-accent`, `--live-img-dark`,
+    `--live-img-light`, `--live-img-avg` (each was `…-r` / `-g` / `-b` / `-l`).
+    `--live-img-temp` is unchanged.
+  - `videoColor`: `--live-video`, `--live-video-accent` (each was `…-r/g/b/l`).
+  - To pick legible text, derive it from the colour's own lightness instead of a
+    luminance prop, e.g. `color: oklch(from var(--live-img) clamp(0, (0.6 - l) * 9, 1) 0 0)`.
+- Both sources now declare `@property` specs (`<color>`), so the live colours
+  interpolate smoothly under `configure({ typed: true })`.
+
 ## [0.4.6]
 
 ### Added

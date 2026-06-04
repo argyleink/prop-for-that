@@ -43,6 +43,12 @@
           Expose runtime state to CSS.
           <em>Now there&rsquo;s a Prop For That.</em>
         </p>
+        <p class="masthead__cta">
+          <a class="btn-gh" href="https://github.com/argyleink/prop-for-that">
+            <svg class="btn-gh__mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.37.5 0 5.78 0 12.29c0 5.2 3.44 9.6 8.2 11.16.6.1.82-.25.82-.56v-2.17c-3.34.71-4.04-1.4-4.04-1.4-.55-1.36-1.34-1.72-1.34-1.72-1.1-.73.08-.72.08-.72 1.2.08 1.84 1.22 1.84 1.22 1.07 1.8 2.8 1.28 3.49.98.1-.76.42-1.28.76-1.57-2.67-.3-5.47-1.31-5.47-5.84 0-1.29.47-2.34 1.23-3.17-.12-.3-.53-1.52.12-3.16 0 0 1-.32 3.3 1.21a11.6 11.6 0 0 1 6 0c2.28-1.53 3.29-1.21 3.29-1.21.65 1.64.24 2.86.12 3.16.77.83 1.23 1.88 1.23 3.17 0 4.54-2.81 5.53-5.49 5.83.43.37.81 1.1.81 2.22v3.29c0 .32.22.68.83.56C20.57 21.88 24 17.49 24 12.29 24 5.78 18.63.5 12 .5Z"/></svg>
+            View on GitHub
+          </a>
+        </p>
         <p class="hint" role="note">
           <span class="hint__dot" aria-hidden="true"></span>
           every panel below is live &middot; move your pointer, resize, press
@@ -964,7 +970,7 @@
   <span class="tok-prop">box-shadow</span>:
     <span class="tok-fn">calc</span>((<span class="tok-num">.5</span> - <span class="tok-var">var(--live-px)</span>) * <span class="tok-num">8rem</span>)
     <span class="tok-fn">calc</span>((<span class="tok-num">.5</span> - <span class="tok-var">var(--live-py)</span>) * <span class="tok-num">8rem</span>) <span class="tok-num">3rem</span>
-    <span class="tok-fn">oklch</span>(<span class="tok-key">from</span> <span class="tok-fn">rgb</span>(<span class="tok-var">var(--live-img-r)</span> <span class="tok-var">var(--live-img-g)</span> <span class="tok-var">var(--live-img-b)</span>) <span class="tok-key">l c h</span> / <span class="tok-num">.6</span>);
+    <span class="tok-fn">oklch</span>(<span class="tok-key">from</span> <span class="tok-var">var(--live-img)</span> <span class="tok-key">l c h</span> / <span class="tok-num">.6</span>);
 }</code></pre>
           </figure>
         </div>
@@ -980,14 +986,14 @@
             The same idea, in motion. <code>video-color</code> samples a playing
             <code>&lt;video&gt;</code> (~4&times;/sec, riding
             <code>requestVideoFrameCallback</code>) for its <em>dominant</em> and
-            <em>accent</em> colours. The accent pours into a box-shadow glow, so the
+            <em>accent</em> colours. The dominant pours into a box-shadow glow, so the
             player looks backlit by whatever is on screen, easing colour to colour as
             the shot changes; both swatches sit below.
           </p>
         </div>
 
         <div class="demo-body">
-          <div class="stage stage--vid" id="vid-stage">
+          <div class="stage--vid" id="vid-stage">
             <figure class="vid-card" id="vid-card">
               <video
                 class="vid-card__v"
@@ -1015,9 +1021,9 @@
   &lt;<span class="tok-key">video</span> <span class="tok-prop">src</span>=<span class="tok-str">"clip.mp4"</span> <span class="tok-prop">crossorigin muted loop autoplay</span>&gt;&lt;/<span class="tok-key">video</span>&gt;
 &lt;/<span class="tok-key">figure</span>&gt;</code></pre>
             <figcaption>CSS</figcaption>
-            <pre><code><span class="tok-sel">.player</span> { <span class="tok-com">/* backlit by the accent, eased between samples */</span>
-  <span class="tok-prop">box-shadow</span>: <span class="tok-num">0 0 6rem</span> <span class="tok-fn">oklch</span>(<span class="tok-key">from</span>
-    <span class="tok-fn">rgb</span>(<span class="tok-var">var(--live-video-accent-r)</span> <span class="tok-var">var(--live-video-accent-g)</span> <span class="tok-var">var(--live-video-accent-b)</span>) <span class="tok-key">l c h</span> / <span class="tok-num">.7</span>);
+            <pre><code><span class="tok-sel">.player</span> { <span class="tok-com">/* backlit by the dominant, eased between samples */</span>
+  <span class="tok-prop">box-shadow</span>: <span class="tok-num">0 0 6rem</span>
+    <span class="tok-fn">oklch</span>(<span class="tok-key">from</span> <span class="tok-var">var(--live-video)</span> <span class="tok-key">l c h</span> / <span class="tok-num">.7</span>);
   <span class="tok-prop">transition</span>: <span class="tok-prop">box-shadow</span> <span class="tok-num">.3s</span> <span class="tok-key">linear</span>;
 }</code></pre>
           </figure>
@@ -1238,9 +1244,9 @@
           <article class="src">
             <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3c3.4 4.6 5.5 7.4 5.5 9.8a5.5 5.5 0 0 1-11 0C6.5 10.4 8.6 7.6 12 3z"/></svg></span><code class="src__key">img-color</code><span class="src__scope src__scope--el">element</span></header>
             <dl class="src__vars">
-              <div class="src__var src__var--scoped"><dt>--live-img-r</dt><dd></dd></div>
-              <div class="src__var src__var--scoped"><dt>--live-img-accent-r</dt><dd></dd></div>
-              <div class="src__var src__var--scoped"><dt>--live-img-dark-r</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-img</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-img-accent</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-img-light</dt><dd></dd></div>
               <div class="src__var src__var--scoped"><dt>--live-img-temp</dt><dd></dd></div>
             </dl>
             <p class="src__desc">A 5-swatch palette (dominant, accent, dark, light, avg) + warm/cool temp, from an <code>&lt;img&gt;</code>&rsquo;s pixels.</p>
@@ -1248,10 +1254,8 @@
           <article class="src">
             <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M10 9.5l4.5 2.5-4.5 2.5z" fill="currentColor" stroke="none"/></svg></span><code class="src__key">video-color</code><span class="src__scope src__scope--el">element</span></header>
             <dl class="src__vars">
-              <div class="src__var src__var--scoped"><dt>--live-video-r</dt><dd></dd></div>
-              <div class="src__var src__var--scoped"><dt>--live-video-g</dt><dd></dd></div>
-              <div class="src__var src__var--scoped"><dt>--live-video-b</dt><dd></dd></div>
-              <div class="src__var src__var--scoped"><dt>--live-video-l</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-video</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-video-accent</dt><dd></dd></div>
             </dl>
             <p class="src__desc">Dominant colour of a playing <code>&lt;video&gt;</code>, sampled ~4&times;/sec for an ambient glow.</p>
           </article>
@@ -1266,6 +1270,12 @@
       <p class="colophon__note">
         Open DevTools: watch <code>--live-*</code> change on <code>:root</code>
         and the bound elements.
+      </p>
+      <p class="colophon__cta">
+        <a class="btn-gh" href="https://github.com/argyleink/prop-for-that">
+          <svg class="btn-gh__mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.37.5 0 5.78 0 12.29c0 5.2 3.44 9.6 8.2 11.16.6.1.82-.25.82-.56v-2.17c-3.34.71-4.04-1.4-4.04-1.4-.55-1.36-1.34-1.72-1.34-1.72-1.1-.73.08-.72.08-.72 1.2.08 1.84 1.22 1.84 1.22 1.07 1.8 2.8 1.28 3.49.98.1-.76.42-1.28.76-1.57-2.67-.3-5.47-1.31-5.47-5.84 0-1.29.47-2.34 1.23-3.17-.12-.3-.53-1.52.12-3.16 0 0 1-.32 3.3 1.21a11.6 11.6 0 0 1 6 0c2.28-1.53 3.29-1.21 3.29-1.21.65 1.64.24 2.86.12 3.16.77.83 1.23 1.88 1.23 3.17 0 4.54-2.81 5.53-5.49 5.83.43.37.81 1.1.81 2.22v3.29c0 .32.22.68.83.56C20.57 21.88 24 17.49 24 12.29 24 5.78 18.63.5 12 .5Z"/></svg>
+          argyleink/prop-for-that
+        </a>
       </p>
     </footer>
 

@@ -19,6 +19,21 @@ Each property then gets:
 - a **`<number>` type**, so it **interpolates**: a `transition` or animation tweens it instead of snapping;
 - a **guaranteed initial value of `0`**, so `var(--live-x)` resolves with no fallback.
 
+## With the `auto` entry: `data-props-typed`
+
+Using the zero-config [`auto`](/reference/api/) entry — binding through `data-props-for` instead of calling `propsFor()` — you can opt in straight from markup by adding `data-props-typed` to the root `<html>`:
+
+```html
+<html data-props-typed>
+  <body>
+    <input type="range" data-props-for="range">
+    <script type="module">import 'prop-for-that/auto'</script>
+  </body>
+</html>
+```
+
+Read once on load, it's the exact equivalent of `configure({ typed: true })`: every `--live-*` the page writes is registered with `@property`. It's a **boolean** — `@property` is registered per name for the whole document, not per element, so typing is all-or-nothing and any attribute value is ignored (there's no per-key subset, just as there isn't in the JS API). For per-property initial values, reach for the JS `defaults` below.
+
 ## Behavior-safe and opt-in
 
 Nothing animates unless *you* add a `transition` or `@keyframes`, so turning `typed` on doesn't change how an existing stylesheet renders, except that `var(--live-x)` now resolves to `0` before a value arrives instead of being invalid. Smoothing a jumpy value is then one line:
@@ -48,7 +63,7 @@ The value must be valid for the property's syntax (a plain number for the defaul
 
 ## Notes
 
-- **Opt in before attaching.** Call `configure({ typed: true })` before your first `propsFor()`, like the prefixes.
+- **Opt in before attaching.** Call `configure({ typed: true })` before your first `propsFor()` — or set `data-props-typed` on `<html>` before `auto` runs — like the prefixes.
 - **One-way door.** `@property` registrations last the page's lifetime (the spec has no unregister). Properties are still cleared from elements on teardown; only the type registration persists.
 - **Inherited.** Registrations use `inherits: true`, which the container-bound sources (`range`, `field`, `media`) rely on.
 - **Safe to double up.** If you, or another library, already declared `@property --live-…`, prop-for-that skips it rather than throwing.

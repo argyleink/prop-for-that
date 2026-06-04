@@ -1,5 +1,7 @@
 /** Shared pixel-sampling + colour-extraction logic for `img-color` and `video-color`. */
 
+import type { PropSpec } from '../core/types'
+
 export interface Rgb {
   r: number
   g: number
@@ -7,6 +9,17 @@ export interface Rgb {
   /** Relative luminance 0–1 (Rec. 709 weights) — threshold it for light/dark. */
   l: number
 }
+
+/**
+ * A swatch as a `#rrggbb` sRGB hex string — canvas pixels are sRGB, so a hex
+ * colour is sufficient, and consumers pull whatever channels they need out of it
+ * with relative colour syntax (`oklch(from var(--…) l c h)`) or `color-mix()`.
+ */
+export const toHex = ({ r, g, b }: Rgb): string =>
+  `#${((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1)}`
+
+/** `@property` spec for the colour outputs, so typed mode interpolates them. */
+export const colorProp: PropSpec = { syntax: '<color>', initial: 'transparent' }
 
 /** Relative luminance 0–1 (Rec. 709 weights). */
 const lum = (r: number, g: number, b: number): number =>
