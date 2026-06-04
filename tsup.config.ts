@@ -3,7 +3,7 @@ import { defineConfig } from 'tsup'
 const shared = {
   treeshake: true,
   minify: true,
-  sourcemap: true,
+  sourcemap: false, // keep the published package lean; dist is publish-only (local uses src)
   target: 'es2022',
 } as const
 

@@ -8,6 +8,13 @@ name: Release
 on:
   push:
     branches: [main]
+    # Only the library itself can produce a release — never docs/ or demos/.
+    # (workflow_dispatch ignores paths, so a manual run always works.)
+    paths:
+      - 'src/**'
+      - 'tsup.config.ts'
+      - 'tsconfig.json'
+      - 'package.json'
   workflow_dispatch: # "Run workflow" button in the Actions tab
 
 permissions:
