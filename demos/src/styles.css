@@ -235,7 +235,7 @@ h2 {
   background: currentColor;
 }
 .display {
-  font-size: var(--step-4);
+  font-size: clamp(2.75rem, 1.8rem + 4.6vw, 6.4rem);
   font-stretch: 112%;
   margin: 0;
 }
@@ -287,6 +287,10 @@ h2 {
 }
 /* prominent GitHub link, shared by the hero and the footer */
 .masthead__cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
   margin: 0 0 var(--space-4);
 }
 .colophon__cta {
@@ -318,6 +322,40 @@ h2 {
 }
 .btn-gh:hover {
   background: var(--accent-ink);
+  border-color: var(--accent-ink);
+  translate: 0 -1px;
+}
+/* secondary variant of the GitHub button: same box, outlined instead of filled */
+.btn-doc {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65ch;
+  padding: 0.7rem 1.25rem;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  text-decoration: none;
+  transition:
+    color 200ms var(--ease-out),
+    border-color 200ms var(--ease-out),
+    translate 150ms var(--ease-out);
+}
+.btn-doc__mark {
+  inline-size: 1.2em;
+  block-size: 1.2em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.btn-doc:hover {
+  color: var(--accent-ink);
   border-color: var(--accent-ink);
   translate: 0 -1px;
 }
