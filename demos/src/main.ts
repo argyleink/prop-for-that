@@ -5,6 +5,8 @@ import {
   field,
   fieldState,
   formState,
+  select,
+  colorInput,
   imgColor,
   videoColor,
   clock,
@@ -48,6 +50,8 @@ registerPlugins(
   field,
   fieldState,
   formState,
+  select,
+  colorInput,
   imgColor,
   videoColor,
   clock,
@@ -133,7 +137,13 @@ const fstate = document.getElementById('fstate')
 const fstateWrap = document.getElementById('fstate-wrap')
 if (fstate && fstateWrap) {
   propsFor(fstate.querySelectorAll('.fstate__field'), ['field-state'])
-  propsFor(fstateWrap, ['field-state', 'form-state'])
+  // form-state + field-state aggregate the form; color-input reads the brand-colour
+  // picker and writes --live-color on the wrap, which re-themes the whole form.
+  propsFor(fstateWrap, ['field-state', 'form-state', 'color-input'])
+  // the plan <select> (required, so it gates the form) exposes its choice as a
+  // number — --live-value-num — on its own field, which CSS reads as the seat count.
+  const planField = document.getElementById('fstate-plan-field')
+  if (planField) propsFor(planField, ['select'])
   fstate.addEventListener('submit', (e) => e.preventDefault())
 }
 

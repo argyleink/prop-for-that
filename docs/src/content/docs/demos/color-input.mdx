@@ -1,0 +1,41 @@
+---
+title: Color input
+description: A live demo of the color-input plugin, exposing the chosen <input type="color"> value to CSS as a hex string.
+---
+
+import ColorInputDemo from '../../../components/ColorInputDemo.astro';
+
+The `color-input` plugin exposes the colour chosen in an `<input type="color">` — which CSS has no way to read — as one sRGB hex string, `--live-color`. Pull whatever channels you need out of it with relative colour syntax / `color-mix()`, so a single picker can live-theme a whole region with zero consumer JS.
+
+<ColorInputDemo />
+
+## The wiring
+
+Bind it to the input, or to a container holding one so siblings inherit the colour:
+
+```html
+<script type="module">import 'prop-for-that/auto'</script>
+
+<div data-props-for="color-input">
+  <input type="color" value="#6750ff">
+  <div class="card">…</div>
+</div>
+```
+
+Everything themes off the one value:
+
+```css
+.card {
+  background: color-mix(in oklab, var(--live-color) 16%, black);
+  border: 1px solid color-mix(in oklab, var(--live-color) 45%, transparent);
+}
+.card h4 { color: oklch(from var(--live-color) max(l, 0.72) c h); }
+
+/* contrast-aware text on the full colour: white on a dark pick, black on a light one */
+.pill {
+  background: var(--live-color);
+  color: oklch(from var(--live-color) clamp(0, (0.6 - l) * 10, 1) 0 0);
+}
+```
+
+In [typed mode](/concepts/typed-properties/), `--live-color` is registered as a `<color>`, so theme changes interpolate between picks.

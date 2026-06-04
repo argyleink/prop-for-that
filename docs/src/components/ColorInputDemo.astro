@@ -1,0 +1,115 @@
+---
+// Color-input demo: `color-input` is bound to the wrapper, so --live-color lands
+// here and the whole card themes off it with relative colour syntax / color-mix()
+// — surface, accent, border, and a contrast-aware pill text colour — no JS reads
+// the value. The readout "chip" is a live swatch (a hex string can't fill a CSS
+// counter, so we show the colour itself).
+---
+<div class="pft-stage color-demo" data-pft-color>
+  <p class="pft-readout">
+    <span class="pft-chip">--live-color <b class="cd__swatch"></b></span>
+  </p>
+
+  <div class="cd__panel">
+    <div class="cd__card">
+      <h4 class="cd__title">Themed card</h4>
+      <p class="cd__body">
+        Background, accent, border, and even legible text are all derived from one
+        picked colour — no script reads it back.
+      </p>
+      <span class="cd__pill">accent</span>
+    </div>
+
+    <label class="cd__pick">
+      Pick a colour
+      <input type="color" value="#6750ff" aria-label="Theme colour" />
+    </label>
+  </div>
+
+  <p class="pft-hint">
+    Everything themes off <code>var(--live-color)</code>: <code>color-mix()</code> for the
+    surface and border, <code>oklch(from …)</code> for the accent, and a contrast-aware
+    text colour on the pill. Drag inside the picker — the card re-themes live.
+  </p>
+</div>
+
+<style>
+  .color-demo { max-inline-size: 32rem; }
+
+  /* the readout chip is a swatch of the live colour */
+  .cd__swatch {
+    align-self: center;
+    inline-size: 2.5ch;
+    block-size: 1em;
+    border-radius: 3px;
+    border: 1px solid var(--sl-color-gray-4);
+    background: var(--live-color, #6750ff);
+    transition: background 0.15s;
+  }
+
+  .cd__panel { display: flex; gap: 1.25rem; flex-wrap: wrap; align-items: flex-start; }
+
+  .cd__card {
+    --c: var(--live-color, #6750ff);
+    flex: 1 1 16rem;
+    padding: 1.1rem 1.25rem;
+    border-radius: 0.6rem;
+    /* A deterministically dark, hue-tinted surface derived from the pick alone —
+       NOT a theme-relative mix. (Mixing toward --sl-color-black flips light in
+       Starlight's light theme, leaving the light text below it failing WCAG.)
+       Fixed dark L + light text L keeps the contrast ratio high in either theme. */
+    background: oklch(from var(--c) 0.21 min(c, 0.05) h);
+    border: 1px solid oklch(from var(--c) 0.5 min(c, 0.14) h);
+    transition: background 0.15s, border-color 0.15s;
+  }
+  /* light, hue-tinted text on the fixed dark surface — both well past AA */
+  .cd__title { margin: 0 0 0.4rem; font-size: 1rem; color: oklch(from var(--c) 0.9 min(c, 0.13) h); }
+  .cd__body { margin: 0; font-size: 0.85rem; line-height: 1.5; color: oklch(from var(--c) 0.91 0.02 h); }
+  .cd__pill {
+    display: inline-block;
+    margin-top: 0.85rem;
+    padding: 0.2rem 0.7rem;
+    border-radius: 99px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    background: var(--c);
+    /* Legible on the full colour: compute the pick's WCAG relative luminance from
+       its linearised sRGB channels, then snap to pure white below the 0.179
+       black/white cross-over and pure black above it — always the higher-contrast
+       choice, so the badge clears AA for essentially any colour. A perceptual-L
+       threshold can't do this: it mis-ranks saturated hues against neutrals.
+       (`--lum` is a token macro: the r/g/b channel keywords only resolve once it's
+       substituted into the `color(from …)` below.) */
+    --lum: (0.2126 * pow((r + 0.055) / 1.055, 2.4) + 0.7152 * pow((g + 0.055) / 1.055, 2.4) + 0.0722 * pow((b + 0.055) / 1.055, 2.4));
+    color: color(from var(--c) srgb
+      clamp(0, (0.179 - var(--lum)) * 1e5, 1)
+      clamp(0, (0.179 - var(--lum)) * 1e5, 1)
+      clamp(0, (0.179 - var(--lum)) * 1e5, 1));
+  }
+
+  .cd__pick {
+    display: grid;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--sl-color-white);
+  }
+  .cd__pick input[type='color'] {
+    inline-size: 4rem;
+    block-size: 4rem;
+    padding: 0;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.5rem;
+    background: var(--sl-color-black);
+    cursor: pointer;
+  }
+</style>
+
+<script>
+  import { propsFor, register } from 'prop-for-that'
+  import { colorInput } from 'prop-for-that/plugins'
+
+  register(colorInput)
+  propsFor(document.querySelectorAll<HTMLElement>('[data-pft-color]'), ['color-input'])
+</script>

@@ -33,7 +33,7 @@ Beyond what's already shipped, these are accepted for the first release.
 
 - **Globals:** `modifiers` (shift/ctrl/alt/meta), `caps-lock`, `key-active`, `pointer-idle`, `memory`, `touch-points`, `document-size`, `page-visible`, `page-focused`, `idle`, `selection`, `location`, `uptime`, `gamepad`, `clock` angles, `fps` extend, `battery` extend.
 - **Element:** `viewport-pos`, `rect`, `dist-from-pointer`, `truncated`, `children`, `text-metrics`.
-- **Per-element:** `color-input`, `date-input`, `file-input`, `textarea`, `select`, ~~`form` (completion %)~~ ✅ shipped as the `form-state` plugin, `meter-progress`, `table`, `audio-analyser`.
+- **Per-element:** ~~`color-input`~~ ✅ shipped, ~~`select`~~ ✅ shipped, `date-input`, `file-input`, `textarea`, ~~`form` (completion %)~~ ✅ shipped as the `form-state` plugin, `meter-progress`, `table`, `audio-analyser`.
 - **Stances:** a `capability` plugin with `delivery-mode`, `device-capability`, `connection-capability`, `conserve` (built for `@container style()`).
 
 ---
@@ -70,7 +70,7 @@ Considered and viable, but not yet committed. Click a name to vote.
 | --- | --- |
 | [`size` extend](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+size-extend) | content box, inline/block size |
 | [`visibility` extend](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+visibility-extend) | `in-viewport`, `time-visible`, `fully-visible` |
-| [`field` extend](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+field-extend) | `remaining`, `fill-pct`, `focused`, granular validity flags (the `field-state` plugin now ships the interaction states: `dirty`/`pristine`, `touched`/`untouched`, `changed`, `submitted`) |
+| [`field` extend](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+field-extend) | ~~`remaining`, `fill-pct`, granular validity flags~~ ✅ shipped in the `field` plugin; `focused` still proposed (and the `field-state` plugin ships the interaction states: `dirty`/`pristine`, `touched`/`untouched`, `changed`, `submitted`) |
 | [`media` extend](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+media-extend) | buffered, played, muted, rate, ended, seeking, video dims, PiP |
 | [`canvas`](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+canvas) | canvas width / height |
 | [`link`](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+link) | `external`, `current` (nav highlighting) |

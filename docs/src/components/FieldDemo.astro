@@ -1,0 +1,102 @@
+---
+// Field demo for the extended props: `field` is bound to the wrapper, so the
+// inner <input> is resolved and its state lands here. Shows the two additions —
+//  • a maxlength budget: --live-remaining (counter) + --live-fill-pct (a bar that
+//    shifts green→red as it fills, via a hue calc — no range query needed).
+//  • granular validity: each message shows only under its specific flag
+//    (value-missing vs too-short), which a single :invalid can't distinguish.
+---
+<div class="pft-stage field-demo" data-pft-field>
+  <p class="pft-readout">
+    <span class="pft-chip">--live-remaining <b class="fd__rem"></b></span>
+    <span class="pft-chip">--live-fill-pct <b class="fd__fill"></b></span>
+    <span class="pft-chip">--live-valid <b class="fd__valid"></b></span>
+  </p>
+
+  <label class="fd__field">
+    <span>Display name <small>3–16 chars, required</small></span>
+    <input
+      class="fd__input"
+      name="name"
+      type="text"
+      required
+      minlength="3"
+      maxlength="16"
+      placeholder="ada_lovelace"
+      autocomplete="off"
+    />
+  </label>
+
+  <div class="fd__meter"><i></i></div>
+
+  <p class="fd__msg" aria-live="polite">
+    <span class="fd__m fd__m--missing">Name is required.</span>
+    <span class="fd__m fd__m--short">A few more characters…</span>
+    <span class="fd__m fd__m--ok">Looks good ✓</span>
+  </p>
+
+  <p class="pft-hint">
+    The bar is <code>scale: var(--live-fill-pct)</code> with a green→red hue from the
+    same value; the counter is <code>--live-remaining</code>. The message switches on the
+    <em>specific</em> reason — <code>@container style(--live-value-missing: 1)</code> vs
+    <code>style(--live-too-short: 1)</code> — which <code>:invalid</code> alone can't tell apart.
+  </p>
+</div>
+
+<style>
+  .field-demo { max-inline-size: 32rem; }
+
+  .fd__field { display: grid; gap: 0.35rem; }
+  .fd__field > span { font-size: 0.85rem; font-weight: 600; color: var(--sl-color-white); }
+  .fd__field small { font-weight: 400; color: var(--sl-color-gray-3); }
+  .fd__input {
+    inline-size: 100%;
+    padding: 0.55rem 0.7rem;
+    border-radius: 0.45rem;
+    border: 1px solid var(--sl-color-gray-5);
+    background: var(--sl-color-black);
+    color: var(--sl-color-white);
+    font: inherit;
+    transition: border-color 0.18s;
+  }
+  .fd__input:user-invalid { border-color: oklch(64% 0.2 25); }
+  .fd__input:user-valid { border-color: oklch(70% 0.16 150); }
+
+  /* readouts */
+  .fd__rem::after { counter-reset: r calc(var(--live-remaining, 16)); content: counter(r); }
+  .fd__fill::after { counter-reset: f calc(var(--live-fill-pct, 0) * 100); content: counter(f) '%'; }
+  .fd__valid::after { content: 'no'; color: var(--sl-color-gray-3); }
+  @container style(--live-valid: 1) {
+    .fd__valid::after { content: 'yes'; color: var(--sl-color-text-accent); }
+  }
+
+  /* maxlength budget: fill scales with --live-fill-pct, hue runs green→red */
+  .fd__meter { height: 0.5rem; border-radius: 99px; background: var(--sl-color-gray-5); overflow: hidden; }
+  .fd__meter i {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    transform-origin: left center;
+    scale: var(--live-fill-pct, 0) 1;
+    background: oklch(0.72 0.19 calc(145 - var(--live-fill-pct, 0) * 145));
+    transition: scale 0.15s ease;
+  }
+
+  /* granular validity: each message gated on its own flag */
+  .fd__msg { margin: 0; min-height: 1.2em; font-size: 0.8rem; font-weight: 600; }
+  .fd__m { display: none; }
+  .fd__m--ok { color: var(--sl-color-text-accent); }
+  .fd__m--missing,
+  .fd__m--short { color: oklch(72% 0.16 60); }
+  @container style(--live-value-missing: 1) { .fd__m--missing { display: inline; } }
+  @container style(--live-too-short: 1) { .fd__m--short { display: inline; } }
+  @container style(--live-valid: 1) { .fd__m--ok { display: inline; } }
+</style>
+
+<script>
+  import { propsFor, register } from 'prop-for-that'
+  import { field } from 'prop-for-that/plugins'
+
+  register(field)
+  propsFor(document.querySelectorAll<HTMLElement>('[data-pft-field]'), ['field'])
+</script>

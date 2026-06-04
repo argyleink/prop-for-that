@@ -3,6 +3,8 @@ import { netTypeToNumber } from '../src/plugins/network'
 import { field } from '../src/plugins/field'
 import { fieldState } from '../src/plugins/field-state'
 import { formState } from '../src/plugins/form-state'
+import { select } from '../src/plugins/select'
+import { colorInput } from '../src/plugins/color-input'
 import { palette, toHex } from '../src/plugins/_color'
 import { scrollVelocity } from '../src/plugins/scroll-velocity'
 import { cpuPressure } from '../src/plugins/cpu-pressure'
@@ -94,6 +96,173 @@ describe('field', () => {
     expect(values.length).toBe(0) // listener removed, still seeded value
 
     el.remove()
+  })
+
+  it('exposes the specific validity reason, not just valid/invalid', () => {
+    const el = document.createElement('input')
+    el.type = 'text'
+    el.required = true
+    document.body.append(el)
+    const { ctx, values } = makeRecorder(el)
+
+    const dispose = field.start(ctx)
+    // empty + required → invalid *because* the value is missing
+    expect(values.valid).toBe(0)
+    expect(values['value-missing']).toBe(1)
+    expect(values['type-mismatch']).toBe(0)
+
+    el.value = 'hi'
+    el.dispatchEvent(new Event('input'))
+    expect(values.valid).toBe(1)
+    expect(values['value-missing']).toBe(0)
+
+    dispose()
+    el.remove()
+  })
+
+  it('writes a maxlength budget only when one is set', () => {
+    const capped = document.createElement('input')
+    capped.type = 'text'
+    capped.maxLength = 5
+    capped.value = 'hi'
+    document.body.append(capped)
+    const a = makeRecorder(capped)
+
+    const disposeA = field.start(a.ctx)
+    expect(a.values.remaining).toBe(3) // 5 − 2
+    expect(a.values['fill-pct']).toBe(0.4) // 2 / 5
+
+    capped.value = 'hello'
+    capped.dispatchEvent(new Event('input'))
+    expect(a.values.remaining).toBe(0)
+    expect(a.values['fill-pct']).toBe(1)
+    disposeA()
+    capped.remove()
+
+    // no maxlength → the budget props are never written (fallbacks stay live)
+    const open = document.createElement('input')
+    open.type = 'text'
+    document.body.append(open)
+    const b = makeRecorder(open)
+    const disposeB = field.start(b.ctx)
+    expect(b.values.remaining).toBeUndefined()
+    expect(b.values['fill-pct']).toBeUndefined()
+    disposeB()
+    open.remove()
+  })
+})
+
+describe('select', () => {
+  const make = (html: string, multiple = false) => {
+    const el = document.createElement('select')
+    el.multiple = multiple
+    el.innerHTML = html
+    document.body.append(el)
+    return el
+  }
+
+  it('exposes index, counts, and a numeric value for a single select', () => {
+    const el = make('<option value="2">2</option><option value="3">3</option><option value="4">4</option>')
+    el.selectedIndex = 1 // the "3" option
+    const { ctx, values } = makeRecorder(el)
+
+    const dispose = select.start(ctx)
+    expect(values.index).toBe(1)
+    expect(values['option-count']).toBe(3)
+    expect(values['index-pct']).toBe(0.5) // 1 / (3 − 1)
+    expect(values['selected-count']).toBe(1)
+    expect(values['selected-pct']).toBeCloseTo(1 / 3, 4)
+    expect(values['value-num']).toBe(3) // numeric option value drives layout
+
+    el.selectedIndex = 2
+    el.dispatchEvent(new Event('change'))
+    expect(values.index).toBe(2)
+    expect(values['index-pct']).toBe(1)
+    expect(values['value-num']).toBe(4)
+
+    dispose()
+    el.remove()
+  })
+
+  it('skips value-num for a non-numeric value', () => {
+    const el = make('<option value="apple">apple</option><option value="pear">pear</option>')
+    const { ctx, values } = makeRecorder(el)
+    const dispose = select.start(ctx)
+    expect(values.index).toBe(0)
+    expect(values['value-num']).toBeUndefined() // no NaN written
+    dispose()
+    el.remove()
+  })
+
+  it('counts selections in a <select multiple> (which CSS cannot tally)', () => {
+    const el = make(
+      '<option>a</option><option>b</option><option>c</option><option>d</option>',
+      true,
+    )
+    el.options[0]!.selected = true
+    el.options[2]!.selected = true
+    const { ctx, values } = makeRecorder(el)
+
+    const dispose = select.start(ctx)
+    expect(values['selected-count']).toBe(2)
+    expect(values['option-count']).toBe(4)
+    expect(values['selected-pct']).toBe(0.5)
+
+    dispose()
+    el.remove()
+  })
+
+  it('resolves an inner <select> from a container, and stops after dispose', () => {
+    const wrap = document.createElement('div')
+    const el = document.createElement('select')
+    el.innerHTML = '<option>a</option><option>b</option>'
+    wrap.append(el)
+    document.body.append(wrap)
+    const { ctx, values } = makeRecorder(wrap)
+
+    const dispose = select.start(ctx)
+    expect(values.index).toBe(0)
+
+    dispose()
+    el.selectedIndex = 1
+    el.dispatchEvent(new Event('change'))
+    expect(values.index).toBe(0) // listener removed: no further updates
+
+    wrap.remove()
+  })
+})
+
+describe('color-input', () => {
+  it('exposes the chosen colour as a hex string', () => {
+    const el = document.createElement('input')
+    el.type = 'color'
+    el.value = '#ff8800'
+    document.body.append(el)
+    const { ctx, values } = makeRecorder(el)
+
+    const dispose = colorInput.start(ctx)
+    expect(values.color).toBe('#ff8800')
+
+    el.value = '#00aaff'
+    el.dispatchEvent(new Event('input'))
+    expect(values.color).toBe('#00aaff')
+
+    dispose()
+    el.value = '#000000'
+    el.dispatchEvent(new Event('input'))
+    expect(values.color).toBe('#00aaff') // listener removed: no further updates
+
+    el.remove()
+  })
+
+  it('no-ops when bound to an element with no colour input', () => {
+    const div = document.createElement('div')
+    document.body.append(div)
+    const { ctx, values } = makeRecorder(div)
+    const dispose = colorInput.start(ctx)
+    expect(values.color).toBeUndefined()
+    dispose()
+    div.remove()
   })
 })
 

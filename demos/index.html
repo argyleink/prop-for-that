@@ -842,7 +842,11 @@
             <code>--live-valid-count</code>, <code>--live-all-valid</code>,
             <code>--live-completion</code> &mdash; to drive the progress bar and gate
             Submit. Type then delete back: <em>dirty</em> stays, <em>changed</em>
-            clears. Empty a required field: completion drops, the gate closes.
+            clears. Empty a required field: completion drops, the gate closes. The
+            required plan <code>&lt;select&gt;</code> (<code>select</code> &rarr;
+            <code>--live-value-num</code>) joins that gate, and the colour picker
+            (<code>color-input</code> &rarr; <code>--live-color</code>) re-themes the
+            whole form &mdash; live, in CSS.
           </p>
         </div>
 
@@ -898,6 +902,28 @@
                   </ul>
                 </div>
 
+                <div class="fstate__field" id="fstate-plan-field">
+                  <label class="fstate__label" for="fstate-plan">team plan</label>
+                  <select id="fstate-plan" class="fstate__select" name="plan" required>
+                    <option value="" selected disabled>Choose a plan&hellip;</option>
+                    <option value="1">Solo</option>
+                    <option value="5">Team</option>
+                    <option value="20">Org</option>
+                  </select>
+                  <p class="fstate__seats" aria-hidden="true"></p>
+                </div>
+
+                <div class="fstate__field">
+                  <label class="fstate__label" for="fstate-accent">brand colour</label>
+                  <input
+                    id="fstate-accent"
+                    class="fstate__color"
+                    type="color"
+                    name="accent"
+                    value="#7c5cff"
+                  />
+                </div>
+
                 <div class="fstate__bar">
                   <button type="submit" class="fstate__btn fstate__btn--go">Submit</button>
                   <button type="reset" class="fstate__btn">Reset</button>
@@ -909,14 +935,13 @@
           <figure class="caption">
             <figcaption>HTML</figcaption>
             <pre><code>&lt;<span class="tok-key">form</span> <span class="tok-prop">data-props-for</span>=<span class="tok-str">"form-state"</span>&gt;
-  &lt;<span class="tok-key">div</span> <span class="tok-prop">data-props-for</span>=<span class="tok-str">"field-state"</span>&gt;&lt;<span class="tok-key">input</span> <span class="tok-prop">name</span>=<span class="tok-str">"name"</span> <span class="tok-prop">required</span>&gt;&lt;/<span class="tok-key">div</span>&gt;
-  &lt;<span class="tok-key">div</span> <span class="tok-prop">data-props-for</span>=<span class="tok-str">"field-state"</span>&gt;&lt;<span class="tok-key">input</span> <span class="tok-prop">type</span>=<span class="tok-str">"email"</span> <span class="tok-prop">required</span>&gt;&lt;/<span class="tok-key">div</span>&gt;
+  &lt;<span class="tok-key">input</span> <span class="tok-prop">name</span>=<span class="tok-str">"name"</span> <span class="tok-prop">required</span> <span class="tok-prop">data-props-for</span>=<span class="tok-str">"field-state"</span>&gt;
+  &lt;<span class="tok-key">select</span> <span class="tok-prop">name</span>=<span class="tok-str">"plan"</span> <span class="tok-prop">required</span> <span class="tok-prop">data-props-for</span>=<span class="tok-str">"select"</span>&gt;<span class="tok-com">&hellip;</span>&lt;/<span class="tok-key">select</span>&gt;
+  &lt;<span class="tok-key">input</span> <span class="tok-prop">type</span>=<span class="tok-str">"color"</span> <span class="tok-prop">data-props-for</span>=<span class="tok-str">"color-input"</span>&gt;
 &lt;/<span class="tok-key">form</span>&gt;</code></pre>
             <figcaption>CSS</figcaption>
-            <pre><code><span class="tok-sel">.ring</span> { <span class="tok-com">/* form-state completion, as a conic */</span>
-  <span class="tok-prop">background</span>: <span class="tok-fn">conic-gradient</span>(<span class="tok-key">in oklch</span>,
-    <span class="tok-key">var(--accent)</span> <span class="tok-fn">calc</span>(<span class="tok-var">var(--live-completion)</span> * <span class="tok-num">360deg</span>), <span class="tok-num">#0000</span> <span class="tok-num">0</span>);
-}
+            <pre><code><span class="tok-sel">.form</span> { <span class="tok-prop">--accent</span>: <span class="tok-var">var(--live-color)</span>; } <span class="tok-com">/* the picker re-skins it */</span>
+<span class="tok-sel">.seats::after</span> { <span class="tok-prop">content</span>: <span class="tok-fn">counter</span>(<span class="tok-var">--live-value-num</span>) <span class="tok-str">' seats'</span>; }
 <span class="tok-key">@container</span> <span class="tok-fn">style</span>(<span class="tok-var">--live-all-valid</span>: <span class="tok-num">1</span>) {
   <span class="tok-sel">.submit</span> { <span class="tok-prop">opacity</span>: <span class="tok-num">1</span>; } <span class="tok-com">/* the gate opens */</span>
 }</code></pre>
@@ -1197,28 +1222,74 @@
               <div class="src__var src__var--scoped"><dt>--live-length</dt><dd></dd></div>
               <div class="src__var src__var--scoped"><dt>--live-empty</dt><dd></dd></div>
               <div class="src__var src__var--scoped"><dt>--live-valid</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-remaining</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-fill-pct</dt><dd></dd></div>
             </dl>
-            <p class="src__desc">Text field length and validity.</p>
+            <p class="src__desc">Text-field length, validity, and remaining-character budget.</p>
+          </article>
+          <article class="src">
+            <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v5c0 4.6-3.2 7.7-8 9-4.8-1.3-8-4.4-8-9V6z"/><path d="M9 11.5l2 2 4-4.5"/></svg></span><code class="src__key">field</code><span class="src__scope src__scope--el">element</span><span class="src__tag">validity</span></header>
+            <dl class="src__vars">
+              <div class="src__var src__var--scoped"><dt>--live-value-missing</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-type-mismatch</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-pattern-mismatch</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-bad-input</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-custom-error</dt><dd></dd></div>
+            </dl>
+            <p class="src__desc"><code>field</code> flags <em>which</em> constraint failed: missing, wrong type, pattern, bad input, custom.</p>
+          </article>
+          <article class="src">
+            <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 12h18M6 9v6M18 9v6"/></svg></span><code class="src__key">field</code><span class="src__scope src__scope--el">element</span><span class="src__tag">validity</span></header>
+            <dl class="src__vars">
+              <div class="src__var src__var--scoped"><dt>--live-too-short</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-too-long</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-range-underflow</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-range-overflow</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-step-mismatch</dt><dd></dd></div>
+            </dl>
+            <p class="src__desc">Length, range &amp; step bounds: too long/short, under/over range, step mismatch.</p>
           </article>
           <article class="src">
             <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12l3 2.5 5-6"/></svg></span><code class="src__key">field-state</code><span class="src__scope src__scope--el">element</span></header>
             <dl class="src__vars">
               <div class="src__var src__var--scoped"><dt>--live-dirty</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-pristine</dt><dd></dd></div>
               <div class="src__var src__var--scoped"><dt>--live-touched</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-untouched</dt><dd></dd></div>
               <div class="src__var src__var--scoped"><dt>--live-changed</dt><dd></dd></div>
               <div class="src__var src__var--scoped"><dt>--live-submitted</dt><dd></dd></div>
             </dl>
-            <p class="src__desc">Form interaction history pseudo-classes can&rsquo;t see: edited, blurred, changed, submitted.</p>
+            <p class="src__desc">Form interaction history pseudo-classes can&rsquo;t see: edited/pristine, blurred/untouched, changed, submitted.</p>
           </article>
           <article class="src">
             <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h9M4 18h6"/><path d="M14.5 17.5l2.5 2.5 4.5-5"/></svg></span><code class="src__key">form-state</code><span class="src__scope src__scope--el">element</span></header>
             <dl class="src__vars">
               <div class="src__var src__var--scoped"><dt>--live-field-count</dt><dd></dd></div>
               <div class="src__var src__var--scoped"><dt>--live-valid-count</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-invalid-count</dt><dd></dd></div>
               <div class="src__var src__var--scoped"><dt>--live-all-valid</dt><dd></dd></div>
               <div class="src__var src__var--scoped"><dt>--live-completion</dt><dd></dd></div>
             </dl>
             <p class="src__desc">Form-wide validity &amp; completion CSS can&rsquo;t count: valid/invalid totals, the all-valid gate.</p>
+          </article>
+          <article class="src">
+            <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="2"/><path d="M8.5 10.5l3.5 3.5 3.5-3.5"/></svg></span><code class="src__key">select</code><span class="src__scope src__scope--el">element</span></header>
+            <dl class="src__vars">
+              <div class="src__var src__var--scoped"><dt>--live-index</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-option-count</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-index-pct</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-value-num</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-selected-count</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-selected-pct</dt><dd></dd></div>
+            </dl>
+            <p class="src__desc">A <code>&lt;select&gt;</code>&rsquo;s choice as numbers: index, option count, and its numeric value.</p>
+          </article>
+          <article class="src">
+            <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><rect x="8" y="8" width="8" height="8" rx="1.5" fill="currentColor" stroke="none"/></svg></span><code class="src__key">color-input</code><span class="src__scope src__scope--el">element</span></header>
+            <dl class="src__vars">
+              <div class="src__var src__var--scoped"><dt>--live-color</dt><dd></dd></div>
+            </dl>
+            <p class="src__desc">The colour chosen in an <code>&lt;input type="color"&gt;</code>, as a hex CSS can read.</p>
           </article>
           <article class="src">
             <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M10.5 8.5l5.5 3.5-5.5 3.5z" fill="currentColor" stroke="none"/></svg></span><code class="src__key">media</code><span class="src__scope src__scope--el">element</span></header>
@@ -1246,7 +1317,9 @@
             <dl class="src__vars">
               <div class="src__var src__var--scoped"><dt>--live-img</dt><dd></dd></div>
               <div class="src__var src__var--scoped"><dt>--live-img-accent</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-img-dark</dt><dd></dd></div>
               <div class="src__var src__var--scoped"><dt>--live-img-light</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-img-avg</dt><dd></dd></div>
               <div class="src__var src__var--scoped"><dt>--live-img-temp</dt><dd></dd></div>
             </dl>
             <p class="src__desc">A 5-swatch palette (dominant, accent, dark, light, avg) + warm/cool temp, from an <code>&lt;img&gt;</code>&rsquo;s pixels.</p>

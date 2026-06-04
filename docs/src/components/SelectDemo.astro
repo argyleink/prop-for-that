@@ -1,0 +1,139 @@
+---
+// Select demo, two stages, each binding `select` to its wrapper so the props land
+// there and every readout/visual inherits them:
+//  1. a single <select> column-picker — --live-value-num reflows a grid, and the
+//     thumb sits at --live-index-pct (ordinal position CSS can't otherwise get).
+//  2. a <select multiple> — --live-selected-count / --live-selected-pct tally the
+//     chosen options, a count :checked can match but CSS can't add up.
+---
+<div class="pft-stage select-demo" data-pft-select-cols>
+  <p class="pft-readout">
+    <span class="pft-chip">--live-index <b class="scd__index"></b></span>
+    <span class="pft-chip">--live-value-num <b class="scd__num"></b></span>
+    <span class="pft-chip">--live-option-count <b class="scd__count"></b></span>
+    <span class="pft-chip">--live-index-pct <b class="scd__pct"></b></span>
+  </p>
+
+  <label class="scd__label">
+    Columns
+    <select class="scd__select" aria-label="Column count">
+      <option value="2">2 columns</option>
+      <option value="3" selected>3 columns</option>
+      <option value="4">4 columns</option>
+      <option value="5">5 columns</option>
+      <option value="6">6 columns</option>
+    </select>
+  </label>
+
+  <div class="scd__track"><i></i></div>
+
+  <div class="scd__grid" aria-hidden="true">
+    <span></span><span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span><span></span><span></span>
+  </div>
+
+  <p class="pft-hint">
+    The grid is <code>grid-template-columns: repeat(var(--live-value-num), 1fr)</code> —
+    the chosen value reflows layout directly. The thumb sits at <code>--live-index-pct</code>.
+    A native <code>&lt;select&gt;</code>, no JS in the consumer.
+  </p>
+</div>
+
+<div class="pft-stage select-demo" data-pft-select-multi>
+  <p class="pft-readout">
+    <span class="pft-chip">--live-selected-count <b class="smd__sel"></b></span>
+    <span class="pft-chip">--live-option-count <b class="smd__count"></b></span>
+    <span class="pft-chip">--live-selected-pct <b class="smd__pct"></b></span>
+  </p>
+
+  <div class="smd__bar"><i></i></div>
+
+  <label class="scd__label">
+    Toppings <small>⌘/Ctrl-click to pick several</small>
+    <select class="scd__select smd__select" multiple size="6" aria-label="Toppings">
+      <option>Pepperoni</option>
+      <option selected>Mushroom</option>
+      <option>Onion</option>
+      <option selected>Olive</option>
+      <option>Basil</option>
+      <option>Chili</option>
+    </select>
+  </label>
+
+  <p class="pft-hint">
+    The fill is <code>scale: var(--live-selected-pct)</code> and the count is
+    <code>--live-selected-count</code>. CSS can match <code>:checked</code> options
+    but has no way to <em>count</em> them — that's the gap <code>select</code> fills.
+  </p>
+</div>
+
+<style>
+  .select-demo { max-inline-size: 32rem; }
+
+  .scd__label { display: grid; gap: 0.4rem; font-size: 0.85rem; font-weight: 600; color: var(--sl-color-white); }
+  .scd__label small { font-weight: 400; color: var(--sl-color-gray-3); }
+  .scd__select {
+    inline-size: 100%;
+    padding: 0.5rem 0.65rem;
+    border-radius: 0.45rem;
+    border: 1px solid var(--sl-color-gray-5);
+    background: var(--sl-color-black);
+    color: var(--sl-color-white);
+    font: inherit;
+    accent-color: var(--sl-color-accent);
+  }
+  .smd__select { padding: 0.25rem; }
+
+  /* readouts: CSS counters seeded straight from the live values */
+  .scd__index::after { counter-reset: i calc(var(--live-index, 0)); content: counter(i); }
+  .scd__num::after { counter-reset: n calc(var(--live-value-num, 0)); content: counter(n); }
+  .scd__count::after { counter-reset: c calc(var(--live-option-count, 0)); content: counter(c); }
+  .scd__pct::after { counter-reset: p calc(var(--live-index-pct, 0) * 100); content: counter(p) '%'; }
+  .smd__sel::after { counter-reset: s calc(var(--live-selected-count, 0)); content: counter(s); }
+  .smd__count::after { counter-reset: c calc(var(--live-option-count, 0)); content: counter(c); }
+  .smd__pct::after { counter-reset: p calc(var(--live-selected-pct, 0) * 100); content: counter(p) '%'; }
+
+  /* ordinal position: a thumb slid to --live-index-pct across the track */
+  .scd__track { position: relative; height: 0.5rem; border-radius: 99px; background: var(--sl-color-gray-5); }
+  .scd__track i {
+    position: absolute;
+    top: 50%;
+    inline-size: 1rem;
+    block-size: 1rem;
+    border-radius: 50%;
+    background: var(--sl-color-text-accent);
+    translate: -50% -50%;
+    left: calc(var(--live-index-pct, 0) * 100%);
+    transition: left 0.2s ease;
+  }
+
+  /* the chosen value drives the column count directly */
+  .scd__grid { display: grid; grid-template-columns: repeat(var(--live-value-num, 3), 1fr); gap: 0.4rem; }
+  .scd__grid span {
+    aspect-ratio: 1;
+    border-radius: 0.3rem;
+    background: color-mix(in oklab, var(--sl-color-text-accent) 28%, var(--sl-color-gray-6));
+    transition: background 0.2s;
+  }
+
+  /* multi-select fill */
+  .smd__bar { height: 0.5rem; border-radius: 99px; background: var(--sl-color-gray-5); overflow: hidden; }
+  .smd__bar i {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    transform-origin: left center;
+    background: var(--sl-color-text-accent);
+    scale: var(--live-selected-pct, 0) 1;
+    transition: scale 0.2s ease;
+  }
+</style>
+
+<script>
+  import { propsFor, register } from 'prop-for-that'
+  import { select } from 'prop-for-that/plugins'
+
+  register(select)
+  propsFor(document.querySelectorAll<HTMLElement>('[data-pft-select-cols]'), ['select'])
+  propsFor(document.querySelectorAll<HTMLElement>('[data-pft-select-multi]'), ['select'])
+</script>

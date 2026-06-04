@@ -2780,6 +2780,14 @@ main {
    and the form below both inherit it */
 .fstate-wrap {
   --ok: light-dark(oklch(56% 0.15 150), oklch(76% 0.16 150));
+  /* color-input writes --live-color here from the brand-colour picker. It overrides
+     the form's accent tokens, so the whole form — ring, focus rings, chips, submit —
+     re-themes to the chosen colour, derived in CSS with relative colour syntax. The
+     base keeps it sensible (and matches the picker default) before the input is read. */
+  --live-color: #7c5cff;
+  --accent: var(--live-color);
+  --accent-ink: oklch(from var(--live-color) calc(l - 0.12) c h);
+  --accent-soft: oklch(from var(--live-color) l c h / 0.28);
   inline-size: min(30rem, 100%);
   display: grid;
   gap: 0.7rem;
@@ -2820,6 +2828,80 @@ main {
   color: var(--ink-faint);
 }
 .fstate__input:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+/* the <select>, styled like the inputs; the `select` source turns its choice into a
+   number CSS can read. appearance:none + a CSS triangle for a consistent caret. */
+.fstate__select {
+  inline-size: 100%;
+  padding: 0.85rem var(--space-3);
+  font-family: var(--font-sans);
+  font-size: var(--step-0);
+  color: var(--ink);
+  background-color: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--ink-soft) 50%),
+    linear-gradient(135deg, var(--ink-soft) 50%, transparent 50%);
+  background-position:
+    right 1.2rem center,
+    right 0.85rem center;
+  background-size:
+    0.35rem 0.35rem,
+    0.35rem 0.35rem;
+  background-repeat: no-repeat;
+  transition: border-color 200ms var(--ease-out);
+}
+.fstate__select:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+/* the seat count, read straight from the <select>'s numeric value (--live-value-num).
+   Hidden until a plan is chosen (value-num isn't written for the empty option). */
+.fstate__seats {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--accent-ink);
+  opacity: clamp(0, var(--live-value-num, 0), 1);
+  transition: opacity 200ms linear;
+}
+.fstate__seats::after {
+  counter-reset: seats calc(var(--live-value-num, 0));
+  content: counter(seats) ' seats included';
+}
+/* the <input type=color> as a wide swatch; color-input exposes its colour as
+   --live-color, which re-themes the form above. */
+.fstate__color {
+  inline-size: 100%;
+  block-size: 2.75rem;
+  padding: 0.3rem;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 200ms var(--ease-out);
+}
+.fstate__color::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+.fstate__color::-webkit-color-swatch {
+  border: none;
+  border-radius: 8px;
+}
+.fstate__color::-moz-color-swatch {
+  border: none;
+  border-radius: 8px;
+}
+.fstate__color:focus-visible {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 4px var(--accent-soft);
@@ -2962,6 +3044,8 @@ main {
 /* the submit gate: dimmed and non-interactive until form-state reports all-valid */
 .fstate__btn--go {
   color: var(--paper);
+  /* auto-pick black/white for legibility on the picked brand colour */
+  color: contrast-color(var(--accent));
   background: var(--accent);
   border-color: var(--accent);
   opacity: 0.4;
@@ -2975,6 +3059,7 @@ main {
 }
 .fstate__btn--go:hover {
   color: var(--paper);
+  color: contrast-color(var(--accent-ink));
   background: var(--accent-ink);
   border-color: var(--accent-ink);
 }

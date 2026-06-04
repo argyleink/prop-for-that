@@ -1,0 +1,44 @@
+---
+title: Select
+description: A live demo of the select plugin, exposing a <select>'s index, numeric value, option count, and multi-select tally to CSS.
+---
+
+import SelectDemo from '../../../components/SelectDemo.astro';
+
+The `select` plugin turns a native `<select>`'s state into numbers CSS can compute with. CSS can match `:open`, `:checked`, and `:focus` — but it can never get *which* option (as a number) into `calc()`, nor count selections in a `<select multiple>`.
+
+The first picker drives a grid's column count straight off `--live-value-num`, and slides a thumb to the ordinal `--live-index-pct`. The second tallies a multi-select with `--live-selected-count` / `--live-selected-pct` — a count `:checked` can match but CSS can't add up.
+
+<SelectDemo />
+
+## The wiring
+
+Bind it to the `<select>`, or to a container holding one so siblings can read the props too:
+
+```html
+<script type="module">import 'prop-for-that/auto'</script>
+
+<div data-props-for="select">
+  <select>
+    <option value="2">2 columns</option>
+    <option value="3">3 columns</option>
+    <option value="4">4 columns</option>
+  </select>
+  <div class="grid">…</div>
+</div>
+```
+
+The chosen value reflows layout, and the index positions a marker — all in CSS:
+
+```css
+/* the chosen value's *meaning* drives layout directly */
+.grid { grid-template-columns: repeat(var(--live-value-num), 1fr); }
+
+/* ordinal position of the choice, normalised 0–1 */
+.thumb { left: calc(var(--live-index-pct) * 100%); }
+
+/* a <select multiple> fill — CSS can't count :checked options itself */
+.bar i { scale: var(--live-selected-pct) 1; }
+```
+
+`--live-value-num` is written only when the chosen value is numeric, so keep a `var(--live-value-num, 3)` fallback for non-numeric options.

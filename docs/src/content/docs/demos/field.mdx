@@ -1,0 +1,41 @@
+---
+title: Field
+description: A live demo of the field plugin's maxlength budget and per-reason validity flags.
+---
+
+import FieldDemo from '../../../components/FieldDemo.astro';
+
+The `field` plugin mirrors a form control's state into CSS. Beyond `--live-length` / `--live-empty` / `--live-valid`, it exposes two things `:invalid` can't: a **maxlength budget** (`--live-remaining`, `--live-fill-pct`) for a pure-CSS character counter, and the **per-reason validity flags** (`--live-value-missing`, `--live-too-short`, `--live-pattern-mismatch`, …) so a hint can react to the *specific* failure rather than a single "invalid".
+
+Type in the field: the bar fills and shifts green→red, the counter ticks down, and the message switches on which constraint is failing.
+
+<FieldDemo />
+
+## The wiring
+
+Bind it to the field, or to a container holding one so a counter and hint nearby inherit the state:
+
+```html
+<script type="module">import 'prop-for-that/auto'</script>
+
+<div data-props-for="field">
+  <input type="text" required minlength="3" maxlength="16">
+  <div class="meter"><i></i></div>
+  <p class="msg">…</p>
+</div>
+```
+
+The counter and bar come from the budget; the messages from the granular flags:
+
+```css
+/* maxlength budget */
+.meter i { scale: var(--live-fill-pct) 1; }
+.count::after { counter-reset: r calc(var(--live-remaining)); content: counter(r); }
+
+/* the *reason* it's invalid — one :invalid can't distinguish these */
+@container style(--live-value-missing: 1) { .msg-required { display: inline; } }
+@container style(--live-too-short: 1)     { .msg-short    { display: inline; } }
+@container style(--live-valid: 1)         { .msg-ok       { display: inline; } }
+```
+
+`--live-remaining` and `--live-fill-pct` are written only when the field has a `maxlength`, so keep a `var(--live-remaining, …)` fallback.

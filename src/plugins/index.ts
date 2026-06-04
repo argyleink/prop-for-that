@@ -13,6 +13,8 @@ import { media } from './media'
 import { field } from './field'
 import { fieldState } from './field-state'
 import { formState } from './form-state'
+import { select } from './select'
+import { colorInput } from './color-input'
 import { orientation } from './orientation'
 import { motion } from './motion'
 import { geo } from './geo'
@@ -34,6 +36,8 @@ export {
   field,
   fieldState,
   formState,
+  select,
+  colorInput,
   orientation,
   motion,
   geo,
@@ -57,6 +61,8 @@ export const allPlugins: Source[] = [
   field,
   fieldState,
   formState,
+  select,
+  colorInput,
   orientation,
   motion,
   geo,

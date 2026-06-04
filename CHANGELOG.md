@@ -8,6 +8,31 @@ backwards-compatible change (semver's `1.0.0`+ rules kick in at v1).
 Only the published library (`dist/`) is versioned here; the demo and docs site
 are repo-only and not part of the npm package.
 
+## [0.5.2]
+
+### Added
+- **`select` plugin** (`prop-for-that/plugins`) — a native `<select>`'s state as
+  numbers CSS can't reach: `--live-index` (`selectedIndex`, `-1` if none),
+  `--live-option-count`, `--live-index-pct` (0–1), `--live-value-num`
+  (`Number(value)`, only when the value is numeric), `--live-selected-count` and
+  `--live-selected-pct` (0–1) — the multi-select tally `:checked` can't count.
+  Turns a `<select>` into a discrete CSS state machine (slide a segmented
+  indicator off `--live-index`) or drives layout off the chosen value. Bind the
+  `<select>` or a container.
+- **`color-input` plugin** (`prop-for-that/plugins`) — `--live-color`, the colour
+  chosen in an `<input type="color">` as one sRGB hex string (CSS otherwise can't
+  read it); extract channels with relative colour syntax / `color-mix()`. Typed
+  mode registers it `<color>` so a picker can live-theme + interpolate a region
+  with zero consumer JS. Bind the input or a container.
+- **`field` plugin extended** — the per-reason `ValidityState` flags `:invalid`
+  can't distinguish (each 1/0): `--live-value-missing`, `--live-type-mismatch`,
+  `--live-pattern-mismatch`, `--live-too-long`, `--live-too-short`,
+  `--live-range-underflow`, `--live-range-overflow`, `--live-step-mismatch`,
+  `--live-bad-input`, `--live-custom-error`; plus a `maxlength` budget when one is
+  set: `--live-remaining` (chars left) and `--live-fill-pct` (0–1) for a pure-CSS
+  character counter. The budget props aren't written without a `maxlength`, so
+  keep a `var()` fallback.
+
 ## [0.5.1]
 
 ### Added
