@@ -1,60 +1,78 @@
 name: Release
 
-# Cut a release by pushing a version tag that matches package.json, e.g.:
-#   git tag v0.3.0 && git push origin v0.3.0
-# CHANGELOG.md must already have a matching `## [0.3.0]` section (this fails
-# otherwise) — that section becomes the GitHub Release notes.
+# Version-driven publishing. On a push to main (or a manual run), this publishes
+# to npm + cuts a GitHub Release **only when** package.json's version isn't already
+# on npm. So the normal flow is: bump package.json + add a CHANGELOG section,
+# commit, push to main — and routine commits (no version change) are a clean no-op.
+# No need to tag by hand; this creates the tag (and respects one you already made).
 on:
   push:
-    tags: ['v*.*.*']
+    branches: [main]
+  workflow_dispatch: # "Run workflow" button in the Actions tab
 
 permissions:
-  contents: write # create the GitHub Release
+  contents: write # push the tag + create the GitHub Release
   id-token: write # npm provenance attestation
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release # serialize releases; never publish two runs at once
   cancel-in-progress: false
 
 jobs:
   release:
-    name: publish ${{ github.ref_name }}
+    name: publish on version bump
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history + tags, so we can tag and detect existing tags
       - uses: actions/setup-node@v4
         with:
           node-version: lts/*
           registry-url: https://registry.npmjs.org # needed for NODE_AUTH_TOKEN
           cache: npm
 
-      - run: npm ci
-
-      # Gate: the tag, package.json, and CHANGELOG must agree before we publish.
-      - name: Verify version and changelog
+      # Is package.json's version already on npm? If so, there's nothing to release.
+      - name: Is this version new?
+        id: check
         run: |
-          TAG="${GITHUB_REF_NAME}"
-          VERSION="${TAG#v}"
-          PKG="$(node -p "require('./package.json').version")"
-          if [ "$VERSION" != "$PKG" ]; then
-            echo "::error::tag $TAG does not match package.json version $PKG"
-            exit 1
+          NAME="$(node -p "require('./package.json').name")"
+          VERSION="$(node -p "require('./package.json').version")"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
+            echo "$NAME@$VERSION is already published — nothing to do."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "$NAME@$VERSION is new — releasing."
+            echo "release=true" >> "$GITHUB_OUTPUT"
           fi
+
+      # ---- everything below runs only for a new version ----
+
+      - name: Verify CHANGELOG has this version
+        if: steps.check.outputs.release == 'true'
+        run: |
+          VERSION="${{ steps.check.outputs.version }}"
           if ! grep -q "^## \[$VERSION\]" CHANGELOG.md; then
             echo "::error::CHANGELOG.md has no '## [$VERSION]' section"
             exit 1
           fi
-          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
 
-      # Don't publish a broken build.
-      - run: npm run typecheck
-      - run: npm test
-      - run: npm run build
+      - name: Install
+        if: steps.check.outputs.release == 'true'
+        run: npm ci
 
-      # Pull this version's section out of CHANGELOG.md for the release notes.
-      - name: Extract release notes
+      - name: Typecheck · unit · build
+        if: steps.check.outputs.release == 'true'
         run: |
-          awk -v ver="$VERSION" '
+          npm run typecheck
+          npm test
+          npm run build
+
+      - name: Extract release notes
+        if: steps.check.outputs.release == 'true'
+        run: |
+          awk -v ver="${{ steps.check.outputs.version }}" '
             $0 ~ "^## \\[" ver "\\]" { f = 1; next }
             /^## \[/ && f { f = 0 }
             f { print }
@@ -62,12 +80,22 @@ jobs:
           echo "----- release notes -----"; cat RELEASE_NOTES.md
 
       - name: Publish to npm
+        if: steps.check.outputs.release == 'true'
         # access: public + provenance come from package.json "publishConfig"
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Create GitHub Release
+      - name: Tag + GitHub Release
+        if: steps.check.outputs.release == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file RELEASE_NOTES.md
+        run: |
+          VERSION="${{ steps.check.outputs.version }}"
+          TAG="v$VERSION"
+          if ! git rev-parse "$TAG" >/dev/null 2>&1; then
+            git tag -a "$TAG" -m "$TAG"
+            git push origin "$TAG"
+          fi
+          gh release view "$TAG" >/dev/null 2>&1 \
+            || gh release create "$TAG" --title "$TAG" --notes-file RELEASE_NOTES.md
