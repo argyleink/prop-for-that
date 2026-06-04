@@ -1,129 +1,72 @@
+<div align="center">
+
 # prop-for-that
 
-Expose what JavaScript knows but CSS can't see, as **batched, diffed CSS custom
-properties**. Give CSS the runtime state it lacks (slider values, pointer
-position, element visibility, viewport, …) and let it compute and react.
+**Expose what JavaScript knows but CSS can't see — as live CSS custom properties.**
+
+[![npm version](https://img.shields.io/npm/v/prop-for-that?logo=npm&color=cb3837)](https://www.npmjs.com/package/prop-for-that)
+[![minzipped size](https://img.shields.io/bundlephobia/minzip/prop-for-that?color=22aa77)](https://bundlephobia.com/package/prop-for-that)
+![zero dependencies](https://img.shields.io/badge/dependencies-0-22aa77)
+![license MIT](https://img.shields.io/badge/license-MIT-blue)
+
+[**Docs**](https://prop-for-that.netlify.app/docsite/) · [**Demos**](https://prop-for-that.netlify.app/) · [**Changelog**](./CHANGELOG.md)
+
+</div>
+
+---
+
+Sliders, pointer position, element visibility, viewport size, battery, network, sensors — JavaScript can read all of it; CSS can't. **prop-for-that** writes that runtime state into `--live-*` and `--const-*` custom properties — batched and diffed down to one `setProperty` per frame — so your CSS can compose and react to it with plain `calc()` and `var()`.
+
+Zero dependencies. TypeScript. ESM + CJS. SSR-safe.
 
 ```bash
 npm i prop-for-that
 ```
 
-## Use it three ways
-
-**Zero-config.** Auto-attaches global state and binds `data-props-for` elements:
+## Quick start
 
 ```html
 <script type="module">import 'prop-for-that/auto'</script>
 
-<input type="range" min="0" max="100" data-props-for="range">
-<section data-props-for="size visibility">…</section>
+<input type="range" data-props-for="range" />
 ```
 
 ```css
-input { background: hsl(calc(var(--live-value-pct) * 120) 80% 50%); }
-section { opacity: var(--const-has-entered); }
+/* the slider paints itself from its own value — no event listeners, no render loop */
+input {
+  background: hsl(calc(var(--live-value-pct) * 120) 80% 50%);
+}
 ```
 
-Add `data-props-typed` to `<html>` to register every `--live-*` as an interpolatable `@property` — the markup form of `configure({ typed: true })`.
+Bind any element with `data-props-for="key …"` and read its `--live-*` properties in CSS. That's the whole idea.
 
-**Imperative.** Explicit control and cleanup:
+## Why
 
-```js
-import { propsFor, configure } from 'prop-for-that'
+- **CSS does the work.** No per-element event handlers or render loops — bind once, compose in stylesheets.
+- **Fast by design.** One `requestAnimationFrame` flush per frame, write-on-change diffing, and a single shared `ResizeObserver` / `IntersectionObserver` for the whole page.
+- **Ship only what you use.** Five core sources are built in; everything else is an opt-in, tree-shakeable plugin.
+- **Plays with the platform.** Opt into typed [`@property`](https://prop-for-that.netlify.app/docsite/concepts/typed-properties/) values for interpolation, or FOUC-safe constants written before first paint.
+- **Tiny and dependency-free**, in every bundle format.
 
-propsFor(['viewport', 'pointer'])            // → :root
-const dispose = propsFor(slider, ['range'])  // → the element
-dispose()
-```
+## What it can read
 
-**Head constants.** Synchronous, FOUC-safe, inline in `<head>`:
+**Core** (always on): viewport, pointer, element size, visibility, and `<input type="range">` values.
 
-```html
-<script type="module">import 'prop-for-that/head'</script>
-<!-- sets --const-scrollbar-w, --const-scrollbar-thin-w, --const-dpr, --const-cores before first paint -->
-```
+**Plugins** (opt-in): battery, network, FPS, clock, scroll velocity, device orientation / motion, geolocation, CPU pressure, media playback, form & field state, and dominant + accent colors extracted from images and video — 20+ in all.
 
-## What you get
+→ Every source, every property, and live demos are in the **[docs](https://prop-for-that.netlify.app/docsite/reference/plugins/)**.
 
-| Source | Properties |
+## Three entry points
+
+| Import | What it does |
 | --- | --- |
-| `viewport` | `--live-vw`, `--live-vh` |
-| `pointer` | `--live-pointer-x/y`, `--live-pointer-x/y-ratio` |
-| `size` | `--live-w`, `--live-h`, `--live-aspect` |
-| `visibility` | `--live-visible`, `--const-has-entered` |
-| `range` | `--live-value`, `--live-value-pct` |
+| `prop-for-that/auto` | Zero-config: attaches global state and binds every `data-props-for` element, kept in sync with the DOM. |
+| `prop-for-that` | Imperative API — `propsFor()`, `register()`, `configure()` — for explicit control and teardown. |
+| `prop-for-that/head` | Synchronous, FOUC-safe constants (scrollbar width, DPR, core count) before first paint. |
+| `prop-for-that/plugins` | The opt-in plugin catalog. |
 
-`--live-*` updates continuously (one batched `setProperty` flush per frame, only
-when a value actually changed). `--const-*` is written once. Values are unitless
-numbers; compose them with `calc()` and units in CSS.
-
-## Plugins (opt-in)
-
-Exotic sources live in `prop-for-that/plugins` and are registered explicitly, so
-they stay tree-shakeable; you only ship the ones you register:
-
-```js
-import { register, propsFor } from 'prop-for-that'
-import { battery } from 'prop-for-that/plugins'
-register(battery)
-propsFor(document.documentElement, ['battery'])
-```
-
-```css
-.indicator { width: calc(var(--live-battery-level) * 100%); }
-```
-
-Register many at once with `registerPlugins(...sources)` (no args = all):
-
-```js
-import { registerPlugins, fps, clock } from 'prop-for-that/plugins'
-registerPlugins(fps, clock)   // or registerPlugins() for everything
-```
-
-| Plugin | Scope | Properties |
-| --- | --- | --- |
-| `scrollVelocity` | global | `--live-scroll-velocity`, `--live-scroll-direction` |
-| `online` | global | `--live-online` |
-| `network` | global | `--live-net-downlink`, `--live-net-rtt`, `--live-net-save-data`, `--live-net-type` |
-| `battery` | global | `--live-battery-level`, `--live-battery-charging` |
-| `clock` | global | `--live-now`, `--live-hours`, `--live-minutes`, `--live-seconds` |
-| `fps` | global | `--live-fps` |
-| `visualViewport` | global | `--live-vvp-scale`, `--live-vvp-offset-top`, `--live-vvp-height` |
-| `pointerLocal` | element | `--live-px`, `--live-py`, `--live-pointer-inside` |
-| `media` | element | `--live-current-time`, `--live-duration`, `--live-progress`, `--live-paused`, `--live-volume` |
-| `field` | element | `--live-length`, `--live-empty`, `--live-valid` |
-| `fieldState` | element | `--live-dirty`, `--live-pristine`, `--live-touched`, `--live-untouched`, `--live-changed`, `--live-submitted` |
-| `formState` | element | `--live-field-count`, `--live-valid-count`, `--live-invalid-count`, `--live-all-valid`, `--live-completion` |
-| `img` | element | `--live-natural-w`, `--live-natural-h`, `--live-loaded`, `--live-broken` |
-| `imgColor` | element | hex colors `--live-img` (dominant), `--live-img-accent`, `--live-img-dark`, `--live-img-light`, `--live-img-avg`, plus `--live-img-temp` (−1 cool…+1 warm) |
-| `videoColor` | element | hex colors `--live-video` (dominant) + `--live-video-accent` |
-| `orientation` | global | `--live-orient-alpha/beta/gamma` |
-| `motion` | global | `--live-accel-x/y/z` |
-| `geo` | global | `--live-geo-lat/lng/accuracy` |
-| `cpuPressure` | global | `--live-cpu-pressure` (0 nominal → 3 critical) |
-
-`orientation`, `motion`, and `geo` are sensor/permission-gated: they
-feature-detect and no-op when unavailable, and may need a user-gesture
-permission grant (notably on iOS). `cpuPressure` (Compute Pressure API) is
-Chromium-only and needs a secure context plus the `compute-pressure` Permissions
-Policy; it also feature-detects and no-ops otherwise. The key string for
-`propsFor`/`data-props-for` is the dashed form (e.g. `'scroll-velocity'`,
-`'pointer-local'`, `'visual-viewport'`, `'cpu-pressure'`).
-
-## How it stays cheap
-
-One `requestAnimationFrame` flush per frame, write-on-change diffing, passive
-listeners, and a single shared `ResizeObserver` / `IntersectionObserver` for the
-whole page. Tree-shakeable: you only ship the sources you use.
-
-Global `--live-*` values are written into one adopted stylesheet rule rather than
-the `<html>` inline `style`, so per-frame churn doesn't make the DevTools Styles
-panel unusable — inheritance is unchanged, `var()` / `calc()` resolve the same.
-Freeze the loop with `pause()` / `resume()` (e.g. to inspect values in DevTools),
-or cap its rate with `configure({ liveHz: 30 })`.
-
-See [`llms.txt`](./llms.txt) for an agent-oriented reference.
+Full API and concepts: **[prop-for-that.netlify.app/docsite](https://prop-for-that.netlify.app/docsite/)**.
 
 ## License
 
-MIT
+MIT © [Adam Argyle](https://github.com/argyleink)
