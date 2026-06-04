@@ -88,13 +88,15 @@ const root = document.documentElement
 if ('getBattery' in navigator) root.dataset.hasBattery = ''
 if ('connection' in navigator) root.dataset.hasNetwork = ''
 
-// Demo 1: bind pointer-local to the FRAME (#card). It writes --live-px /
-// --live-py (0–1 across the frame) + --live-pointer-inside there, inherited into
-// the card, so the card parallaxes from the frame pointer and its glow fades in
-// the moment you enter the frame (~50px before the card). The frame carries the
-// behind-card gradient and a border shine.
+// Demo 1: bind pointer-local to BOTH the FRAME (#card) and the card (.tilt-card).
+// The frame's --live-px / --live-py (0–1 across the frame) drive the behind-card
+// gradient + border shine; the card's OWN --live-px / --live-py (0–1 across the
+// card) drive its glow / glare / texture, so the highlight tracks the cursor
+// exactly over the card instead of feeling offset by the frame padding.
 const card = document.getElementById('card')
 if (card) propsFor(card, ['pointer-local'])
+const tiltCard = card?.querySelector<HTMLElement>('.tilt-card')
+if (tiltCard) propsFor(tiltCard, ['pointer-local'])
 
 // ── Demo 2: each panel exposes binary --live-visible / --const-has-entered, the
 // scroll-TRIGGERED state CSS can't latch on its own (one IntersectionObserver).
@@ -222,8 +224,10 @@ if (dragboard) propsFor(dragboard, ['pointer-local', 'size'])
 
 // ── Demo 11: bind media to the player CONTAINER; it finds the inner <video> and
 // writes --live-progress etc. on the container so the ring + label inherit them.
+// video-color also samples the same <video> (crossorigin) and writes
+// --live-video-accent here, which colours the progress ring from the footage.
 const player = document.getElementById('player')
-if (player) propsFor(player, ['media'])
+if (player) propsFor(player, ['media', 'video-color'])
 
 // ── Demo 0 (auto): the zero-config entry. `import 'prop-for-that/auto'` attaches
 // the default globals AND binds any [data-props-for] element — so the box below gets

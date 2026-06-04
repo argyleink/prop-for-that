@@ -115,9 +115,9 @@ html {
   /* the page (root) scroller: default width, transparent track, accent thumb */
   scrollbar-color: var(--scroll-thumb) transparent;
 }
-/* every nested (non-root) scroller: thin, with the same transparent track and
-   accent thumb as the page scroller */
-:where(.caption pre, .sizer, .field__input) {
+/* every non-root scroller: thin, with the same transparent track and accent
+   thumb as the page (root) scroller */
+:where(:not(:root)) {
   scrollbar-width: thin;
   scrollbar-color: var(--scroll-thumb) transparent;
 }
@@ -867,7 +867,7 @@ main {
 }
 .auto-box {
   position: relative;
-  inline-size: 15rem;
+  inline-size: 18rem;
   block-size: 10rem;
   min-inline-size: 8rem;
   min-block-size: 6.5rem;
@@ -908,23 +908,12 @@ main {
   counter-reset: h calc(var(--live-h, 0));
   content: counter(h);
 }
-.auto-box__grip {
-  position: absolute;
-  right: 0.3rem;
-  bottom: 0.3rem;
-  inline-size: 0.7rem;
-  block-size: 0.7rem;
-  border-right: 2px solid var(--line-strong);
-  border-bottom: 2px solid var(--line-strong);
-  pointer-events: none;
-}
 
 /* ═══════════════════════ 1. POINTER-REACTIVE CARD ═════════════════════════
-   pointer-local is bound to the FRAME (#card), so --live-px / --live-py (0–1
-   across the frame) + --live-pointer-inside live there and inherit into the
-   card. The frame carries the glow + a border shine; the card parallaxes from
-   the frame's pointer and its own glow fades in as soon as you enter the frame
-   (~the frame padding, ≈50px) before reaching the card. */
+   pointer-local is bound to BOTH the FRAME (#card) and the card (.tilt-card).
+   The frame's --live-px / --live-py drive the behind-card halo + border shine;
+   the card's OWN --live-px / --live-py drive its glow / glare / texture, so the
+   highlight tracks the cursor exactly over the card (no frame-vs-card offset). */
 .stage--pointer {
   --px: var(--live-px, 0.5);
   --py: var(--live-py, 0.5);
@@ -970,10 +959,16 @@ main {
 
 .tilt-card {
   --w: min(16rem, 66vw);
+  /* pointer-local is ALSO bound to the card, so the inner glow / shine / glare /
+     texture read the card's OWN --px / --py / --act — the highlight tracks the
+     cursor exactly over the card instead of the larger frame. (The frame keeps
+     its own binding for the behind-card halo + border shine.) */
+  --px: var(--live-px, 0.5);
+  --py: var(--live-py, 0.5);
+  --act: var(--live-pointer-inside, 0);
   /* The parallax tilt follows the GLOBAL pointer (root --live-pointer-*-ratio,
      0–1 across the viewport), so the card leans toward the cursor anywhere on the
-     page — ambient, not gated to the frame. The inner glow / shine / texture still
-     read the frame's local --px / --py / --act (inherited from #card). */
+     page — ambient, not gated to the frame. */
   --rx: calc((0.5 - var(--live-pointer-y-ratio, 0.5)) * 16deg);
   --ry: calc((var(--live-pointer-x-ratio, 0.5) - 0.5) * 16deg);
   --glare-r: calc(var(--w) * 0.5);
@@ -983,8 +978,8 @@ main {
   aspect-ratio: 5 / 7;
   border-radius: 20px;
   overflow: hidden;
-  /* the inner glow — gated by --act, so it begins fading in the moment the
-     pointer enters the frame, ~50px before it reaches the card */
+  /* the inner glow — gated by the card's own --act, fading in as the pointer
+     reaches the card */
   background:
     radial-gradient(
       11rem 11rem at calc(var(--px, 0.5) * 100%) calc(var(--py, 0.5) * 100%),
@@ -1097,7 +1092,7 @@ main {
   margin: 0 0 auto;
 }
 .tilt-card__title {
-  font-size: var(--step-2);
+  font-size: clamp(1.5rem, 1.25rem + 0.9vw, 2rem);
   font-weight: 800;
   font-stretch: 112%;
   line-height: 0.92;
@@ -1681,7 +1676,9 @@ main {
   appearance: none;
   width: 1.4rem;
   height: 1.4rem;
-  margin-top: calc((0.5rem - 1.4rem) / 2);
+  /* the 3px thumb border vs the 1px track border biases the centring; after the
+     −90° rotation that bias reads as a horizontal shift, so nudge it back left */
+  margin-top: calc((0.5rem - 1.4rem) / 2 - 1.5px);
   border-radius: 50%;
   background: var(--surface);
   border: 3px solid var(--tier);
@@ -2028,6 +2025,9 @@ main {
 .stage--trig {
   min-height: 18rem;
   padding: clamp(var(--space-4), 6vw, 4rem);
+  /* no card around the eyes — they sit straight on the page */
+  border: none;
+  background: none;
 }
 .eyes {
   display: flex;
@@ -2188,6 +2188,9 @@ main {
    on the [data-has-*] capability flags set once in JS. */
 .stage--device {
   padding: clamp(var(--space-3), 4vw, 2.5rem);
+  /* no outer card — each tile is its own card */
+  border: none;
+  background: none;
 }
 .tiles {
   --warn: light-dark(oklch(64% 0.16 65), oklch(78% 0.15 70));
@@ -2511,16 +2514,6 @@ main {
   content: 'aspect ' counter(whole) '.' counter(frac, decimal-leading-zero);
   color: var(--accent-ink);
 }
-.sizer__grip {
-  position: absolute;
-  right: 0.3rem;
-  bottom: 0.3rem;
-  inline-size: 0.7rem;
-  block-size: 0.7rem;
-  border-right: 2px solid var(--line-strong);
-  border-bottom: 2px solid var(--line-strong);
-  pointer-events: none;
-}
 
 /* ════════════════════════════════ 11. MEDIA ═══════════════════════════════
    media writes --live-progress on the player container; the conic ring fills. */
@@ -2532,19 +2525,28 @@ main {
   display: grid;
   justify-items: center;
   gap: var(--space-3);
+  /* base colour until video-color samples a frame and writes the real accent
+     (inline, so it wins). Keeps the ring from showing the @property's transparent
+     initial if another video registers --live-video-accent first. */
+  --live-video-accent: var(--accent);
   /* media writes --live-progress here in discrete steps (~4×/sec on timeupdate).
      configure({ typed: true }) registers it as an interpolatable @property, so
      transitioning it makes the conic ring sweep smoothly between samples; the
-     ring inherits the eased value. */
-  transition: --live-progress 250ms linear;
+     ring inherits the eased value. --live-video-accent (a typed <color>) is eased
+     the same way so the ring's colour fades between video samples instead of jumping. */
+  transition:
+    --live-progress 250ms linear,
+    --live-video-accent 300ms linear;
 }
 .player__ring {
   inline-size: clamp(10rem, 36vw, 14rem);
   aspect-ratio: 1;
   border-radius: 50%;
   padding: 0.55rem;
+  /* the fill is the video's live accent colour (video-color), falling back to the
+     page accent until a frame is sampled */
   background: conic-gradient(
-    var(--accent) calc(var(--live-progress, 0) * 360deg),
+    var(--live-video-accent, var(--accent)) calc(var(--live-progress, 0) * 360deg),
     var(--line) 0
   );
 }
@@ -2584,6 +2586,9 @@ main {
 .stage--ambient {
   min-height: 18rem;
   padding: clamp(var(--space-4), 6vw, 4rem);
+  /* no outer card — the ambient__card is the demo's surface */
+  border: none;
+  background: none;
 }
 .ambient {
   --low: clamp(0, round(up, calc(0.2 - var(--live-battery-level, 1)), 1), 1);
@@ -2647,18 +2652,21 @@ main {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   color: oklch(98% 0.02 var(--accent-h));
+  /* P3 colour stops, interpolated in oklab. The first and last stops are the same
+     colour so the 200%-wide image tiles seamlessly; scrolling the position by
+     exactly one tile (200%) loops with no jump. */
   background: linear-gradient(
-    110deg,
-    oklch(46% 0.2 var(--accent-h)),
-    oklch(30% 0.16 calc(var(--accent-h) + 40)),
-    oklch(46% 0.2 var(--accent-h))
+    110deg in oklab,
+    color(from oklch(46% 0.2 var(--accent-h)) display-p3 r g b),
+    color(from oklch(30% 0.16 calc(var(--accent-h) + 40)) display-p3 r g b),
+    color(from oklch(46% 0.2 var(--accent-h)) display-p3 r g b)
   );
-  background-size: 220% 100%;
+  background-size: 200% 100%;
   animation: ambient-sheen 4s linear infinite;
 }
 @keyframes ambient-sheen {
   to {
-    background-position: 220% 0;
+    background-position: 200% 0;
   }
 }
 .ambient__title {
@@ -2696,13 +2704,11 @@ main {
    translate is computed from --live-px/--live-py (pointer-local) and
    --live-w/--live-h (size), both bound to the board. Release → the :active rule
    drops → it springs home. */
-.stage--drag {
-  min-height: 24rem;
-  padding: clamp(var(--space-4), 6vw, 4rem);
-}
+/* no outer stage card here — the dragboard IS the demo container and spans the
+   full column the stage used to occupy. */
 .dragboard {
   position: relative;
-  inline-size: min(34rem, 100%);
+  inline-size: 100%;
   block-size: 19rem;
   border-radius: var(--radius);
   border: 1px solid var(--line);
@@ -3094,15 +3100,18 @@ main {
 .stage--vid {
   display: grid;
   place-items: center;
-  gap: var(--space-5);
-  padding: clamp(var(--space-4), 7vw, 4.5rem);
+  gap: var(--space-3);
+  /* no padding: the video spans the full column, as wide as the bordered stage
+     containers in the other demos */
+  padding: 0;
 }
 .vid-card {
   /* the glow colour: the video's dominant (a hex colour) — steadier than the
      accent, which jumps around too much frame to frame */
   --vid: var(--live-video, #3c4678);
   position: relative;
-  inline-size: min(30rem, 100%);
+  margin: 0; /* reset the default <figure> margin so it fills + aligns cleanly */
+  inline-size: 100%;
   border-radius: 16px;
   overflow: hidden;
   box-shadow:

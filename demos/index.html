@@ -134,7 +134,6 @@
                   class="auto-box__h"
                 ></span>
               </p>
-              <span class="auto-box__grip" aria-hidden="true"></span>
             </div>
           </div>
 
@@ -680,7 +679,6 @@
                 <span class="sizer__w"></span>&thinsp;&times;&thinsp;<span class="sizer__h"></span>
                 <span class="sizer__aspect"></span>
               </p>
-              <span class="sizer__grip" aria-hidden="true"></span>
             </div>
           </div>
 
@@ -718,6 +716,7 @@
                 <video
                   class="player__video"
                   src="https://mdn.github.io/shared-assets/videos/flower.mp4"
+                  crossorigin="anonymous"
                   controls
                   muted
                   loop
@@ -807,12 +806,10 @@
         </div>
 
         <div class="demo-body">
-          <div class="stage stage--drag">
-            <div class="dragboard" id="dragboard">
-              <span class="drag-token" style="--hx: 0.22; --hy: 0.28">drag&nbsp;me</span>
-              <span class="drag-token" style="--hx: 0.72; --hy: 0.32">&amp;&nbsp;me</span>
-              <span class="drag-token" style="--hx: 0.4; --hy: 0.72">me&nbsp;too</span>
-            </div>
+          <div class="dragboard" id="dragboard">
+            <span class="drag-token" style="--hx: 0.22; --hy: 0.28">drag&nbsp;me</span>
+            <span class="drag-token" style="--hx: 0.72; --hy: 0.32">&amp;&nbsp;me</span>
+            <span class="drag-token" style="--hx: 0.4; --hy: 0.72">me&nbsp;too</span>
           </div>
 
           <figure class="caption">
