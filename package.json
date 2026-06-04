@@ -63,6 +63,9 @@
   },
   "scripts": {
     "build": "tsup",
+    "build:demos": "cd demos && npm install && npm run build",
+    "build:docs": "cd docs && npm install && DOCS_BASE=/docsite npm run build",
+    "build:site": "npm run build:demos && npm run build:docs && node scripts/assemble-site.mjs",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

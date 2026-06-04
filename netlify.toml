@@ -1,0 +1,15 @@
+# Netlify builds both sub-sites from the repo root: the demos app (Vite) is the
+# root of prop-for-that.netlify.app, and the Starlight docs are served at /docsite.
+# `npm run build:site` builds each and assembles them into _site/ (demos at the
+# root, docs under /docsite/ — see scripts/assemble-site.mjs). DOCS_BASE makes
+# Astro emit /docsite-prefixed URLs for that build only.
+#
+# For this file to be used, the Netlify site's "Base directory" must be the repo
+# root (empty), not `demos`.
+
+[build]
+  command = "npm run build:site"
+  publish = "_site"
+
+[build.environment]
+  NODE_VERSION = "20"

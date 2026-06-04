@@ -6,12 +6,47 @@ import { fileURLToPath } from 'node:url';
 
 const fromHere = (p) => fileURLToPath(new URL(p, import.meta.url));
 
+// Astro prefixes its OWN generated links (sidebar, etc.) with `base`, but NOT
+// hand-written root-absolute links in Markdown/MDX bodies (`[x](/reference/…)`).
+// Under /docsite those would point at the demos site and 404, so this rehype pass
+// prefixes in-content `/…` href/src with the base. No-op when base is `/`.
+function rehypeBasePrefix() {
+	const base = (process.env.DOCS_BASE || '/').replace(/\/$/, '');
+	return (tree) => {
+		if (!base) return; // base is '/'
+		const walk = (node) => {
+			if (node.type === 'element' && node.properties) {
+				for (const attr of ['href', 'src']) {
+					const v = node.properties[attr];
+					if (
+						typeof v === 'string' &&
+						v.startsWith('/') &&
+						!v.startsWith('//') &&
+						v !== base &&
+						!v.startsWith(base + '/')
+					) {
+						node.properties[attr] = base + v;
+					}
+				}
+			}
+			node.children?.forEach(walk);
+		};
+		walk(tree);
+	};
+}
+
 // https://astro.build/config
 export default defineConfig({
+	// Hosted on Netlify: the demos site is the root, the docs live under /docsite.
+	// `DOCS_BASE` is set by the Netlify build (see netlify.toml); local `astro dev`
+	// and `astro build` leave it unset, so they stay at the root.
+	site: 'https://prop-for-that.netlify.app',
+	base: process.env.DOCS_BASE || '/',
 	// GFM (incl. markdown tables) isn't applied to MDX by default in this
 	// Astro/Starlight combo, so add it explicitly for tables to render.
 	markdown: {
 		remarkPlugins: [remarkGfm],
+		rehypePlugins: [rehypeBasePrefix],
 	},
 	// The interactive Demos pages import the library straight from local source.
 	vite: {
