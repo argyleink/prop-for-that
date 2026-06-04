@@ -33,10 +33,10 @@ export function observeIntersection(
   cb: (entry: IntersectionObserverEntry) => void,
 ): Disposer {
   if (!io) {
-    // Thresholds [0, 1]: notify on first-pixel enter/exit (ratio crosses 0) and
-    // on full containment (ratio crosses 1), so `visibility` can flag "any part
-    // visible" and latch "entirely visible". (Continuous ratios in between are
-    // native `view()` territory.)
+    // Thresholds [0, 1]: notify when the target starts/stops overlapping the
+    // viewport at all (ratio crosses 0) and when it becomes/stops being fully
+    // contained (ratio crosses 1). `visibility` uses the full-containment edge;
+    // continuous ratios in between are native `view()` territory.
     io = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) ioCallbacks.get(entry.target)?.(entry)

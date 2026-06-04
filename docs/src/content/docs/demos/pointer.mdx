@@ -39,7 +39,7 @@ so its descendants inherit them and nothing outside does.
 
 <PointerLocalDemo />
 
-It's a plugin, so register it once **before the DOM is scanned** (auto registers only the core sources); after that the element opts in with `data-prop`:
+It's a plugin, so register it once **before the DOM is scanned** (auto registers only the core sources); after that the element opts in with `data-props-for`:
 
 ```html
 <script type="module">
@@ -49,7 +49,7 @@ It's a plugin, so register it once **before the DOM is scanned** (auto registers
   register(pointerLocal)
 </script>
 
-<div data-prop="pointer-local">…</div>
+<div data-props-for="pointer-local">…</div>
 ```
 
 ```css

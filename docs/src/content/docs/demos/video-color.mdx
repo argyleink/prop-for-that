@@ -1,0 +1,67 @@
+---
+title: Video color
+description: A live demo of the video-color plugin — the dominant color of a playing video as CSS custom properties, for an ambient glow or chrome that tracks the picture.
+---
+
+import VideoColorDemo from '../../../components/VideoColorDemo.astro';
+
+CSS can't read a video's pixels, so it can't tint a player's chrome, glow, or caption to match what's on screen. The `video-color` plugin samples a playing `<video>` every few frames and writes its **dominant color** and a vibrant **accent** as channels you compose with `rgb()`, plus a luminance you branch on to keep overlaid text legible.
+
+It's the moving-picture sibling of [`img-color`](/demos/img-color/): the same 16×16 downsample and bucketing, but driven by the video's own frames instead of a one-shot `load`. (It keeps to these two colors rather than the full image palette — a six-swatch extraction isn't worth it 4×/second for an ambient glow.)
+
+<VideoColorDemo />
+
+The player's caption is painted with the video's **dominant** color and the glow with its **accent**, both recomputed ~4×/second as the picture changes — all composed in CSS.
+
+## The props
+
+Written on the bound element on the [`live`](/concepts/naming-and-cadence/) cadence. Both colors share the same shape: `r` / `g` / `b` channels (`0`–`255`) and an `l` luminance (`0`–`1`, Rec. 709 weights — threshold it for light/dark text).
+
+| Property | What it is |
+| --- | --- |
+| `--live-video-r`, `-g`, `-b`, `--live-video-l` | the **dominant** color (the most common one) |
+| `--live-video-accent-r`, `-g`, `-b`, `-l` | the **most vibrant** color (reuses the dominant when a frame is essentially grayscale) |
+
+```css
+.player  { box-shadow: 0 0 4rem rgb(var(--live-video-accent-r) var(--live-video-accent-g) var(--live-video-accent-b)); }
+.caption { background: rgb(var(--live-video-r) var(--live-video-g) var(--live-video-b)); }
+
+/* contrasting text: round() snaps luminance to 0 or 1 → white or black */
+.caption { color: hsl(0 0% calc((1 - round(var(--live-video-l), 1)) * 100%)); }
+```
+
+## How it stays cheap
+
+A video is a moving picture, so the cost is in *when* you sample, not just how:
+
+1. Sampling rides **`requestVideoFrameCallback`** — it fires once per *presented* frame and stops firing when the video is **paused, offscreen, `display:none`, or in a background tab**. An idle video costs nothing, with no `IntersectionObserver` needed.
+2. On top of that, the pixel read is **throttled to ~4 Hz** — plenty to track scene cuts for ambient theming, a fraction of the work of reading every frame.
+3. Each read draws the current frame to a 16×16 canvas and buckets those 256 pixels once — the dominant and the accent both fall out of that single pass, the same path as `img-color`. A paused/poster frame is seeded on attach, and where `requestVideoFrameCallback` is missing it falls back to the `timeupdate` event (~4 Hz while playing).
+
+:::caution[Cross-origin video needs CORS]
+Reading pixels from a cross-origin video taints the canvas and throws. For video from another origin, add `crossorigin="anonymous"` **and** serve it with permissive CORS headers. Without that the plugin simply **writes nothing** — so always give `var()` a fallback: `rgb(var(--live-video-r, 128) …)`. Same-origin, `data:`, `blob:`, and canvas-captured streams (like this demo's) just work.
+:::
+
+## The wiring
+
+```html
+<script type="module">
+  import 'prop-for-that/auto'
+  import { registerPlugins, videoColor } from 'prop-for-that/plugins'
+  registerPlugins(videoColor)
+</script>
+
+<!-- bind the figure so the caption (a sibling of the video) inherits the color -->
+<figure data-props-for="video-color">
+  <video src="/clip.mp4" muted autoplay loop playsinline></video>
+  <figcaption>…</figcaption>
+</figure>
+```
+
+```js
+import { propsFor, register } from 'prop-for-that'
+import { videoColor } from 'prop-for-that/plugins'
+
+register(videoColor)
+propsFor(document.querySelector('figure'), ['video-color'])
+```

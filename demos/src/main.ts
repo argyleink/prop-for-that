@@ -3,6 +3,10 @@ import {
   registerPlugins,
   pointerLocal,
   field,
+  fieldState,
+  formState,
+  imgColor,
+  videoColor,
   clock,
   fps,
   online,
@@ -13,6 +17,7 @@ import {
   visualViewport,
   orientation,
   motion,
+  cpuPressure,
 } from 'prop-for-that/plugins'
 
 // Register every --live-* as a typed @property so values are interpolatable
@@ -41,6 +46,10 @@ configure({
 registerPlugins(
   pointerLocal,
   field,
+  fieldState,
+  formState,
+  imgColor,
+  videoColor,
   clock,
   fps,
   online,
@@ -51,11 +60,12 @@ registerPlugins(
   visualViewport,
   orientation,
   motion,
+  cpuPressure,
 )
 
 // ── The entire reactive wiring. JS exposes state; CSS does all the reacting.
 // These globals land on :root, so any element on the page can read them: the
-// accent hue, the HUD, the telemetry panel, the trig clock, the device panel.
+// accent hue, the HUD, the trig clock, the device panel.
 propsFor([
   'pointer', // --live-pointer-x/y(-ratio)
   'viewport', // --live-vw / --live-vh
@@ -68,6 +78,7 @@ propsFor([
   'visual-viewport', // --live-vvp-scale / offset-top / height
   'orientation', // --live-orient-alpha / beta / gamma (mobile)
   'motion', // --live-accel-x / y / z (mobile)
+  'cpu-pressure', // --live-cpu-pressure (0 nominal → 3 critical, Chromium)
 ])
 
 // Capability flags (one-shot, NOT reactive): the Battery + Network Information
@@ -85,7 +96,7 @@ if ('connection' in navigator) root.dataset.hasNetwork = ''
 const card = document.getElementById('card')
 if (card) propsFor(card, ['pointer-local'])
 
-// ── Demo 2: each panel exposes binary --live-visible / --live-has-entered, the
+// ── Demo 2: each panel exposes binary --live-visible / --const-has-entered, the
 // scroll-TRIGGERED state CSS can't latch on its own (one IntersectionObserver).
 // propsFor accepts a NodeList, so one call binds every panel.
 propsFor(document.querySelectorAll('[data-reveal]'), ['visibility'])
@@ -108,6 +119,85 @@ if (level) propsFor(level, ['range'])
 const note = document.getElementById('note')
 if (note) propsFor(note, ['field'])
 
+// ── Demo 14: bind field-state to EACH field wrapper, so every input gets its
+// own interaction history (--live-dirty / touched / changed / submitted) on its
+// own container — the chips inside read that field's state. Bind field-state AND
+// form-state to the WRAP (it holds the topper + the form): field-state aggregates
+// the form-wide submitted, form-state aggregates validity/completion across every
+// field (--live-field-count / valid-count / all-valid / completion). Both land on
+// the wrap, so the topper above the card reads them and the submit gate inside the
+// form does too. preventDefault keeps Submit from navigating.
+const fstate = document.getElementById('fstate')
+const fstateWrap = document.getElementById('fstate-wrap')
+if (fstate && fstateWrap) {
+  propsFor(fstate.querySelectorAll('.fstate__field'), ['field-state'])
+  propsFor(fstateWrap, ['field-state', 'form-state'])
+  fstate.addEventListener('submit', (e) => e.preventDefault())
+}
+
+// ── Demo 15 (img-color): the first two swatches are real photos from a CORS-
+// enabled placeholder API (crossorigin so img-color can read their pixels); the
+// other two are canvas-generated gradients (same-origin, no taint). Picking one
+// swaps the <img>; img-color re-reads the dominant colour into --live-img-r/g/b
+// on the card, which tints the drop shadow. pointer-local on the stage drives
+// --live-px/py, and CSS casts the shadow AWAY from the cursor — the cursor is the sun.
+const SUN_IMAGES = [
+  'https://picsum.photos/id/1080/240/300', // strawberries — vivid red
+  'https://picsum.photos/id/225/240/300', // dog — warm earth tones
+]
+// Display-P3 stops for the two gradient swatches — wider gamut than sRGB, rendered
+// through a display-p3 canvas and a P3 CSS gradient. The picker gradient is authored
+// `in oklab` for perceptual interpolation (current Chromium normalises that out of
+// the *serialised* value, but the intent stands and other engines honour it).
+const SUN_GRADS: Record<string, string[]> = {
+  lime: ['color(display-p3 0.85 1 0.3)', 'color(display-p3 0.35 0.85 0.3)', 'color(display-p3 0 0.55 0.35)'],
+  berry: ['color(display-p3 1 0.5 0.82)', 'color(display-p3 0.75 0.2 0.82)', 'color(display-p3 0.35 0.1 0.66)'],
+}
+const sunArtwork = (stops: string[]): string => {
+  const c = document.createElement('canvas')
+  c.width = c.height = 100
+  // a display-p3 canvas so the P3 stops render at full gamut (falls back to sRGB)
+  const g = c.getContext('2d', { colorSpace: 'display-p3' }) ?? c.getContext('2d')
+  if (!g) return ''
+  const grad = g.createLinearGradient(0, 0, 100, 100)
+  stops.forEach((s, i) => grad.addColorStop(i / (stops.length - 1), s))
+  g.fillStyle = grad
+  g.fillRect(0, 0, 100, 100)
+  return c.toDataURL()
+}
+const sunImg = document.querySelector<HTMLImageElement>('#sun-img')
+const sunCard = document.getElementById('sun-card')
+const sunPicker = document.getElementById('sun-picker')
+if (sunImg && sunCard && sunPicker) {
+  sunImg.crossOrigin = 'anonymous' // so img-color can read cross-origin pixels
+  sunPicker.querySelectorAll<HTMLElement>('[data-img], [data-grad]').forEach((dot) => {
+    const url = dot.dataset.img != null ? SUN_IMAGES[Number(dot.dataset.img)] : undefined
+    if (url) {
+      dot.style.backgroundImage = `url("${url}")`
+      dot.addEventListener('click', () => (sunImg.src = url))
+      return
+    }
+    const stops = dot.dataset.grad ? SUN_GRADS[dot.dataset.grad] : undefined
+    if (!stops) return
+    dot.style.background = `linear-gradient(135deg in oklab, ${stops.join(', ')})`
+    dot.addEventListener('click', () => (sunImg.src = sunArtwork(stops)))
+  })
+  sunImg.src = SUN_IMAGES[0]! // start on the first photo
+}
+// img-color AND pointer-local on the STAGE: the dominant tints the card's shadow,
+// and the palette swatches (siblings of the card) read the rest of the extracted
+// colours — accent / dark / light / avg — all inherited from the stage.
+const sunStage = document.getElementById('sun-stage')
+if (sunStage) propsFor(sunStage, ['pointer-local', 'img-color'])
+
+// ── Demo 16 (video-color): bind it to the STAGE so the card's glow AND the two
+// swatches below it read the sampled colours (~4 Hz). The accent drives the
+// backlit box-shadow glow; dominant + accent show as swatches. The video is
+// crossorigin so the frame is readable (CORS); muted + autoplay + loop keep the
+// colour flowing.
+const vidStage = document.getElementById('vid-stage')
+if (vidStage) propsFor(vidStage, ['video-color'])
+
 // ── Demo 6 (CSS trig): bind pointer-local to EACH eye, so every eye gets its
 // own --live-px / --live-py and can aim its pupil with atan2()/sin()/cos() —
 // the angle from that eye's own centre to the cursor. No JS does the maths.
@@ -124,19 +214,19 @@ if (clockFace) propsFor(clockFace, ['pointer-local'])
 const sizer = document.getElementById('sizer')
 if (sizer) propsFor(sizer, ['size'])
 
-// ── Demo 14 (drag): bind pointer-local AND size to the board. CSS gates on
+// ── Demo 13 (drag): bind pointer-local AND size to the board. CSS gates on
 // :active and computes each token's translate from --live-px / --live-py and the
 // board's --live-w / --live-h. No JS drag handler, no pointer math in JS.
 const dragboard = document.getElementById('dragboard')
 if (dragboard) propsFor(dragboard, ['pointer-local', 'size'])
 
-// ── Demo 12: bind media to the player CONTAINER; it finds the inner <video> and
+// ── Demo 11: bind media to the player CONTAINER; it finds the inner <video> and
 // writes --live-progress etc. on the container so the ring + label inherit them.
 const player = document.getElementById('player')
 if (player) propsFor(player, ['media'])
 
 // ── Demo 0 (auto): the zero-config entry. `import 'prop-for-that/auto'` attaches
-// the default globals AND binds any [data-prop] element — so the box below gets
+// the default globals AND binds any [data-props-for] element — so the box below gets
 // `size` with no imperative call at all. Imported dynamically so it runs after
 // configure() above (its globals get the same typed @property treatment).
 import('prop-for-that/auto')

@@ -1,0 +1,121 @@
+---
+// Form-state demo: form-state is bound to the <form>, so the validity/completion
+// aggregate (--live-field-count / valid-count / invalid-count / all-valid /
+// completion) lands on the form and the progress bar, counts, status word, and
+// the gated submit button all read it — things CSS can't count across a form.
+// Per-field invalid styling is left to native :user-invalid.
+---
+<form class="pft-stage form-state-demo" data-pft-formstate novalidate aria-label="Validity demo">
+  <p class="pft-readout">
+    <span class="pft-chip">--live-valid-count <b class="fsd__r fsd__valid"></b></span>
+    <span class="pft-chip">--live-invalid-count <b class="fsd__r fsd__invalid"></b></span>
+    <span class="pft-chip">--live-completion <b class="fsd__r fsd__pct"></b></span>
+    <span class="pft-chip">--live-all-valid <b class="fsd__r fsd__all"></b></span>
+  </p>
+
+  <div class="fsd__bar"><i></i></div>
+
+  <label class="fsd__field">
+    <span>Name <small>required</small></span>
+    <input name="name" type="text" required placeholder="Ada Lovelace" autocomplete="off" />
+  </label>
+
+  <label class="fsd__field">
+    <span>Email <small>required</small></span>
+    <input name="email" type="email" required placeholder="ada@example.com" autocomplete="off" />
+  </label>
+
+  <label class="fsd__field">
+    <span>Website <small>optional, must be a URL</small></span>
+    <input name="url" type="url" placeholder="https://…" autocomplete="off" />
+  </label>
+
+  <div class="fsd__actions">
+    <button class="fsd__btn fsd__submit" type="submit">Submit</button>
+    <button class="fsd__btn" type="reset">Reset</button>
+    <span class="fsd__status" aria-live="polite"></span>
+  </div>
+
+  <p class="pft-hint">
+    The bar is <code>calc(var(--live-completion) * 100%)</code>; the status counts
+    <code>--live-invalid-count</code>; the Submit button only enables under
+    <code>@container style(--live-all-valid: 1)</code>. CSS can match one
+    <code>:invalid</code> field, but it can't count them or gate on "all valid" —
+    that's what <code>form-state</code> adds.
+  </p>
+</form>
+
+<style>
+  .form-state-demo { max-inline-size: 32rem; }
+
+  /* completion bar */
+  .fsd__bar { height: 0.5rem; border-radius: 99px; background: var(--sl-color-gray-5); overflow: hidden; }
+  .fsd__bar i {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    transform-origin: left center;
+    background: var(--sl-color-text-accent);
+    scale: var(--live-completion, 0) 1;
+    transition: scale 0.2s ease;
+  }
+
+  /* readouts: counts via CSS counters, all-valid via a style query */
+  .fsd__valid::after { counter-reset: v calc(var(--live-valid-count, 0)); content: counter(v); }
+  .fsd__invalid::after { counter-reset: n calc(var(--live-invalid-count, 0)); content: counter(n); }
+  .fsd__pct::after { counter-reset: p calc(var(--live-completion, 0) * 100); content: counter(p) '%'; }
+  .fsd__all::after { content: 'no'; color: var(--sl-color-gray-3); }
+  @container style(--live-all-valid: 1) { .fsd__all::after { content: 'yes'; color: var(--sl-color-text-accent); } }
+
+  .fsd__field { display: grid; gap: 0.35rem; }
+  .fsd__field > span { font-size: 0.85rem; font-weight: 600; color: var(--sl-color-white); }
+  .fsd__field small { font-weight: 400; color: var(--sl-color-gray-3); }
+  .fsd__field input {
+    inline-size: 100%;
+    padding: 0.55rem 0.7rem;
+    border-radius: 0.45rem;
+    border: 1px solid var(--sl-color-gray-5);
+    background: var(--sl-color-black);
+    color: var(--sl-color-white);
+    font: inherit;
+    transition: border-color 0.18s;
+  }
+  /* per-field invalidity is native CSS, shown only after the user interacts */
+  .fsd__field input:user-invalid { border-color: oklch(64% 0.2 25); }
+  .fsd__field input:user-valid { border-color: oklch(70% 0.16 150); }
+
+  .fsd__actions { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+  .fsd__btn {
+    padding: 0.45rem 0.9rem;
+    border-radius: 0.45rem;
+    border: 1px solid var(--sl-color-gray-5);
+    background: var(--sl-color-gray-6);
+    color: var(--sl-color-white);
+    font: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  /* the submit gate: disabled until every field validates */
+  .fsd__submit { opacity: 0.45; pointer-events: none; border-color: var(--sl-color-accent); }
+  @container style(--live-all-valid: 1) {
+    .fsd__submit { opacity: 1; pointer-events: auto; background: var(--sl-color-accent); color: var(--sl-color-black); }
+  }
+
+  .fsd__status { font-family: var(--sl-font-mono, ui-monospace, monospace); font-size: 0.78rem; color: var(--sl-color-gray-3); }
+  .fsd__status::after {
+    counter-reset: n calc(var(--live-invalid-count, 0));
+    content: counter(n) ' field(s) need attention';
+  }
+  @container style(--live-all-valid: 1) { .fsd__status::after { content: 'ready to submit ✓'; color: var(--sl-color-text-accent); } }
+</style>
+
+<script>
+  import { propsFor, register } from 'prop-for-that'
+  import { formState } from 'prop-for-that/plugins'
+
+  register(formState)
+  for (const form of document.querySelectorAll<HTMLFormElement>('[data-pft-formstate]')) {
+    propsFor(form, ['form-state'])
+    form.addEventListener('submit', (e) => e.preventDefault()) // demo only
+  }
+</script>

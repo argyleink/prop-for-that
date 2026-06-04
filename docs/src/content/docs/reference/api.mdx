@@ -10,7 +10,7 @@ import { configure, register, unregister, propsFor, unbind, reset, pause, resume
 ```
 
 :::tip[Prefer attributes?]
-For zero-config, declarative usage, the [`auto` entry](/start/getting-started/#1-auto-zero-config) binds elements straight from a `data-prop` attribute — no `propsFor()` call per element. The functions on this page are for explicit, programmatic control and teardown.
+For zero-config, declarative usage, the [`auto` entry](/start/getting-started/#1-auto-zero-config) binds elements straight from a `data-props-for` attribute — no `propsFor()` call per element. The functions on this page are for explicit, programmatic control and teardown.
 :::
 
 ---
@@ -49,13 +49,13 @@ configure({
 
 ## `register(source)`
 
-Add a custom or plugin source to the registry so it can be used by key via `propsFor()` or `data-prop`.
+Add a custom or plugin source to the registry so it can be used by key via `propsFor()` or `data-props-for`.
 
 ```ts
 function register(source: Source): void
 
 interface Source {
-  key: SourceKey          // unique identifier used in propsFor/data-prop
+  key: SourceKey          // unique identifier used in propsFor/data-props-for
   scope: 'global' | 'element'
   start(ctx: SourceContext): Disposer
 }

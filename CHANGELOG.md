@@ -8,15 +8,152 @@ backwards-compatible change (semver's `1.0.0`+ rules kick in at v1).
 Only the published library (`dist/`) is versioned here; the demo and docs site
 are repo-only and not part of the npm package.
 
+## [0.4.6]
+
+### Added
+- **`videoColor` now also writes a live accent colour** — `--live-video-accent-r`
+  / `-g` / `-b` / `-l`, the most vibrant colour of the current frame (reuses the
+  dominant when a frame is essentially grayscale). It reuses the same `palette()`
+  pass as `imgColor`, so the accent is free beyond a few ops per sample; the plugin
+  stays dominant + accent only (no full palette) since a six-swatch extraction
+  isn't worth running 4×/second for an ambient glow. The existing
+  `--live-video-r/g/b/l` dominant props are unchanged.
+
+### Changed
+- Removed the now-unused internal `dominantColor()` from `_color.ts`; `videoColor`
+  reads the dominant from `palette()` instead. Internal only — no public API or
+  behaviour change.
+
+## [0.4.5]
+
+### Added
+- **`imgColor` now extracts a small palette**, not just the dominant colour. Four
+  new swatches, each in the same `r` / `g` / `b` (`0`–`255`) + `l` (luminance
+  `0`–`1`) shape as the dominant: `--live-img-accent-*` (the most vibrant colour —
+  reuses the dominant for a grayscale image), `--live-img-dark-*` (darkest
+  non-black), `--live-img-light-*` (lightest non-white), and `--live-img-avg-*`
+  (the mean of every pixel, vs the dominant's mode). Plus a scalar
+  `--live-img-temp` (`−1` cool … `+1` warm) from the image's red-vs-blue balance.
+  All of it falls out of the **same single 16×16 bucketing pass** — no extra image
+  reads — so it's barely dearer than before. The existing `--live-img-r/g/b/l`
+  dominant props are unchanged.
+
+### Changed
+- `_color.ts` gains a shared `buildBuckets()` helper and a `palette()` extractor;
+  `dominantColor()` (used by `videoColor`) is refactored onto it with no behaviour
+  change, so `videoColor` stays dominant-only and pays nothing for the new palette.
+
+## [0.4.4]
+
+### Added
+- **`videoColor` plugin** (`prop-for-that/plugins`, key `video-color`, element).
+  The dominant colour of a playing `<video>` — `--live-video-r` / `-g` / `-b`
+  (`0`–`255`) plus `--live-video-l` (relative luminance `0`–`1`) — for an ambient
+  glow, scrim, or chrome that tracks the picture. Sampling rides
+  `requestVideoFrameCallback` (so it stops when the video is paused, offscreen, or
+  backgrounded) and is throttled to ~4 Hz on top; it seeds a paused/poster frame
+  on attach and falls back to the `timeupdate` event where
+  `requestVideoFrameCallback` is unavailable. The current frame is read 16×16 from
+  a canvas, reusing `img-color`'s dominant-colour path. Cross-origin video needs
+  `crossorigin="anonymous"` + permissive CORS headers, else the canvas is tainted
+  and the plugin writes nothing (`var()` fallbacks stay safe). Bind the `<video>`
+  or a container holding one.
+
+### Changed
+- The shared pixel-sampling + dominant-colour logic now lives in
+  `src/plugins/_color.ts`, reused by both `imgColor` and `videoColor`. No
+  behaviour change to `imgColor`.
+
+## [0.4.3]
+
+### Added
+- **`formState` plugin** (`prop-for-that/plugins`, key `form-state`, element).
+  Form-level **validity & completion** that CSS can't compute — `:invalid` matches
+  one control, but CSS can't count across a form or gate on "all valid." Bind it to
+  a `<form>` (or wrapper) for `--live-field-count` (controls subject to constraint
+  validation), `--live-valid-count` / `--live-invalid-count`, `--live-all-valid`
+  (`1`/`0` — the submit gate), and `--live-completion` (`0`–`1`: valid required
+  controls ÷ required controls). Recomputes on `input`/`change`, and on the frame
+  after a `reset`. Pairs with `field-state` (interaction history) and `field`
+  (per-field `--live-valid`).
+- **`imgColor` plugin** (`prop-for-that/plugins`, key `img-color`, element). The
+  **dominant colour** of an `<img>` (CSS can't read pixels): `--live-img-r` /
+  `--live-img-g` / `--live-img-b` (`0`–`255`) plus `--live-img-l` (relative
+  luminance `0`–`1`, to pick legible text). Sampled 16×16 via `createImageBitmap`
+  + `OffscreenCanvas` (decode/downscale off the main thread, ~256 px read back),
+  with a `<canvas>` fallback; recomputed on load so a `src` swap updates it. Bind
+  the `<img>` or a container holding one. Cross-origin images need
+  `crossorigin="anonymous"` + CORS, else the canvas is tainted and the plugin
+  writes nothing — so keep a `var()` fallback. Kept separate from `img` so the
+  pixel-reading cost is opt-in.
+
+## [0.4.2]
+
+### Fixed
+- **`fieldState`**: `--live-changed` now clears correctly after a form `reset`.
+  It's recomputed against each control's *default* value synchronously, instead
+  of re-read in a microtask — Chromium runs that microtask checkpoint *before* the
+  reset event reverts the control values, so `--live-changed` stayed stuck on after
+  a reset. `dirty` / `touched` / `submitted` already reset correctly; now `changed`
+  does too (handles text inputs, `<textarea>`, `<select>`, and checkbox/radio).
+
+## [0.4.1]
+
+### Added
+- **`fieldState` plugin** (`prop-for-that/plugins`, key `field-state`, element).
+  The form interaction-history states libraries like Angular, Formik, and React
+  Hook Form track but CSS pseudo-classes can't express — all `1`/`0`:
+  `--live-dirty` / `--live-pristine` (has the user edited the field at all —
+  latches on first `input`/`change`), `--live-touched` / `--live-untouched`
+  (blurred at least once — latches on first `blur`), `--live-changed` (current
+  value differs from the value at mount — un-latches when typed back), and
+  `--live-submitted` (the owning `<form>` has been submitted — latches on
+  `submit`, clears on `reset`). Both latch pairs reset when the form is reset.
+  Bind a **single field** for that field's state, or a **`<form>` / wrapper** for
+  the *aggregate* over every field inside it (dirty/touched/changed if *any*
+  field is — like a framework form-group). Props land on the bound element, so a
+  label, hint, or submit button can reveal an error or enable only once
+  `--live-touched`/`--live-submitted`/`--live-dirty`. Validity stays in the
+  `field` plugin; focus stays in `:focus`.
+
 ## [0.4.0]
 
+### Added
+- **`--const-scrollbar-thin-w`** from the `head` entry: the scrollbar width when
+  `scrollbar-width: thin` is applied, measured alongside `--const-scrollbar-w`.
+  Falls back to the classic width where `scrollbar-width: thin` isn't supported.
+- **`img` plugin** (`prop-for-that/plugins`, key `img`, element). For `<img>`:
+  `--live-natural-w` / `--live-natural-h` (intrinsic pixel size), `--live-loaded`
+  (`1`/`0`), `--live-broken` (`1`/`0`). Bind the image or a container holding one
+  (props land on the container, so a wrapper can show a skeleton while loading, a
+  fallback when broken, or set `aspect-ratio` from the natural size). Seeds from
+  `complete`/`naturalWidth` so already-cached images report correctly.
+- **`cpuPressure` plugin** (`prop-for-that/plugins`, key `cpu-pressure`, global).
+  Exposes the CPU's [Compute Pressure](https://developer.mozilla.org/en-US/docs/Web/API/Compute_Pressure_API)
+  state as `--live-cpu-pressure`, an ordered tier (nominal=0, fair=1, serious=2,
+  critical=3) — use it to back off expensive CSS work as the CPU gets busy.
+  Chromium-only, secure-context, and gated by the `compute-pressure` Permissions
+  Policy; feature-detects and no-ops (seeding `0` where supported, writing nothing
+  where not) so `var(--live-cpu-pressure, 0)` is safe everywhere.
+
 ### Changed (breaking)
-- **`visibility`'s `--live-has-entered` now latches only once the element is
-  *entirely* within the viewport**, not on first-pixel entry. The shared
-  `IntersectionObserver` gains `threshold: [0, 1]` so the source can distinguish
-  "any part visible" (`--live-visible`, unchanged) from "fully visible"
-  (`--live-has-entered`). An element larger than the viewport can never be
-  entirely visible, so its `has-entered` no longer latches.
+- **The auto-mode attribute is renamed `data-prop` → `data-props-for`.** The
+  zero-config `prop-for-that/auto` entry now scans for, observes, and binds
+  `[data-props-for="key1 key2"]` (was `[data-prop]`). Rename the attribute on every
+  element: `<div data-prop="size">` → `<div data-props-for="size">`. The value
+  syntax is unchanged — one or more space-separated source keys. The imperative
+  `propsFor()` API is unaffected.
+- **`visibility` is now full-element, and its latch moved off the `live`
+  cadence.** Both signals key off *entire-element* containment instead of
+  first-pixel overlap, and the write-once latch is renamed:
+  - `--live-visible` (1/0) now flips only while the element is **entirely**
+    within the viewport (previously: any part overlapping). Still reactive.
+  - `--live-has-entered` → **`--const-has-entered`**. It's written once (latches
+    to 1 the first time the element is entirely in view, never resets), so it now
+    lives on the `const` cadence. Update CSS to read `var(--const-has-entered)`.
+  - The shared `IntersectionObserver` gains `threshold: [0, 1]` to detect full
+    containment. An element larger than the viewport can never be entirely
+    visible, so neither signal ever turns on for it.
 
 ## [0.3.0]
 

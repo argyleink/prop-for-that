@@ -33,7 +33,7 @@ registerPlugins()             // or everything
 ```
 
 :::tip[Import name vs. key]
-The **import** is camelCase (`scrollVelocity`); the **key** you pass to `propsFor()` / `data-prop` is the dashed form (`'scroll-velocity'`). The tables below list both.
+The **import** is camelCase (`scrollVelocity`); the **key** you pass to `propsFor()` / `data-props-for` is the dashed form (`'scroll-velocity'`). The tables below list both.
 :::
 
 ## Global plugins
@@ -52,10 +52,11 @@ Register, then attach with `propsFor([...])`; they write to `:root`.
 | `orientation` | `orientation` | `--live-orient-alpha`, `--live-orient-beta`, `--live-orient-gamma` (degrees) |
 | `motion` | `motion` | `--live-accel-x`, `--live-accel-y`, `--live-accel-z` (m/s², gravity included) |
 | `geo` | `geo` | `--live-geo-lat`, `--live-geo-lng`, `--live-geo-accuracy` (metres) |
+| `cpuPressure` | `cpu-pressure` | `--live-cpu-pressure` (CPU [Compute Pressure](https://developer.mozilla.org/en-US/docs/Web/API/Compute_Pressure_API) as an ordered tier: `nominal`=0, `fair`=1, `serious`=2, `critical`=3) |
 
 ## Element plugins
 
-Register, then attach with `propsFor(el, [...])`; they write to the bound element. In [auto mode](/start/getting-started/#1-auto-zero-config) a registered element plugin also binds straight from a `data-prop` attribute — just register it before the DOM is scanned:
+Register, then attach with `propsFor(el, [...])`; they write to the bound element. In [auto mode](/start/getting-started/#1-auto-zero-config) a registered element plugin also binds straight from a `data-props-for` attribute — just register it before the DOM is scanned:
 
 ```html
 <script type="module">
@@ -64,7 +65,7 @@ Register, then attach with `propsFor(el, [...])`; they write to the bound elemen
   registerPlugins(field)   // register before auto scans the DOM
 </script>
 
-<input data-prop="field">
+<input data-props-for="field">
 ```
 
 | Import | Key | Properties |
@@ -72,12 +73,21 @@ Register, then attach with `propsFor(el, [...])`; they write to the bound elemen
 | `pointerLocal` | `pointer-local` | `--live-px`, `--live-py` (0–1 within the element's box), `--live-pointer-inside` (`1` / `0`) |
 | `media` | `media` | `--live-current-time`, `--live-duration`, `--live-progress` (0–1), `--live-paused` (`1` / `0`), `--live-volume` (0–1), for `<video>` / `<audio>` |
 | `field` | `field` | `--live-length` (value length), `--live-empty` (`1` / `0`), `--live-valid` (`1` / `0`), for form fields |
+| `fieldState` | `field-state` | the interaction history form libraries track but CSS can't (all `1` / `0`): `--live-dirty` / `--live-pristine` (edited at all — latches), `--live-touched` / `--live-untouched` (blurred at least once — latches), `--live-changed` (current value differs from mount — un-latches), `--live-submitted` (owning `<form>` submitted). Bind a single field, or a `<form>` for the aggregate over all its fields. Pairs with `field` (validity) and `:focus` (focus) — see the [Field state demo](/demos/field-state/) |
+| `formState` | `form-state` | form-level validity & completion CSS can't count: `--live-field-count`, `--live-valid-count`, `--live-invalid-count`, `--live-all-valid` (`1` / `0` — the submit gate), `--live-completion` (`0`–`1`, valid required ÷ required). Bind a `<form>` / wrapper — see the [Form state demo](/demos/form-state/) |
+| `img` | `img` | `--live-natural-w`, `--live-natural-h` (intrinsic pixel size), `--live-loaded` (`1` / `0`), `--live-broken` (`1` / `0`), for `<img>` |
+| `imgColor` | `img-color` | a palette from an `<img>` (CSS can't read pixels), each swatch `r` / `g` / `b` (`0`–`255`) + `l` (luminance `0`–`1`): dominant `--live-img-r/g/b/l`, `--live-img-accent-*` (most vibrant), `--live-img-dark-*` (darkest non-black), `--live-img-light-*` (lightest non-white), `--live-img-avg-*` (mean), plus `--live-img-temp` (`−1` cool … `+1` warm). All from one 16×16 `createImageBitmap` + `OffscreenCanvas` pass; cross-origin images need `crossorigin` + CORS or it no-ops — see the [Image color demo](/demos/img-color/) |
+| `videoColor` | `video-color` | live colours of a playing `<video>`, each `r` / `g` / `b` (`0`–`255`) + `l` (luminance `0`–`1`): dominant `--live-video-r/g/b/l` + accent `--live-video-accent-*` (the most vibrant; reuses the dominant for a grayscale frame). Both read 16×16 on `requestVideoFrameCallback` (so it stops sampling when the video is paused, offscreen, or backgrounded), throttled to ~4 Hz; cross-origin video needs `crossorigin` + CORS or it no-ops — see the [Video color demo](/demos/video-color/) |
 
 ## Permissions & feature detection
 
 Every plugin **feature-detects** the API it needs and quietly no-ops (returns an empty disposer) when it's unavailable, so registering one is always safe.
 
 `orientation`, `motion`, and `geo` are additionally **permission-gated**: on some platforms (notably iOS) they require a user-gesture permission grant before any values arrive.
+
+`cpuPressure` is **Chromium-only** today and needs a **secure context** plus the `compute-pressure` [Permissions Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Permissions-Policy) (allowed for same-origin by default). It seeds `--live-cpu-pressure: 0` (nominal) where supported and writes nothing where it isn't, so `var(--live-cpu-pressure, 0)` is a safe read everywhere.
+
+`imgColor` and `videoColor` read pixels through a canvas, so a **cross-origin** image or video needs `crossorigin="anonymous"` plus permissive CORS headers; otherwise the canvas is tainted and the plugin writes nothing. Same-origin, `data:`, and `blob:` sources work without ceremony. Keep a `var()` fallback either way.
 
 ## Planned
 

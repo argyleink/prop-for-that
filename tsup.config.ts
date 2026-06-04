@@ -33,7 +33,7 @@ export default defineConfig([
   },
 
   // Drop-in <script> builds: side-effecting, expose no global.
-  //   <script src=".../dist/auto.global.js"></script>  binds [data-prop]
+  //   <script src=".../dist/auto.global.js"></script>  binds [data-props-for]
   //   <script src=".../dist/head.global.js"></script>  FOUC-safe --const-*
   {
     ...shared,

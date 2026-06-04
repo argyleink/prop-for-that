@@ -2,20 +2,20 @@ import { propsFor, unbind } from './index'
 
 /**
  * Zero-config entry: attaches a default set of global sources and binds any
- * element carrying `data-prop="key1 key2"`, keeping bindings in sync with the DOM.
+ * element carrying `data-props-for="key1 key2"`, keeping bindings in sync with the DOM.
  *
  *   import 'prop-for-that/auto'
- *   <input type="range" data-prop="range">
- *   <div data-prop="size visibility">…</div>
+ *   <input type="range" data-props-for="range">
+ *   <div data-props-for="size visibility">…</div>
  */
 const DEFAULT_GLOBALS = ['viewport', 'pointer']
 
-/** The data-prop keys auto bound per element, so we touch only the delta and
+/** The data-props-for keys auto bound per element, so we touch only the delta and
  *  never clobber bindings added through the imperative API. */
 const tracked = new WeakMap<HTMLElement, string[]>()
 
 function keysOf(el: HTMLElement): string[] {
-  return (el.dataset.prop ?? '').split(/\s+/).filter(Boolean)
+  return (el.dataset.propsFor ?? '').split(/\s+/).filter(Boolean)
 }
 
 function sync(el: HTMLElement): void {
@@ -39,19 +39,19 @@ function clear(el: HTMLElement): void {
 
 function syncTree(node: Node): void {
   if (!(node instanceof HTMLElement)) return
-  if (node.hasAttribute('data-prop')) sync(node)
-  node.querySelectorAll<HTMLElement>('[data-prop]').forEach(sync)
+  if (node.hasAttribute('data-props-for')) sync(node)
+  node.querySelectorAll<HTMLElement>('[data-props-for]').forEach(sync)
 }
 
 function clearTree(node: Node): void {
   if (!(node instanceof HTMLElement)) return
   clear(node)
-  node.querySelectorAll<HTMLElement>('[data-prop]').forEach(clear)
+  node.querySelectorAll<HTMLElement>('[data-props-for]').forEach(clear)
 }
 
 function init(): void {
   propsFor(DEFAULT_GLOBALS)
-  document.querySelectorAll<HTMLElement>('[data-prop]').forEach(sync)
+  document.querySelectorAll<HTMLElement>('[data-props-for]').forEach(sync)
 
   new MutationObserver((mutations) => {
     for (const m of mutations) {
@@ -66,7 +66,7 @@ function init(): void {
     subtree: true,
     childList: true,
     attributes: true,
-    attributeFilter: ['data-prop'],
+    attributeFilter: ['data-props-for'],
   })
 }
 

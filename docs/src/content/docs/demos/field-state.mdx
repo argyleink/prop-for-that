@@ -1,0 +1,112 @@
+---
+title: Field state
+description: A live demo of the field-state plugin — dirty, pristine, touched, untouched, changed, and submitted, on a whole form or a single input.
+---
+
+import FieldStateDemo from '../../../components/FieldStateDemo.astro';
+
+Frameworks (Angular, Formik, React Hook Form, final-form) track a field's **interaction history** — has it been edited, has it been blurred, does its value still differ from the start, was the form submitted. CSS pseudo-classes can't see any of that: `:focus` is *now*, not *was-ever-touched*; there's no selector for "the value changed." The `field-state` plugin exposes that history as `--live-*` flags.
+
+It's the companion to the [`field`](/reference/plugins/#element-plugins) plugin, which covers the *value* (`--live-length`, `--live-empty`, `--live-valid`). `field-state` covers the *history*.
+
+<FieldStateDemo />
+
+Type in a field, blur it (tab away), then **Submit** or **Reset**. Every yes/no above and every dot below is pure CSS reading a `--live-*` flag — no JavaScript touches the styles.
+
+## The states
+
+All six are `0` / `1` flags, written on the [`live`](/concepts/naming-and-cadence/) cadence.
+
+| Property | `1` when… | Latches? | Framework equivalent |
+| --- | --- | --- | --- |
+| `--live-dirty` | the user has edited the field **at all** | yes — on first `input` / `change` | Angular `.dirty` |
+| `--live-pristine` | the field has **not** been edited yet | — (inverse of `dirty`) | Angular `.pristine` |
+| `--live-touched` | the field has been **blurred** at least once | yes — on first blur | Angular `.touched`, Formik `touched` |
+| `--live-untouched` | the field has **never** been blurred | — (inverse of `touched`) | Angular `.untouched` |
+| `--live-changed` | the **current value differs** from the value at mount | **no** — clears if you type it back | React Hook Form per-field `dirty` |
+| `--live-submitted` | the owning `<form>` has been **submitted** | yes — clears on form reset | RHF `isSubmitted` |
+
+A few things worth knowing:
+
+- **`dirty` vs. `changed`.** `dirty` is sticky: edit a field and it stays dirty for the life of the form, even if you delete what you typed. `changed` is live: it's `1` only while the value is actually different from where it started, and flips back to `0` the moment you restore the original. Use `dirty` for "has this been touched at all," `changed` for "are there unsaved differences right now."
+- **`touched` fires on blur, not focus.** Like the form libraries, a field becomes *touched* when the user **leaves** it — the classic trigger for "now it's fair to show a validation error."
+- **Reset is honored.** When the owning form is reset, `dirty` and `touched` clear (back to pristine / untouched), `submitted` clears, and `changed` is recomputed against each field's starting value.
+- **Edits only, not programmatic changes.** The flags react to user `input` / `change` / `blur`, not to JavaScript assigning `el.value` — matching how `.dirty` / `.touched` behave in frameworks.
+
+Validity isn't here on purpose — that's `field`'s `--live-valid`. And focus isn't here either — that's CSS's own `:focus`. `field-state` is strictly the history neither of those can give you.
+
+## A whole form, or a single field
+
+`field-state` reads the same way at two scopes, decided entirely by **what you bind it to**:
+
+- **Bind it to one `<input>` / `<textarea>` / `<select>`** → the flags describe *that field*.
+- **Bind it to a `<form>` (or any wrapper holding fields)** → the flags **aggregate** over every field inside it: `dirty` / `touched` / `changed` are `1` if *any* field is, and `submitted` is the form's. This is your form-group state, the way Angular's `FormGroup` is dirty if any control is.
+
+The demo above does **both at once** over the same markup: `field-state` is bound to the `<form>` (the chips and status line read that aggregate) *and* to each field's row wrapper (each dot reads that one field). Because custom properties inherit, the inner per-field binding **shadows** the form aggregate within its own subtree — so `--live-dirty` means "this field" on a dot and "any field" on the form-level chips, with no name clash.
+
+### Per-field
+
+```html
+<script type="module">
+  import 'prop-for-that/auto'
+  import { registerPlugins, fieldState } from 'prop-for-that/plugins'
+  registerPlugins(fieldState)   // register before auto scans the DOM
+</script>
+
+<!-- bind the wrapper so the label can style from the field's state -->
+<label data-props-for="field-state">
+  Email
+  <input name="email" type="email">
+  <small class="error">looks off</small>
+</label>
+```
+
+```css
+/* show the hint only after the user has left the field */
+.error { display: none; }
+@container style(--live-touched: 1) { .error { display: block; } }
+```
+
+### Whole-form aggregate
+
+```html
+<form data-props-for="field-state">
+  <input name="name">
+  <input name="email" type="email">
+  <button type="submit">Save</button>
+</form>
+```
+
+```css
+/* enable Save only when there are unsaved edits */
+button[type="submit"] { opacity: 0.5; pointer-events: none; }
+@container style(--live-dirty: 1) {
+  button[type="submit"] { opacity: 1; pointer-events: auto; }
+}
+
+/* a "you have unsaved changes" banner, gone the instant you revert */
+.unsaved { display: none; }
+@container style(--live-changed: 1) { .unsaved { display: block; } }
+```
+
+:::tip[Reading 0/1 flags in CSS]
+Because these are discrete `0`/`1` states (not a range), read them with a [`@container style()`](/concepts/style-queries/) query, not `var()` arithmetic — a style query is how CSS branches on an exact value. The bound element doesn't need `container-type`; style queries work on any ancestor.
+:::
+
+## The wiring
+
+Imperatively, the two scopes are just two `propsFor` calls:
+
+```js
+import { propsFor, register } from 'prop-for-that'
+import { fieldState } from 'prop-for-that/plugins'
+
+register(fieldState)
+
+const form = document.querySelector('form')
+propsFor(form, ['field-state'])                 // aggregate over the form
+for (const label of form.querySelectorAll('label'))
+  propsFor(label, ['field-state'])              // and per field
+```
+
+Each call returns a disposer that removes its listeners and the properties it wrote.

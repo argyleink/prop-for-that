@@ -89,11 +89,11 @@ the README tables.
   `propsFor(target, keys)` is element-scoped. Every call returns a disposer that removes
   **exactly** what it started, including the written properties.
 - **`./auto` (`src/auto.ts`)** — zero-config side-effect entry. Attaches `DEFAULT_GLOBALS`
-  (`viewport pointer`) and binds `[data-prop="key1 key2"]` elements, kept in sync with the
+  (`viewport pointer`) and binds `[data-props-for="key1 key2"]` elements, kept in sync with the
   DOM via a single `MutationObserver`. Tracks per-element keys so it only touches the delta
   and never clobbers imperatively-added bindings.
 - **`./head` (`src/head.ts`)** — synchronous, FOUC-safe constants for inline use in
-  `<head>`. Writes `--const-scrollbar-w`, `--const-dpr`, `--const-cores` immediately,
+  `<head>`. Writes `--const-scrollbar-w`, `--const-scrollbar-thin-w`, `--const-dpr`, `--const-cores` immediately,
   **bypassing the rAF writer on purpose** (these affect first paint).
 - **`./plugins` (`src/plugins/index.ts`)** — the opt-in plugin catalog.
 
@@ -108,7 +108,7 @@ side-effect-free so tree-shaking works.
 - **ASCII prefixes are deliberate.** `--live-`/`--const-` avoid CSS tokenizer escaping
   (sigils like `$`/`#`/`-->` would need `var(--\$x)` or break as CDC tokens). Don't switch
   to sigil-based names — `e2e/naming.spec.ts` guards this.
-- **`data-prop` / `propsFor` keys use the dashed form** of multi-word sources:
+- **`data-props-for` / `propsFor` keys use the dashed form** of multi-word sources:
   `scroll-velocity`, `pointer-local`, `visual-viewport`.
 - **Cadence**: reactive values are `'live'`; values written once are `'const'`.
 - **Typed `@property`** is opt-in via `configure({ typed: true })` (+ optional `defaults`);

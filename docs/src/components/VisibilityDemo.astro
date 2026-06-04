@@ -1,6 +1,6 @@
 ---
 // Visibility demo: three panels spaced down the page. Scroll, and each panel's
-// --live-visible flips 1/0 while --live-has-entered latches once entirely visible.
+// --live-visible flips 1/0 on full containment while --const-has-entered latches once entirely visible.
 ---
 <div class="vis-demo">
   <div class="pft-stage vis-demo__panel" data-pft-vis>
@@ -11,7 +11,7 @@
         <span class="vis-demo__seen">entered</span>
       </span>
     </header>
-    <p class="vis-demo__t"><code>--live-visible</code> is 1 while any part is on screen.</p>
+    <p class="vis-demo__t"><code>--live-visible</code> is 1 while the whole element is on screen.</p>
   </div>
 
   <div class="pft-stage vis-demo__panel" data-pft-vis>
@@ -22,7 +22,7 @@
         <span class="vis-demo__seen">entered</span>
       </span>
     </header>
-    <p class="vis-demo__t"><code>--live-has-entered</code> latches once the element is entirely in view and never resets.</p>
+    <p class="vis-demo__t"><code>--const-has-entered</code> latches once the element is entirely in view and never resets.</p>
   </div>
 
   <div class="pft-stage vis-demo__panel" data-pft-vis>
@@ -40,7 +40,7 @@
 <style>
   .vis-demo__panel {
     --in: var(--live-visible, 0);
-    --seen: var(--live-has-entered, 0);
+    --seen: var(--const-has-entered, 0);
     margin-block: 42vh;
     /* one-way reveal driven by has-entered */
     opacity: calc(0.25 + var(--seen) * 0.75);

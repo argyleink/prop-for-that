@@ -1,0 +1,160 @@
+---
+// Img-color demo: img-color is bound to each card (it resolves the inner <img>),
+// so the whole palette lands on the card. The caption background is the dominant
+// colour, the card glow is the accent, the chips are dominant/accent/dark/light/
+// average, and the bar reads --live-img-temp. Text colour flips black/white from
+// each swatch's luminance. The images are inline SVG data URIs (muted base + a
+// vivid accent blob + a dark and a light corner) so the canvas read isn't
+// cross-origin tainted and every swatch is visibly distinct.
+---
+<div class="pft-stage img-color-demo">
+  <div class="ic__grid">
+    <figure class="ic__card" data-pft-imgcolor
+      data-base="#8a5a50" data-accent="#ff7a18" data-dark="#241a16" data-light="#f3e9e0">
+      <img class="ic__img" alt="" />
+      <figcaption class="ic__cap">
+        <span class="ic__name">Ember</span>
+        <span class="ic__temp" title="warm ↔ cool"></span>
+      </figcaption>
+      <div class="ic__palette" role="img" aria-label="extracted palette">
+        <i class="ic__sw ic__sw--dom" title="dominant"></i>
+        <i class="ic__sw ic__sw--accent" title="accent"></i>
+        <i class="ic__sw ic__sw--dark" title="darkest"></i>
+        <i class="ic__sw ic__sw--light" title="lightest"></i>
+        <i class="ic__sw ic__sw--avg" title="average"></i>
+      </div>
+    </figure>
+
+    <figure class="ic__card" data-pft-imgcolor
+      data-base="#4a6670" data-accent="#16c5e8" data-dark="#11202a" data-light="#e6f3f6">
+      <img class="ic__img" alt="" />
+      <figcaption class="ic__cap">
+        <span class="ic__name">Ocean</span>
+        <span class="ic__temp" title="warm ↔ cool"></span>
+      </figcaption>
+      <div class="ic__palette" role="img" aria-label="extracted palette">
+        <i class="ic__sw ic__sw--dom" title="dominant"></i>
+        <i class="ic__sw ic__sw--accent" title="accent"></i>
+        <i class="ic__sw ic__sw--dark" title="darkest"></i>
+        <i class="ic__sw ic__sw--light" title="lightest"></i>
+        <i class="ic__sw ic__sw--avg" title="average"></i>
+      </div>
+    </figure>
+
+    <figure class="ic__card" data-pft-imgcolor
+      data-base="#b9a988" data-accent="#1f9e8a" data-dark="#3a2f22" data-light="#f7f1e4">
+      <img class="ic__img" alt="" />
+      <figcaption class="ic__cap">
+        <span class="ic__name">Sand</span>
+        <span class="ic__temp" title="warm ↔ cool"></span>
+      </figcaption>
+      <div class="ic__palette" role="img" aria-label="extracted palette">
+        <i class="ic__sw ic__sw--dom" title="dominant"></i>
+        <i class="ic__sw ic__sw--accent" title="accent"></i>
+        <i class="ic__sw ic__sw--dark" title="darkest"></i>
+        <i class="ic__sw ic__sw--light" title="lightest"></i>
+        <i class="ic__sw ic__sw--avg" title="average"></i>
+      </div>
+    </figure>
+  </div>
+
+  <p class="pft-hint">
+    Each card is themed from its art in one 16×16 pass: the caption is the
+    <code>dominant</code> colour, the glow is the <code>accent</code> (most
+    vibrant), the chips are dominant / accent / darkest / lightest / average, and
+    the bar marker rides <code>--live-img-temp</code> (cool ↔ warm). Caption text
+    flips black/white from <code>--live-img-l</code> so it stays legible.
+  </p>
+</div>
+
+<style>
+  .ic__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    gap: 1rem;
+  }
+  .ic__card {
+    margin: 0;
+    border-radius: 0.6rem;
+    overflow: hidden;
+    border: 1px solid var(--sl-color-gray-5);
+    /* a faint wash of the dominant, and a glow in the accent colour */
+    background: color-mix(in oklab,
+      rgb(var(--live-img-r, 128) var(--live-img-g, 128) var(--live-img-b, 128)) 16%,
+      var(--sl-color-black));
+    box-shadow: 0 0 1.6rem -0.4rem
+      rgb(var(--live-img-accent-r, 128) var(--live-img-accent-g, 128) var(--live-img-accent-b, 128));
+    transition: box-shadow 0.3s ease;
+  }
+  .ic__img { display: block; inline-size: 100%; block-size: 7rem; object-fit: cover; }
+  .ic__cap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.45rem 0.7rem;
+    background: rgb(var(--live-img-r, 128) var(--live-img-g, 128) var(--live-img-b, 128));
+    /* round(luminance) → 0 or 1 → black or white text, full contrast either way */
+    color: hsl(0 0% calc((1 - round(var(--live-img-l, 0.5), 1)) * 100%));
+    font-family: var(--sl-font-mono, ui-monospace, monospace);
+  }
+  .ic__name { font-weight: 700; font-size: 0.85rem; }
+  /* temperature gauge: a cool→warm track with a marker positioned from −1…+1 */
+  .ic__temp {
+    position: relative;
+    inline-size: 3.5rem;
+    block-size: 0.4rem;
+    border-radius: 1rem;
+    background: linear-gradient(to right, #4aa3ff, #d9d9d9, #ff8a3d);
+  }
+  .ic__temp::after {
+    content: '';
+    position: absolute;
+    inset-block: -0.15rem;
+    inline-size: 0.45rem;
+    border-radius: 1rem;
+    background: currentColor;
+    outline: 1px solid rgb(var(--live-img-r, 0) var(--live-img-g, 0) var(--live-img-b, 0));
+    /* −1 → 0%, 0 → 50%, +1 → 100% */
+    inset-inline-start: calc((var(--live-img-temp, 0) + 1) * 50%);
+    transform: translateX(-50%);
+  }
+  .ic__palette { display: flex; gap: 0.35rem; padding: 0.5rem 0.7rem 0.6rem; }
+  .ic__sw {
+    inline-size: 1.1rem;
+    block-size: 1.1rem;
+    border-radius: 0.25rem;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+  }
+  .ic__sw--dom { background: rgb(var(--live-img-r, 128) var(--live-img-g, 128) var(--live-img-b, 128)); }
+  .ic__sw--accent { background: rgb(var(--live-img-accent-r, 128) var(--live-img-accent-g, 128) var(--live-img-accent-b, 128)); }
+  .ic__sw--dark { background: rgb(var(--live-img-dark-r, 64) var(--live-img-dark-g, 64) var(--live-img-dark-b, 64)); }
+  .ic__sw--light { background: rgb(var(--live-img-light-r, 220) var(--live-img-light-g, 220) var(--live-img-light-b, 220)); }
+  .ic__sw--avg { background: rgb(var(--live-img-avg-r, 128) var(--live-img-avg-g, 128) var(--live-img-avg-b, 128)); }
+</style>
+
+<script>
+  import { propsFor, register } from 'prop-for-that'
+  import { imgColor } from 'prop-for-that/plugins'
+
+  // a muted base with a vivid accent blob and dark + light corners, so the
+  // extracted dominant, accent, darkest and lightest are all visibly different
+  const swatch = (base: string, accent: string, dark: string, light: string) =>
+    'data:image/svg+xml,' +
+    encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="240" height="160">` +
+        `<rect width="240" height="160" fill="${base}"/>` +
+        `<rect x="0" y="118" width="78" height="42" fill="${dark}"/>` +
+        `<rect x="176" y="0" width="64" height="42" fill="${light}"/>` +
+        `<circle cx="126" cy="84" r="46" fill="${accent}"/>` +
+      `</svg>`,
+    )
+
+  register(imgColor)
+  for (const card of document.querySelectorAll<HTMLElement>('[data-pft-imgcolor]')) {
+    propsFor(card, ['img-color']) // attaches the load listener first…
+    const img = card.querySelector('img')!
+    const d = card.dataset
+    img.src = swatch(d.base!, d.accent!, d.dark!, d.light!) // …then triggers the load
+  }
+</script>

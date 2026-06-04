@@ -33,7 +33,7 @@ Beyond what's already shipped, these are accepted for the first release.
 
 - **Globals:** `modifiers` (shift/ctrl/alt/meta), `caps-lock`, `key-active`, `pointer-idle`, `memory`, `touch-points`, `document-size`, `page-visible`, `page-focused`, `idle`, `selection`, `location`, `uptime`, `gamepad`, `clock` angles, `fps` extend, `battery` extend.
 - **Element:** `viewport-pos`, `rect`, `dist-from-pointer`, `truncated`, `children`, `text-metrics`.
-- **Per-element:** `color-input`, `date-input`, `file-input`, `textarea`, `select`, `form` (completion %), `meter-progress`, `table`, `audio-analyser`.
+- **Per-element:** `color-input`, `date-input`, `file-input`, `textarea`, `select`, ~~`form` (completion %)~~ ✅ shipped as the `form-state` plugin, `meter-progress`, `table`, `audio-analyser`.
 - **Stances:** a `capability` plugin with `delivery-mode`, `device-capability`, `connection-capability`, `conserve` (built for `@container style()`).
 
 ---
@@ -55,19 +55,28 @@ Considered and viable, but not yet committed. Click a name to vote.
 | [`light`](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+light) | ambient light `lux` (rare support) |
 | [`gyroscope` / `magnetometer` / `gravity`](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+generic-sensor) | Generic Sensor API |
 | [`js-memory`](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+js-memory) | heap used / heap % (Chromium-only) |
+| [`date`](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+date) | calendar parts: `weekday`, `day`, `month`, `year`, `day-of-year`, `days-in-month`, `is-weekend`, `is-am` (the calendar companion to `clock`'s time-of-day) |
+| [`input-modality`](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+input-modality) | whether the last input was keyboard / mouse / touch / pen — adaptive density, hit-targets, and focus rings beyond what `:focus-visible` scopes |
+| [`interacted`](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+interacted) | `--const-interacted` latches on the first user gesture — "tap to start" overlays, autoplay/audio unlock, deferring heavy work until engagement |
+| [`drag-state`](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+drag-state) | a drag op is in progress (global `dragging`); per-element `drag-over` (valid drop target) and `dragging-self` — no CSS pseudo exists for these |
+| [`intl`](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+intl) | FOUC-safe i18n consts: timezone offset, first weekday, 12/24-hour, `lang` (so a `date`-driven calendar starts the week correctly) |
+| [`storage`](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+storage) | quota usage % + persisted flag (`navigator.storage.estimate`) — "almost full" warnings, gating offline features |
+| [`permissions`](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+permissions) | granted / denied / prompt per permission (notifications, camera, mic, geo) — show an "enable" nudge only while the state is *prompt* |
+| [`responsiveness`](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+responsiveness) | main-thread-busy from PerformanceObserver `longtask` — back off effects when janky (distinct from `fps` cadence and `cpu-pressure` tier) |
+| [`modifier-locks` extend](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+modifier-locks) | `num-lock`, `scroll-lock` alongside the v1 `caps-lock` (one `getModifierState` call) |
 
 ### Element & per-element
 | Proposal | What it would expose |
 | --- | --- |
 | [`size` extend](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+size-extend) | content box, inline/block size |
 | [`visibility` extend](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+visibility-extend) | `in-viewport`, `time-visible`, `fully-visible` |
-| [`field` extend](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+field-extend) | `remaining`, `fill-pct`, `dirty`, `focused`, granular validity flags |
-| [`checkbox`](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+checkbox) | `checked`, `indeterminate` |
+| [`field` extend](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+field-extend) | `remaining`, `fill-pct`, `focused`, granular validity flags (the `field-state` plugin now ships the interaction states: `dirty`/`pristine`, `touched`/`untouched`, `changed`, `submitted`) |
 | [`media` extend](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+media-extend) | buffered, played, muted, rate, ended, seeking, video dims, PiP |
-| [`img`](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+img) | natural dims, `loaded`, `broken` |
 | [`canvas`](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+canvas) | canvas width / height |
 | [`link`](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+link) | `external`, `current` (nav highlighting) |
 | [`caret`](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+caret) | caret position, selection range |
+| [`field-state` extend](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+field-state-editable) | `[contenteditable]` support — dirty / changed / touched for rich-text editors, which CSS can't see |
+| [`img-color` extend](https://github.com/argyleink/prop-for-that/issues?q=is%3Aopen+label%3Aproposal+img-color-extend) | palette beyond the dominant colour: secondary/accent swatches, average vs. dominant (the `img-color` plugin ships the dominant colour today) |
 
 ---
 

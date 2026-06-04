@@ -13,7 +13,7 @@ when a value actually changed. Zero runtime dependencies, tree-shakeable, TypeSc
 ## Entry points
 
 - `prop-for-that`: the core API (`configure`, `register`, `unregister`, `propsFor`, `unbind`, `reset`).
-- `prop-for-that/auto`: side-effecting. On load it attaches the default globals (`viewport`, `pointer`) to `:root`, scans the DOM for `[data-prop="key1 key2"]` and binds those sources, and watches the DOM with a `MutationObserver`.
+- `prop-for-that/auto`: side-effecting. On load it attaches the default globals (`viewport`, `pointer`) to `:root`, scans the DOM for `[data-props-for="key1 key2"]` and binds those sources, and watches the DOM with a `MutationObserver`.
 - `prop-for-that/head`: side-effecting. Synchronously writes FOUC-safe constants before first paint. Inline it in `<head>`.
 - `prop-for-that/plugins`: opt-in plugin sources, plus `registerPlugins` and `allPlugins`.
 
@@ -27,7 +27,7 @@ npm i prop-for-that
 
 ## Mental model
 
-1. A **source** reads one group of state. It has a `key` (used in `propsFor`/`data-prop`), a `scope` (`global` → writes to `:root`; `element` → writes to the bound element), and a `start(ctx)` that attaches listeners/observers and returns a disposer.
+1. A **source** reads one group of state. It has a `key` (used in `propsFor`/`data-props-for`), a `scope` (`global` → writes to `:root`; `element` → writes to the bound element), and a `start(ctx)` that attaches listeners/observers and returns a disposer.
 2. Sources call `ctx.write(localName, value, cadence?)`, never `setProperty` directly. The **Writer** queues writes and flushes once per `requestAnimationFrame`, diffing against the last value written.
 3. CSS consumes the resulting custom properties:
    - **`var()`** for continuous values (ratios, dimensions), composed with `calc()`.
@@ -92,7 +92,7 @@ prefix; constants use `--const-`. Values are unitless numbers unless noted.
 | `viewport` | global | `--live-vw`, `--live-vh` |
 | `pointer` | global | `--live-pointer-x`, `--live-pointer-y`, `--live-pointer-x-ratio` (0–1), `--live-pointer-y-ratio` (0–1) |
 | `size` | element | `--live-w`, `--live-h`, `--live-aspect` (w/h) |
-| `visibility` | element | `--live-visible` (1/0, any part in viewport), `--live-has-entered` (1/0, latches once entirely in viewport, never resets) |
+| `visibility` | element | `--live-visible` (1/0, whole element in viewport), `--const-has-entered` (1/0, latches once entirely in viewport, never resets) |
 | `range` | element | `--live-value`, `--live-value-pct` (0–1). Bind the `<input>` or a container holding one. |
 
 ### Head constants (`prop-for-that/head`)
@@ -100,12 +100,13 @@ prefix; constants use `--const-`. Values are unitless numbers unless noted.
 | property | value |
 | --- | --- |
 | `--const-scrollbar-w` | scrollbar width in px |
+| `--const-scrollbar-thin-w` | scrollbar width in px with `scrollbar-width: thin` (= `--const-scrollbar-w` where unsupported) |
 | `--const-dpr` | `devicePixelRatio` |
 | `--const-cores` | `navigator.hardwareConcurrency` |
 
 ### Plugins (`prop-for-that/plugins`)
 
-Import name is camelCase; the key for `propsFor`/`data-prop` is the dashed form.
+Import name is camelCase; the key for `propsFor`/`data-props-for` is the dashed form.
 
 | import | key | scope | properties |
 | --- | --- | --- | --- |
@@ -119,9 +120,15 @@ Import name is camelCase; the key for `propsFor`/`data-prop` is the dashed form.
 | `orientation` | `orientation` | global | `--live-orient-alpha`, `--live-orient-beta`, `--live-orient-gamma` (deg) |
 | `motion` | `motion` | global | `--live-accel-x`, `--live-accel-y`, `--live-accel-z` (m/s²) |
 | `geo` | `geo` | global | `--live-geo-lat`, `--live-geo-lng`, `--live-geo-accuracy` (m) |
+| `cpuPressure` | `cpu-pressure` | global | `--live-cpu-pressure` (Compute Pressure tier: nominal=0, fair=1, serious=2, critical=3) |
 | `pointerLocal` | `pointer-local` | element | `--live-px`, `--live-py` (0–1 within the element), `--live-pointer-inside` (1/0) |
 | `media` | `media` | element | `--live-current-time`, `--live-duration`, `--live-progress` (0–1), `--live-paused` (1/0), `--live-volume` (0–1) |
 | `field` | `field` | element | `--live-length`, `--live-empty` (1/0), `--live-valid` (1/0) |
+| `fieldState` | `field-state` | element | form interaction history (all 1/0): `--live-dirty`/`--live-pristine` (user has edited it; latches), `--live-touched`/`--live-untouched` (blurred at least once; latches), `--live-changed` (current value ≠ mount value; un-latches), `--live-submitted` (owning `<form>` submitted). Bind a single field for its state, or a `<form>`/wrapper for the aggregate over all its fields. |
+| `formState` | `form-state` | element | form-level validity/completion CSS can't count: `--live-field-count`, `--live-valid-count`, `--live-invalid-count`, `--live-all-valid` (1/0 submit gate), `--live-completion` (0–1, valid required ÷ required). Bind a `<form>`/wrapper. |
+| `img` | `img` | element | `--live-natural-w`, `--live-natural-h` (intrinsic px), `--live-loaded` (1/0), `--live-broken` (1/0). Bind the `<img>` or a container holding one. |
+| `imgColor` | `img-color` | element | a palette from an `<img>`, all from one 16×16 bucketing pass (createImageBitmap+OffscreenCanvas). Each swatch is `r`/`g`/`b` (0–255) + `l` (luminance 0–1): dominant `--live-img-r/g/b/l`, `--live-img-accent-*` (most vibrant), `--live-img-dark-*` (darkest non-black), `--live-img-light-*` (lightest non-white), `--live-img-avg-*` (mean). Plus `--live-img-temp` (−1 cool…+1 warm). Accent reuses the dominant for grayscale. Cross-origin needs `crossorigin` + CORS, else no-ops. Bind the `<img>` or a container. |
+| `videoColor` | `video-color` | element | live colours of a playing `<video>`, each `r`/`g`/`b` (0–255) + `l` (luminance 0–1): dominant `--live-video-r/g/b/l` + accent `--live-video-accent-*` (most vibrant; reuses the dominant for a grayscale frame). Both from one 16×16 read on `requestVideoFrameCallback` (stops when paused/offscreen/backgrounded), throttled to ~4 Hz; seeds a paused/poster frame; falls back to `timeupdate`. Cross-origin needs `crossorigin` + CORS, else no-ops. Bind the `<video>` or a container. |
 
 ## Recipes
 
@@ -129,8 +136,8 @@ Zero-config (attributes):
 
 ```html
 <script type="module">import 'prop-for-that/auto'</script>
-<input type="range" data-prop="range">
-<section data-prop="size visibility">…</section>
+<input type="range" data-props-for="range">
+<section data-props-for="size visibility">…</section>
 ```
 
 Imperative:
@@ -174,11 +181,11 @@ Discrete reaction with a style query:
 
 - **Custom properties inherit downward only.** An `element`-scoped source writes its vars on the bound element. To let *sibling* elements react, bind a common ancestor. `range` and `field` help here: bind them to a container and they find the inner `<input>`, writing the vars on the container.
 - **Pick the right consumer.** Continuous numbers go through `var()` + `calc()`. Discrete/boolean/integer values use `@container style()`, which matches on **equality only** (range comparisons like `style(--x < 5)` are not stable yet). Emit booleans/tiers when you need thresholds.
-- **`visibility` is binary + latched, not a ratio.** It writes `--live-visible` and `--live-has-entered`. There is no continuous visible-ratio and no scroll-position source: use native `animation-timeline: scroll()` / `view()` for continuous scroll-driven effects.
+- **`visibility` is binary + latched, not a ratio.** It writes `--live-visible` and `--const-has-entered`. There is no continuous visible-ratio and no scroll-position source: use native `animation-timeline: scroll()` / `view()` for continuous scroll-driven effects.
 - **Values are unitless.** Multiply by `1px`, `1deg`, `100%`, etc. in CSS.
 - **Configure prefixes before attaching.** `configure({ livePrefix, constPrefix })` must run before any `propsFor()`.
 - **Typed properties are opt-in.** `configure({ typed: true })` (before attaching) registers each written `--live-*` with `@property` so it interpolates (consumers add `transition`/`@keyframes`) and resolves to `0` before a value arrives. It is a one-way door (no unregister), uses `inherits: true`, is feature-detected, and skips names already registered. Sources can declare per-property `props: { name: { syntax, initial, inherits } }` (default `<number>` / `0` / inherited); consumers can set initials with `configure({ typed: true, defaults: { 'pointer-x-ratio': 0.5 } })` (keyed by local name).
-- **Permission-gated plugins** (`orientation`, `motion`, `geo`) and unsupported APIs feature-detect and no-op; registering them is always safe. On iOS some need a user-gesture permission grant before values arrive.
+- **Permission-gated plugins** (`orientation`, `motion`, `geo`) and unsupported APIs feature-detect and no-op; registering them is always safe. On iOS some need a user-gesture permission grant before values arrive. `cpuPressure` is Chromium-only and needs a secure context + the `compute-pressure` Permissions Policy; it seeds `--live-cpu-pressure: 0` where supported, writes nothing where not.
 - **Global writes land in an adopted stylesheet, not `<html>` inline style.** Root `--live-*` go into one constructable, adopted `:root {}` rule (element-scoped writes stay inline; the `head` entry still writes `--const-*` inline for first paint). Keeps the DevTools Styles panel usable under per-frame churn; `var()`/`calc()` consumption is identical (still inherits). Reading `documentElement.style` directly won't show them — read computed style. Falls back to inline where constructable stylesheets are unsupported.
 - **Freeze or throttle the loop.** `pause()` / `resume()` stop and restart sampling+flushing (values hold steady; bindings stay attached). `configure({ liveHz: 30 })` caps the rate to reduce mutations/recalc, throttling samplers (`fps`, `scroll-velocity`) too.
 

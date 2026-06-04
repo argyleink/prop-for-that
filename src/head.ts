@@ -11,13 +11,17 @@ function writeConstants(): void {
   const set = (name: string, value: string | number) =>
     root.style.setProperty(config.constPrefix + name, String(value))
 
-  // Scrollbar width — JS knows it, CSS historically didn't. Probe a scroller.
+  // Scrollbar width — JS knows it, CSS historically didn't. Probe a scroller,
+  // then re-probe with `scrollbar-width: thin` for the thin variant. (Where thin
+  // isn't supported it falls back to the classic width, so the two match.)
   const probe = document.createElement('div')
   probe.style.cssText =
     'position:absolute;top:-9999px;width:100px;height:100px;overflow:scroll;visibility:hidden'
   const host = document.body ?? root
   host.appendChild(probe)
   set('scrollbar-w', probe.offsetWidth - probe.clientWidth)
+  probe.style.scrollbarWidth = 'thin'
+  set('scrollbar-thin-w', probe.offsetWidth - probe.clientWidth)
   probe.remove()
 
   set('dpr', window.devicePixelRatio || 1)

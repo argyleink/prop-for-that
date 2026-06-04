@@ -46,6 +46,10 @@ export default defineConfig({
 						{ label: 'Size & viewport', slug: 'demos/size' },
 						{ label: 'Visibility', slug: 'demos/visibility' },
 						{ label: 'Range', slug: 'demos/range' },
+						{ label: 'Field state', slug: 'demos/field-state' },
+						{ label: 'Form state', slug: 'demos/form-state' },
+						{ label: 'Image color', slug: 'demos/img-color' },
+						{ label: 'Video color', slug: 'demos/video-color' },
 					],
 				},
 				{

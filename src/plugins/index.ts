@@ -11,9 +11,15 @@ import { visualViewport } from './visual-viewport'
 import { pointerLocal } from './pointer-local'
 import { media } from './media'
 import { field } from './field'
+import { fieldState } from './field-state'
+import { formState } from './form-state'
 import { orientation } from './orientation'
 import { motion } from './motion'
 import { geo } from './geo'
+import { cpuPressure } from './cpu-pressure'
+import { img } from './img'
+import { imgColor } from './img-color'
+import { videoColor } from './video-color'
 
 export {
   scrollVelocity,
@@ -26,9 +32,15 @@ export {
   pointerLocal,
   media,
   field,
+  fieldState,
+  formState,
   orientation,
   motion,
   geo,
+  cpuPressure,
+  img,
+  imgColor,
+  videoColor,
 }
 
 /** Every plugin source, for `registerPlugins()` / bulk registration. */
@@ -43,14 +55,20 @@ export const allPlugins: Source[] = [
   pointerLocal,
   media,
   field,
+  fieldState,
+  formState,
   orientation,
   motion,
   geo,
+  cpuPressure,
+  img,
+  imgColor,
+  videoColor,
 ]
 
 /**
  * Register plugin sources with the core registry so they work via
- * `bind`/`global`/`data-prop`. Defaults to registering all plugins.
+ * `bind`/`global`/`data-props-for`. Defaults to registering all plugins.
  *
  *   import { registerPlugins } from 'prop-for-that/plugins'
  *   registerPlugins()                 // register everything

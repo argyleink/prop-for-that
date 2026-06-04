@@ -6,7 +6,7 @@ description: Use @container style() to apply conditional CSS rules from the disc
 CSS consumes the properties prop-for-that writes in two ways:
 
 - **`var()`** *interpolates* on a value. Best for **continuous** numbers (`--live-pointer-x-ratio`, `--live-value-pct`) fed through `calc()`.
-- **`@container style()`** applies a **conditional rule** when a property equals a value. Best for **discrete, boolean, or enum** state (`--live-online`, `--live-visible`, `--live-has-entered`, `--live-value: 100`, `--live-paused`, `--live-battery-low`, capability tiers).
+- **`@container style()`** applies a **conditional rule** when a property equals a value. Best for **discrete, boolean, or enum** state (`--live-online`, `--live-visible`, `--const-has-entered`, `--live-value: 100`, `--live-paused`, `--live-battery-low`, capability tiers).
 
 Style queries are what make the discrete signals shine: a value flips whole rule blocks on and off, which `var()` can't do.
 
@@ -43,7 +43,7 @@ propsFor(['online'])   // writes --live-online (1/0) to :root
 <script type="module">import 'prop-for-that/auto'</script>
 
 <!-- auto binds it from the attribute; descendants of #meter inherit --live-value -->
-<div id="meter" data-prop="range">…</div>
+<div id="meter" data-props-for="range">…</div>
 ```
 
 ```css

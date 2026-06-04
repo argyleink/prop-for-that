@@ -5,7 +5,7 @@ description: A live demo of the visibility source, exposing binary in/out state 
 
 import VisibilityDemo from '../../../components/VisibilityDemo.astro';
 
-The `visibility` source is scroll-triggered, not scroll-linked. It writes two binary signals per bound element: `--live-visible` (1 while any part is on screen) and `--live-has-entered` (latches to 1 once the element is entirely in view, never resets). The continuous ratio is left to native `view()` timelines; the one-way latch is the part those can't express. Scroll the panels below into and out of view.
+The `visibility` source is scroll-triggered, not scroll-linked. It writes two binary signals per bound element: `--live-visible` (1 while the whole element is on screen) and `--const-has-entered` (latches to 1 once the element is entirely in view, never resets). The continuous ratio is left to native `view()` timelines; the one-way latch is the part those can't express. Scroll the panels below into and out of view.
 
 <VisibilityDemo />
 
@@ -16,14 +16,14 @@ Each panel opts in with its own attribute — no list to query, and panels added
 ```html
 <script type="module">import 'prop-for-that/auto'</script>
 
-<section data-prop="visibility">…</section>
-<section data-prop="visibility">…</section>
+<section data-props-for="visibility">…</section>
+<section data-props-for="visibility">…</section>
 ```
 
 ```css
 /* reveal once, then keep it */
 .panel {
-  opacity: calc(0.25 + var(--live-has-entered) * 0.75);
+  opacity: calc(0.25 + var(--const-has-entered) * 0.75);
   transition: opacity 0.5s;
 }
 

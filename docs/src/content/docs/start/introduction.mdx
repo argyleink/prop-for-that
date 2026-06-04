@@ -14,7 +14,7 @@ JavaScript knows things CSS can't see. `prop-for-that` exposes them as `--live-*
 ```css
 /* reveal an element once it has fully scrolled into view, and keep it */
 .reveal {
-  opacity: var(--live-has-entered);
+  opacity: var(--const-has-entered);
   transition: opacity 0.4s;
 }
 
@@ -30,13 +30,13 @@ input[type="range"] {
 }
 ```
 
-Enable the sources declaratively: import the auto entry and tag elements with `data-prop`. `pointer` is a default global, so it's already on; elements opt in by attribute:
+Enable the sources declaratively: import the auto entry and tag elements with `data-props-for`. `pointer` is a default global, so it's already on; elements opt in by attribute:
 
 ```html
 <script type="module">import 'prop-for-that/auto'</script>
 
-<input type="range" data-prop="range">
-<div class="reveal" data-prop="visibility">…</div>
+<input type="range" data-props-for="range">
+<div class="reveal" data-props-for="visibility">…</div>
 <!-- pointer is a default global — the .card just reads --live-pointer-*-ratio -->
 
 ```

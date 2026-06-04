@@ -748,8 +748,8 @@ main {
 }
 
 /* ════════════════════════════════ 0. AUTO ═════════════════════════════════
-   No imperative call: `import 'prop-for-that/auto'` binds [data-prop] elements.
-   The box carries data-prop="size", so the size source writes --live-w/h on it
+   No imperative call: `import 'prop-for-that/auto'` binds [data-props-for] elements.
+   The box carries data-props-for="size", so the size source writes --live-w/h on it
    and CSS counts them — bound by an attribute alone. */
 .stage--auto {
   min-height: 18rem;
@@ -1003,8 +1003,8 @@ main {
 
 /* ═══════════════════════ 2. SCROLL-TRIGGERED REVEALS ══════════════════════
    Binary + latched visibility — NOT a continuous ratio (that's native view()).
-   --live-visible (1/0) toggles as a panel enters/leaves; --live-has-entered
-   latches on first entry and never resets, so each panel reveals ONCE and stays
+   --live-visible (1/0) toggles while a panel is fully in view; --const-has-entered
+   latches once it's first fully in view and never resets, so each panel reveals ONCE and stays
    (a view() timeline would reverse on scroll-back). */
 .reveals {
   position: relative;
@@ -1024,7 +1024,7 @@ main {
 }
 .reveal {
   --in: var(--live-visible, 0);
-  --seen: var(--live-has-entered, 0);
+  --seen: var(--const-has-entered, 0);
   position: relative;
   display: grid;
   grid-template-columns: 2.7rem 1fr;
@@ -1091,6 +1091,29 @@ main {
   gap: var(--space-2);
   padding-block-start: 0.28rem; /* optically center the text on the coin */
 }
+/* II is a LIVE example of --live-visible itself: a backdrop behind its text fills
+   and glows while --in (--live-visible) is 1 — i.e. while the panel is wholly on
+   screen — and empties the instant any edge scrolls off. The live toggle the
+   latched reveal above can't show; tied straight to --in, it animates purely from
+   the variable. */
+.reveal--toggle .reveal__body {
+  position: relative;
+  isolation: isolate;
+}
+.reveal--toggle .reveal__body::before {
+  content: '';
+  position: absolute;
+  inset: -0.65rem -0.85rem;
+  z-index: -1;
+  border-radius: 14px;
+  background: color-mix(in oklab, var(--accent-soft) calc(var(--in) * 85%), transparent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, var(--accent) calc(var(--in) * 50%), transparent),
+    0 0 calc(var(--in) * 1.6rem) color-mix(in oklab, var(--accent) calc(var(--in) * 22%), transparent);
+  transition:
+    background 320ms var(--ease-out),
+    box-shadow 320ms var(--ease-out);
+}
 .reveal__t {
   font-size: var(--step-1);
   font-weight: 400;
@@ -1121,7 +1144,7 @@ main {
   border: 1px solid;
   border-radius: 999px;
 }
-/* in view: brightens while --live-visible is 1, dims when scrolled away */
+/* fully in view: brightens while --live-visible is 1, dims the moment an edge scrolls off */
 .reveal__live {
   color: color-mix(in oklab, var(--accent-ink) calc(var(--in) * 100%), var(--ink-faint));
   border-color: color-mix(in oklab, var(--accent) calc(var(--in) * 55%), var(--line));
@@ -2371,66 +2394,7 @@ main {
   pointer-events: none;
 }
 
-/* ════════════════════════════════ 11. ORBIT ═══════════════════════════════
-   --live-seconds → an angle; cos()/sin() drop each dot onto the circle. */
-.stage--orbit {
-  min-height: 20rem;
-  padding: clamp(var(--space-4), 6vw, 4rem);
-}
-.orbit {
-  --size: clamp(13rem, 50vw, 17rem);
-  position: relative;
-  inline-size: var(--size);
-  aspect-ratio: 1;
-}
-.orbit__core {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  inline-size: 1rem;
-  aspect-ratio: 1;
-  margin: -0.5rem;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 1.6rem color-mix(in oklab, var(--accent) 60%, transparent);
-}
-.orbit__ring {
-  position: absolute;
-  inset: 0;
-}
-/* a dashed guide circle at each ring's radius */
-.orbit__ring::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  inline-size: calc(var(--r) * 2);
-  aspect-ratio: 1;
-  margin: calc(var(--r) * -1);
-  border-radius: 50%;
-  border: 1px dashed color-mix(in oklab, var(--line) 85%, transparent);
-}
-.orbit__dot {
-  /* the heading: clock seconds scaled by this ring's speed + direction, then
-     each dot offset to its evenly-spaced slot (i of n) around the circle. */
-  --a: calc(
-    var(--live-seconds, 0) * 6deg * var(--spd, 1) * var(--dir, 1) +
-      var(--i) / var(--n, 1) * 360deg
-  );
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  inline-size: var(--dot, 0.8rem);
-  aspect-ratio: 1;
-  margin: calc(var(--dot, 0.8rem) / -2);
-  border-radius: 50%;
-  background: color-mix(in oklab, var(--accent) var(--tint, 70%), var(--surface));
-  box-shadow: 0 0 0.7rem color-mix(in oklab, var(--accent) 40%, transparent);
-  translate: calc(cos(var(--a)) * var(--r)) calc(sin(var(--a)) * var(--r));
-  transition: translate 500ms var(--ease-out);
-}
-
-/* ════════════════════════════════ 12. MEDIA ═══════════════════════════════
+/* ════════════════════════════════ 11. MEDIA ═══════════════════════════════
    media writes --live-progress on the player container; the conic ring fills. */
 .stage--media {
   min-height: 20rem;
@@ -2485,7 +2449,7 @@ main {
   content: counter(d) 's';
 }
 
-/* ═══════════════════════════════ 13. AMBIENT ══════════════════════════════
+/* ═══════════════════════════════ 12. AMBIENT ══════════════════════════════
    --low is a branch-free boolean: 1 when the battery is under 20%, else 0
    (round(up, .2 - level) snaps it). The simulate switch (:has) forces it on.
    A style() query strips the animation + heavy paint when --low is 1. */
@@ -2599,7 +2563,7 @@ main {
   }
 }
 
-/* ════════════════════════════════ 14. DRAG ════════════════════════════════
+/* ════════════════════════════════ 13. DRAG ════════════════════════════════
    No drag handler: :active gates the motion; while a token is held, its
    translate is computed from --live-px/--live-py (pointer-local) and
    --live-w/--live-h (size), both bound to the board. Release → the :active rule
@@ -2665,155 +2629,412 @@ main {
   box-shadow: 0 16px 32px -10px color-mix(in oklab, var(--accent) 80%, transparent);
 }
 
-/* ════════════════════════════ ∑. LIVE TELEMETRY ═══════════════════════════
-   A full readout of every --live-* on :root. Each number is a CSS counter
-   seeded from a live value (via the row's inline --n); each bar is a calc()
-   width (via --bar). Pure CSS — nothing here reads a value in JS. */
-.telemetry__grid {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  gap: var(--gutter) clamp(2rem, 5vw, 4rem);
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
-  align-items: center;
-}
-/* 2D pointer plot — the dot sits at (x-ratio, y-ratio); it aligns because the
-   plot box maps 0–1 across its own size, just like the viewport ratios. A faint
-   measure grid sits behind live crosshair lines that track the pointer. */
-/* a radial vitals gauge — the ring fills with live fps, a satellite orbits at
-   the clock's seconds angle. Two ambient sources, no pointer. */
-.vitals {
-  position: relative;
-  margin: 0;
+/* ═════════════════════════════ 14. FIELD STATE ════════════════════════════
+   field-state writes --live-dirty / touched / changed / submitted (all 0/1) on
+   the <form> it's bound to, so every chip + the flag inherit them. These are the
+   interaction-history states pseudo-classes can't express. The input reuses the
+   page's field design (surface fill, line-strong border, 12px radius, accent
+   focus ring); the chips reuse the reveal pill (lit by their own --s). */
+.stage--formstate {
+  min-height: 20rem;
+  padding: clamp(var(--space-4), 5vw, 3rem);
   display: grid;
   place-items: center;
-  aspect-ratio: 1;
-  max-inline-size: 18rem;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  overflow: hidden;
-  background:
-    radial-gradient(circle at 50% 42%, var(--accent-soft), var(--surface) 70%);
 }
-.vitals > * {
-  grid-area: 1 / 1;
+/* the form-state topper sits above the card; --ok lives on the wrap so the topper
+   and the form below both inherit it */
+.fstate-wrap {
+  --ok: light-dark(oklch(56% 0.15 150), oklch(76% 0.16 150));
+  inline-size: min(30rem, 100%);
+  display: grid;
+  gap: 0.7rem;
 }
-.vitals__ring {
-  --p: clamp(0, calc(var(--live-fps, 0) / 120), 1);
-  inline-size: 74%;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: conic-gradient(var(--accent) calc(var(--p) * 360deg), var(--line) 0);
-  -webkit-mask: radial-gradient(
-    farthest-side,
-    #0000 calc(100% - 0.82rem),
-    #000 calc(100% - 0.77rem)
-  );
-  mask: radial-gradient(
-    farthest-side,
-    #0000 calc(100% - 0.82rem),
-    #000 calc(100% - 0.77rem)
-  );
-  transition: background 200ms linear;
+.fstate {
+  inline-size: 100%;
+  display: grid;
+  gap: var(--space-4);
 }
-/* the satellite rides the clock: one sweep a minute (--live-seconds × 6°) */
-.vitals__orbit {
-  inline-size: 74%;
-  aspect-ratio: 1;
-  rotate: calc(var(--live-seconds, 0) * 6deg);
-  transition: rotate 400ms var(--ease-out);
-}
-.vitals__sat {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  inline-size: 0.7rem;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: var(--accent-ink);
-  translate: -50% -50%;
-  box-shadow: 0 0 0.8rem color-mix(in oklab, var(--accent) 60%, transparent);
-}
-.vitals__num {
-  margin: 0;
-  align-self: center;
-  font-family: var(--font-display);
-  font-size: var(--step-3);
-  font-weight: 900;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.03em;
-  line-height: 1;
-  color: var(--ink);
-}
-.vitals__num::after {
-  counter-reset: f var(--live-fps, 0);
-  content: counter(f);
-}
-.vitals__k {
-  margin: 0;
-  align-self: end;
-  margin-block-end: 16%;
-  font-family: var(--font-mono);
-  font-size: var(--step--1);
-  font-weight: 600;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-}
-.vitals figcaption {
-  position: absolute;
-  z-index: 1;
-  inset: auto auto var(--space-2) var(--space-3);
-  font-family: var(--font-mono);
-  font-size: var(--step--1);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-}
-
-.readout {
-  margin: 0;
+/* each input lives in its own field group, bound to its own field-state, so its
+   chips read that field's --live-dirty / touched / changed / submitted */
+.fstate__field {
   display: grid;
   gap: var(--space-2);
 }
-.readout__row {
-  display: grid;
-  grid-template-columns: minmax(7rem, auto) 4.5rem 1fr;
+.fstate__label {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+/* same input design as .field__input — surface fill, strong rule, 12px radius,
+   accent focus ring — just single-line */
+.fstate__input {
+  inline-size: 100%;
+  padding: 0.85rem var(--space-3);
+  font-family: var(--font-sans);
+  font-size: var(--step-0);
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  transition: border-color 200ms var(--ease-out);
+}
+.fstate__input::placeholder {
+  color: var(--ink-faint);
+}
+.fstate__input:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+/* the four state chips — same pill as the reveal demo, each lit by its own --s */
+.fstate__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.fstate__chip {
+  display: inline-flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: 0.5ch;
+  padding: 0.25em 0.75em;
+  border: 1px solid;
+  border-radius: 999px;
+  color: color-mix(in oklab, var(--accent-ink) calc(var(--s, 0) * 100%), var(--ink-faint));
+  border-color: color-mix(in oklab, var(--accent) calc(var(--s, 0) * 55%), var(--line));
+  background: color-mix(in oklab, var(--accent-soft) calc(var(--s, 0) * 100%), transparent);
+  transition:
+    color 200ms linear,
+    border-color 200ms linear,
+    background 200ms linear;
+}
+.fstate__chip span {
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  border-radius: 50%;
+  background: color-mix(in oklab, var(--accent) calc(var(--s, 0) * 100%), var(--line-strong));
+  transition: background 200ms linear;
+}
+.fstate__chip--dirty {
+  --s: var(--live-dirty, 0);
+}
+.fstate__chip--touched {
+  --s: var(--live-touched, 0);
+}
+.fstate__chip--changed {
+  --s: var(--live-changed, 0);
+}
+.fstate__chip--submitted {
+  --s: var(--live-submitted, 0);
+}
+/* the topper: a quiet metadata row above the card. The form-state aggregate
+   (--live-completion / valid-count / field-count / all-valid) and the field-state
+   aggregate (--live-submitted) land on .fstate-wrap, so the topper reads them. */
+.fstate__topper {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding-inline: 0.4rem;
   font-family: var(--font-mono);
   font-size: var(--step--1);
 }
-.readout__row dt {
-  margin: 0;
-  color: var(--ink-soft);
-  letter-spacing: 0.02em;
+/* completion as a conic arc — fills with --live-completion, shifts accent → ok the
+   moment every field is valid */
+.fstate__ring {
+  --p: clamp(0, var(--live-completion, 0), 1);
+  --ring: var(--accent);
+  inline-size: 1.35rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: conic-gradient(
+    in oklch,
+    var(--ring) calc(var(--p) * 360deg),
+    color-mix(in oklab, var(--line) 55%, transparent) 0
+  );
+  -webkit-mask: radial-gradient(
+    farthest-side,
+    #0000 calc(100% - 3px),
+    #000 calc(100% - 2.5px)
+  );
+  mask: radial-gradient(farthest-side, #0000 calc(100% - 3px), #000 calc(100% - 2.5px));
+  transition: background 260ms var(--ease-out);
 }
-.readout__row .num {
-  margin: 0;
-  text-align: right;
-  color: var(--accent-ink);
-  font-variant-numeric: tabular-nums;
+.fstate__count {
   font-weight: 600;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
 }
-.readout__row .num::after {
-  /* calc() rounds the value — without it a fractional global (sub-pixel
-     clientX, fractional Mbps) is an invalid <integer> and voids the counter */
-  counter-reset: n calc(var(--n, 0));
-  content: counter(n) var(--suffix, '');
+.fstate__count::after {
+  counter-reset: v var(--live-valid-count, 0) t var(--live-field-count, 0);
+  content: counter(v) ' / ' counter(t) ' valid';
 }
-.bar {
-  block-size: 0.45rem;
-  border-radius: 999px;
-  background: color-mix(in oklab, var(--line) 80%, transparent);
-  overflow: hidden;
+.fstate__status {
+  margin-inline-start: auto;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  transition: color 220ms linear;
 }
-.bar i {
-  display: block;
-  block-size: 100%;
-  inline-size: clamp(0%, calc(var(--bar, 0) * 100%), 100%);
-  border-radius: inherit;
+.fstate__status::after {
+  content: 'incomplete';
+}
+@container style(--live-all-valid: 1) {
+  .fstate__ring {
+    --ring: var(--ok);
+  }
+  .fstate__status::after {
+    content: 'ready';
+  }
+}
+@container style(--live-submitted: 1) {
+  .fstate__status {
+    color: var(--ok);
+  }
+  .fstate__status::after {
+    content: 'submitted';
+  }
+}
+.fstate__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.fstate__btn {
+  padding: 0.6rem 1.15rem;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  cursor: pointer;
+  transition:
+    color 200ms linear,
+    border-color 200ms var(--ease-out),
+    background 200ms var(--ease-out),
+    opacity 200ms linear;
+}
+.fstate__btn:hover {
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+/* the submit gate: dimmed and non-interactive until form-state reports all-valid */
+.fstate__btn--go {
+  color: var(--paper);
   background: var(--accent);
+  border-color: var(--accent);
+  opacity: 0.4;
+  pointer-events: none;
+}
+@container style(--live-all-valid: 1) {
+  .fstate__btn--go {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+.fstate__btn--go:hover {
+  color: var(--paper);
+  background: var(--accent-ink);
+  border-color: var(--accent-ink);
+}
+
+/* ════════════════════════════ 15. IMG COLOR ══════════════════════════════
+   img-color writes the <img>'s dominant colour into --live-img-r/g/b on the card;
+   pointer-local writes --live-px/py on the stage. CSS casts a drop shadow in the
+   image's colour AWAY from the cursor (offset clamped, growing with distance), so
+   the cursor reads as the sun. The stage clips that shadow inside its own box. */
+.stage--sun {
+  min-height: 22rem;
+  padding: clamp(var(--space-4), 6vw, 4rem);
+  display: grid;
+  justify-items: center;
+  gap: var(--space-4);
+  overflow: clip; /* contain the coloured shadow within the card box */
+}
+.sun-card {
+  /* cursor offset from the stage centre, clamped to ±0.5 so a far cursor doesn't
+     fling the shadow off; the offset grows with distance → longer shadow at edges */
+  --dx: clamp(-0.5, calc(var(--live-px, 0.5) - 0.5), 0.5);
+  --dy: clamp(-0.5, calc(var(--live-py, 0.5) - 0.5), 0.5);
+  --reach: 7rem;
+  position: relative;
+  inline-size: min(19rem, 70vw);
+  aspect-ratio: 4 / 5;
+  border-radius: 18px;
+  /* the only reactive thing: the image-coloured shadow, cast opposite the cursor.
+     oklch(from …) restates the read RGB as oklch, so the colour is an oklch value. */
+  box-shadow:
+    calc(var(--dx) * -2 * var(--reach)) calc(var(--dy) * -2 * var(--reach)) 2.5rem
+      0.25rem
+      oklch(
+        from rgb(var(--live-img-r, 130) var(--live-img-g, 95) var(--live-img-b, 60))
+          l c h / 0.6
+      );
+  transition: box-shadow 120ms linear;
+}
+.sun-card__img {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+/* the extracted palette — dominant (the shadow's colour) plus the four other
+   swatches img-color pulls: accent, dark, light, avg. Each reads its own
+   --live-img-<name>-* trio; the dominant uses the bare --live-img-* names. */
+.sun-palette {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.sun-sw {
+  display: grid;
+  gap: 0.4rem;
+  justify-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.sun-sw i {
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  border-radius: 10px;
+  background: var(--sw);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.12),
+    0 1px 4px rgb(0 0 0 / 0.18);
+  transition: background 280ms linear;
+}
+.sun-sw--dominant {
+  --sw: rgb(var(--live-img-r, 130) var(--live-img-g, 95) var(--live-img-b, 60));
+}
+.sun-sw--accent {
+  --sw: rgb(var(--live-img-accent-r, 210) var(--live-img-accent-g, 120) var(--live-img-accent-b, 40));
+}
+.sun-sw--dark {
+  --sw: rgb(var(--live-img-dark-r, 38) var(--live-img-dark-g, 30) var(--live-img-dark-b, 28));
+}
+.sun-sw--light {
+  --sw: rgb(var(--live-img-light-r, 232) var(--live-img-light-g, 222) var(--live-img-light-b, 210));
+}
+.sun-sw--avg {
+  --sw: rgb(var(--live-img-avg-r, 150) var(--live-img-avg-g, 120) var(--live-img-avg-b, 100));
+}
+/* the picker — click a swatch and img-color re-reads the new artwork's colours */
+.sun-picker {
+  display: flex;
+  gap: var(--space-2);
+}
+.sun-dot {
+  inline-size: 2rem;
+  block-size: 2rem;
+  padding: 0;
+  border: 2px solid var(--line-strong);
+  border-radius: 50%;
+  background-size: cover;
+  background-position: center;
+  cursor: pointer;
+  transition:
+    transform 150ms var(--ease-out),
+    border-color 150ms linear;
+}
+.sun-dot:focus-visible {
+  border-color: var(--accent);
+}
+.sun-dot:hover {
+  transform: scale(1.12);
+  border-color: var(--accent);
+}
+
+/* ════════════════════════════ 16. VIDEO COLOR ════════════════════════════
+   video-color samples the playing <video> into --live-video-* (dominant) and
+   --live-video-accent-* on the stage. The ACCENT drives a soft box-shadow glow,
+   eased between the ~4 Hz samples, so the player looks backlit; both colours show
+   as swatches below. overflow:hidden rounds the video but NOT the card's own
+   outset shadow, so the glow spills. The accent falls back to the dominant. */
+.stage--vid {
+  min-height: 22rem;
+  padding: clamp(var(--space-5), 8vw, 5rem);
+  gap: var(--space-4);
+}
+.vid-card {
+  /* the glow colour: the video's accent, falling back to its dominant */
+  --vr: var(--live-video-accent-r, var(--live-video-r, 60));
+  --vg: var(--live-video-accent-g, var(--live-video-g, 70));
+  --vb: var(--live-video-accent-b, var(--live-video-b, 120));
+  position: relative;
+  inline-size: min(30rem, 100%);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow:
+    0 0 3rem -0.25rem oklch(from rgb(var(--vr) var(--vg) var(--vb)) l c h / 0.55),
+    0 0 7rem 0.5rem oklch(from rgb(var(--vr) var(--vg) var(--vb)) l c h / 0.32);
+  transition: box-shadow 320ms linear;
+}
+.vid-card__v {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+}
+/* the two live colours, side by side */
+.vid-palette {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.vid-sw {
+  display: grid;
+  gap: 0.4rem;
+  justify-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.vid-sw i {
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  border-radius: 10px;
+  background: var(--sw);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.12),
+    0 1px 4px rgb(0 0 0 / 0.18);
+  transition: background 280ms linear;
+}
+.vid-sw--dominant {
+  --sw: rgb(var(--live-video-r, 60) var(--live-video-g, 70) var(--live-video-b, 120));
+}
+.vid-sw--accent {
+  --sw: rgb(
+    var(--live-video-accent-r, var(--live-video-r, 60))
+      var(--live-video-accent-g, var(--live-video-g, 70))
+      var(--live-video-accent-b, var(--live-video-b, 120))
+  );
 }
 
 /* ════════════════════════════ ★. SOURCE GALLERY ═══════════════════════════
@@ -3075,10 +3296,6 @@ main {
   .dial::-webkit-slider-runnable-track,
   .steps::-webkit-slider-thumb,
   .steps::-moz-range-thumb {
-    transition: none;
-  }
-  /* still place the orbit dots (their position IS the data), just don't ease */
-  .orbit__dot {
     transition: none;
   }
   /* the ring still fills to the right level; it just snaps instead of sweeping */

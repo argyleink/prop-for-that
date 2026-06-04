@@ -42,7 +42,7 @@ Any element with an `id` is already a global in JS, so `propsFor(card, …)` nee
 
 <CardGrid stagger>
   <Card title="Zero-config auto mode" icon="rocket">
-    Import `prop-for-that/auto`, add `data-prop` attributes, done. A `MutationObserver` binds new elements as they appear — no JavaScript beyond the import.
+    Import `prop-for-that/auto`, add `data-props-for` attributes, done. A `MutationObserver` binds new elements as they appear — no JavaScript beyond the import.
   </Card>
   <Card title="Batched & diffed" icon="approve-check">
     One `setProperty` flush per animation frame, and only when a value actually changed. A hundred `pointermove` events in a frame collapse to one write.

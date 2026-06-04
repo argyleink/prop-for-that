@@ -57,7 +57,7 @@ export interface SourceContext {
 }
 
 export interface Source {
-  /** Key used in `data-prop` / `propsFor()`. */
+  /** Key used in `data-props-for` / `propsFor()`. */
   key: string
   scope: Scope
   /** Optional `@property` typings per local name, applied when `typed` is on. */

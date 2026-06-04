@@ -1,0 +1,139 @@
+---
+// Field-state demo: field-state is bound TWICE over the same markup —
+//   • to the <form>, so --live-dirty/touched/changed/submitted AGGREGATE over
+//     every field (the readout chips + status line read these), and
+//   • to each field <label> wrapper, so each row's dot reads THAT field's own
+//     state. The inner per-field binding shadows the inherited form aggregate
+//     within its subtree, so the same var name means "this field" on the dot and
+//     "any field" on the form-level chips. Edit one field: its dot lights and the
+//     form aggregate flips together.
+---
+<form class="pft-stage field-state-demo" data-pft-fieldstate novalidate aria-label="Sign-up form demo">
+  <p class="pft-readout">
+    <span class="pft-chip">--live-dirty <b class="fs-demo__r fs-demo__dirty"></b></span>
+    <span class="pft-chip">--live-touched <b class="fs-demo__r fs-demo__touched"></b></span>
+    <span class="pft-chip">--live-changed <b class="fs-demo__r fs-demo__changed"></b></span>
+    <span class="pft-chip">--live-submitted <b class="fs-demo__r fs-demo__submitted"></b></span>
+  </p>
+
+  <label class="fs-demo__field" data-pft-fieldstate-field>
+    <span class="fs-demo__name">Name <i class="fs-demo__dot" aria-hidden="true"></i></span>
+    <input name="name" type="text" placeholder="Ada Lovelace" autocomplete="off" />
+  </label>
+
+  <label class="fs-demo__field" data-pft-fieldstate-field>
+    <span class="fs-demo__name">Email <i class="fs-demo__dot" aria-hidden="true"></i></span>
+    <input name="email" type="email" placeholder="ada@example.com" autocomplete="off" />
+  </label>
+
+  <div class="fs-demo__actions">
+    <button class="fs-demo__btn fs-demo__submit" type="submit">Submit</button>
+    <button class="fs-demo__btn" type="reset">Reset</button>
+    <span class="fs-demo__status" aria-live="polite"></span>
+  </div>
+
+  <p class="pft-hint">
+    Each row's <b class="fs-demo__legend-dot" aria-hidden="true"></b> dot reads
+    <em>that field's</em> <code>--live-dirty</code> / <code>--live-touched</code>
+    (bound to the row), while the chips and status above read the
+    <em>form-wide</em> aggregate (bound to the <code>&lt;form&gt;</code>). Same var
+    names, two scopes. Type in one field, then blur it, then Submit or Reset.
+  </p>
+</form>
+
+<style>
+  .field-state-demo { max-inline-size: 32rem; }
+
+  /* form-level readouts: each is a discrete 0/1, so a style query reads it */
+  .fs-demo__r::after { content: 'no'; color: var(--sl-color-gray-3); }
+  @container style(--live-dirty: 1)     { .fs-demo__dirty::after     { content: 'yes'; color: var(--sl-color-text-accent); } }
+  @container style(--live-touched: 1)   { .fs-demo__touched::after   { content: 'yes'; color: var(--sl-color-text-accent); } }
+  @container style(--live-changed: 1)   { .fs-demo__changed::after   { content: 'yes'; color: var(--sl-color-text-accent); } }
+  @container style(--live-submitted: 1) { .fs-demo__submitted::after { content: 'yes'; color: var(--sl-color-text-accent); } }
+
+  .fs-demo__field { display: grid; gap: 0.4rem; }
+  .fs-demo__name {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--sl-color-white);
+  }
+  .fs-demo__field input {
+    inline-size: 100%;
+    padding: 0.55rem 0.7rem;
+    border-radius: 0.45rem;
+    border: 1px solid var(--sl-color-gray-5);
+    background: var(--sl-color-black);
+    color: var(--sl-color-white);
+    font: inherit;
+    /* border tints to accent once THIS field is touched (per-field value) */
+    border-color: color-mix(in oklab,
+      var(--sl-color-accent) calc(var(--live-touched, 0) * 100%),
+      var(--sl-color-gray-5));
+    transition: border-color 0.18s;
+  }
+
+  /* per-field dot: dim until edited, then accent; rings once blurred (touched) */
+  .fs-demo__dot,
+  .fs-demo__legend-dot {
+    inline-size: 0.6rem;
+    block-size: 0.6rem;
+    border-radius: 50%;
+    background: var(--sl-color-gray-4);
+    transition: background 0.18s, box-shadow 0.18s;
+  }
+  .fs-demo__legend-dot { display: inline-block; vertical-align: middle; }
+  @container style(--live-dirty: 1) {
+    .fs-demo__dot { background: var(--sl-color-text-accent); }
+  }
+  @container style(--live-touched: 1) {
+    .fs-demo__dot { box-shadow: 0 0 0 0.25rem color-mix(in oklab, var(--sl-color-accent) 28%, transparent); }
+  }
+
+  .fs-demo__actions { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+  .fs-demo__btn {
+    padding: 0.45rem 0.9rem;
+    border-radius: 0.45rem;
+    border: 1px solid var(--sl-color-gray-5);
+    background: var(--sl-color-gray-6);
+    color: var(--sl-color-white);
+    font: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  /* the submit button only "wakes up" once the form has unsaved edits */
+  .fs-demo__submit {
+    opacity: 0.45;
+    pointer-events: none;
+    border-color: var(--sl-color-accent);
+  }
+  @container style(--live-dirty: 1) {
+    .fs-demo__submit { opacity: 1; pointer-events: auto; background: var(--sl-color-accent); color: var(--sl-color-black); }
+  }
+
+  .fs-demo__status {
+    font-family: var(--sl-font-mono, ui-monospace, monospace);
+    font-size: 0.78rem;
+    color: var(--sl-color-gray-3);
+  }
+  .fs-demo__status::after { content: 'pristine — nothing edited yet'; }
+  @container style(--live-dirty: 1)     { .fs-demo__status::after { content: 'dirty — you have unsaved edits'; color: var(--sl-color-text-accent); } }
+  @container style(--live-submitted: 1) { .fs-demo__status::after { content: 'submitted ✓'; color: var(--sl-color-text-accent); } }
+</style>
+
+<script>
+  import { propsFor, register } from 'prop-for-that'
+  import { fieldState } from 'prop-for-that/plugins'
+
+  register(fieldState)
+
+  for (const form of document.querySelectorAll<HTMLFormElement>('[data-pft-fieldstate]')) {
+    propsFor(form, ['field-state']) // aggregate state over every field in the form
+    // demo only: keep the submit on the page so you can watch --live-submitted flip
+    form.addEventListener('submit', (e) => e.preventDefault())
+    for (const field of form.querySelectorAll<HTMLElement>('[data-pft-fieldstate-field]'))
+      propsFor(field, ['field-state']) // per-field state, written on each row
+  }
+</script>

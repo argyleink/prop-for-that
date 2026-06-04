@@ -10,18 +10,18 @@ npm i prop-for-that
 
 ## Use it three ways
 
-**Zero-config.** Auto-attaches global state and binds `data-prop` elements:
+**Zero-config.** Auto-attaches global state and binds `data-props-for` elements:
 
 ```html
 <script type="module">import 'prop-for-that/auto'</script>
 
-<input type="range" min="0" max="100" data-prop="range">
-<section data-prop="size visibility">…</section>
+<input type="range" min="0" max="100" data-props-for="range">
+<section data-props-for="size visibility">…</section>
 ```
 
 ```css
 input { background: hsl(calc(var(--live-value-pct) * 120) 80% 50%); }
-section { opacity: var(--live-has-entered); }
+section { opacity: var(--const-has-entered); }
 ```
 
 **Imperative.** Explicit control and cleanup:
@@ -38,7 +38,7 @@ dispose()
 
 ```html
 <script type="module">import 'prop-for-that/head'</script>
-<!-- sets --const-scrollbar-w, --const-dpr, --const-cores before first paint -->
+<!-- sets --const-scrollbar-w, --const-scrollbar-thin-w, --const-dpr, --const-cores before first paint -->
 ```
 
 ## What you get
@@ -48,7 +48,7 @@ dispose()
 | `viewport` | `--live-vw`, `--live-vh` |
 | `pointer` | `--live-pointer-x/y`, `--live-pointer-x/y-ratio` |
 | `size` | `--live-w`, `--live-h`, `--live-aspect` |
-| `visibility` | `--live-visible`, `--live-has-entered` |
+| `visibility` | `--live-visible`, `--const-has-entered` |
 | `range` | `--live-value`, `--live-value-pct` |
 
 `--live-*` updates continuously (one batched `setProperty` flush per frame, only
@@ -90,15 +90,23 @@ registerPlugins(fps, clock)   // or registerPlugins() for everything
 | `pointerLocal` | element | `--live-px`, `--live-py`, `--live-pointer-inside` |
 | `media` | element | `--live-current-time`, `--live-duration`, `--live-progress`, `--live-paused`, `--live-volume` |
 | `field` | element | `--live-length`, `--live-empty`, `--live-valid` |
+| `fieldState` | element | `--live-dirty`, `--live-pristine`, `--live-touched`, `--live-untouched`, `--live-changed`, `--live-submitted` |
+| `formState` | element | `--live-field-count`, `--live-valid-count`, `--live-invalid-count`, `--live-all-valid`, `--live-completion` |
+| `img` | element | `--live-natural-w`, `--live-natural-h`, `--live-loaded`, `--live-broken` |
+| `imgColor` | element | dominant `--live-img-r/g/b/l`, plus `--live-img-accent-*`, `--live-img-dark-*`, `--live-img-light-*`, `--live-img-avg-*` (each `r/g/b/l`) and `--live-img-temp` (−1 cool…+1 warm) |
+| `videoColor` | element | dominant `--live-video-r/g/b/l` + accent `--live-video-accent-r/g/b/l` |
 | `orientation` | global | `--live-orient-alpha/beta/gamma` |
 | `motion` | global | `--live-accel-x/y/z` |
 | `geo` | global | `--live-geo-lat/lng/accuracy` |
+| `cpuPressure` | global | `--live-cpu-pressure` (0 nominal → 3 critical) |
 
 `orientation`, `motion`, and `geo` are sensor/permission-gated: they
 feature-detect and no-op when unavailable, and may need a user-gesture
-permission grant (notably on iOS). The key string for `propsFor`/`data-prop`
-is the dashed form (e.g. `'scroll-velocity'`, `'pointer-local'`,
-`'visual-viewport'`).
+permission grant (notably on iOS). `cpuPressure` (Compute Pressure API) is
+Chromium-only and needs a secure context plus the `compute-pressure` Permissions
+Policy; it also feature-detects and no-ops otherwise. The key string for
+`propsFor`/`data-props-for` is the dashed form (e.g. `'scroll-velocity'`,
+`'pointer-local'`, `'visual-viewport'`, `'cpu-pressure'`).
 
 ## How it stays cheap
 

@@ -110,7 +110,7 @@
           <h2>Zero config: just an attribute</h2>
           <p class="desc">
             <code>import 'prop-for-that/auto'</code> once, then tag any element
-            with <code>data-prop</code> &mdash; no <code>propsFor</code> call. The
+            with <code>data-props-for</code> &mdash; no <code>propsFor</code> call. The
             box below is bound by its attribute alone; drag its corner and CSS
             counts the size. Add or remove the attribute live and it keeps up.
           </p>
@@ -118,8 +118,8 @@
 
         <div class="demo-body">
           <div class="stage stage--auto">
-            <div class="auto-box" data-prop="size">
-              <p class="auto-box__tag" aria-hidden="true">data-prop="size"</p>
+            <div class="auto-box" data-props-for="size">
+              <p class="auto-box__tag" aria-hidden="true">data-props-for="size"</p>
               <p class="auto-box__read">
                 <span class="auto-box__w"></span>&thinsp;&times;&thinsp;<span
                   class="auto-box__h"
@@ -130,11 +130,11 @@
           </div>
 
           <figure class="caption">
-            <figcaption>The entire JS</figcaption>
+            <figcaption>JS</figcaption>
             <pre><code><span class="tok-key">import</span> <span class="tok-str">'prop-for-that/auto'</span></code></pre>
-            <figcaption>The markup (HTML): bind by attribute</figcaption>
-            <pre><code>&lt;<span class="tok-key">div</span> <span class="tok-prop">data-prop</span>=<span class="tok-str">"size"</span> <span class="tok-prop">style</span>=<span class="tok-str">"resize: both"</span>&gt;&lt;/<span class="tok-key">div</span>&gt;</code></pre>
-            <figcaption>The reaction (CSS)</figcaption>
+            <figcaption>HTML</figcaption>
+            <pre><code>&lt;<span class="tok-key">div</span> <span class="tok-prop">data-props-for</span>=<span class="tok-str">"size"</span> <span class="tok-prop">style</span>=<span class="tok-str">"resize: both"</span>&gt;&lt;/<span class="tok-key">div</span>&gt;</code></pre>
+            <figcaption>CSS</figcaption>
             <pre><code><span class="tok-sel">.box::after</span> {
   <span class="tok-prop">counter-reset</span>: w <span class="tok-fn">calc</span>(<span class="tok-var">var(--live-w)</span>) h <span class="tok-fn">calc</span>(<span class="tok-var">var(--live-h)</span>);
   <span class="tok-prop">content</span>: <span class="tok-fn">counter</span>(w) <span class="tok-str">' × '</span> <span class="tok-fn">counter</span>(h);
@@ -172,11 +172,9 @@
           </div>
 
           <figure class="caption">
-            <figcaption>The markup (HTML)</figcaption>
-            <pre><code>&lt;<span class="tok-key">div</span> <span class="tok-prop">id</span>=<span class="tok-str">"card"</span>&gt;<span class="tok-com">&hellip;</span>&lt;/<span class="tok-key">div</span>&gt;</code></pre>
-            <figcaption>The entire JS</figcaption>
-            <pre><code><span class="tok-key">propsFor</span>(card, [<span class="tok-str">'pointer-local'</span>])</code></pre>
-            <figcaption>The reaction (CSS)</figcaption>
+            <figcaption>HTML</figcaption>
+            <pre><code>&lt;<span class="tok-key">div</span> <span class="tok-prop">id</span>=<span class="tok-str">"card"</span> <span class="tok-prop">data-props-for</span>=<span class="tok-str">"pointer-local"</span>&gt;<span class="tok-com">&hellip;</span>&lt;/<span class="tok-key">div</span>&gt;</code></pre>
+            <figcaption>CSS</figcaption>
             <pre><code><span class="tok-sel">.tilt-card</span> {
   <span class="tok-prop">--rx</span>: <span class="tok-fn">calc</span>((<span class="tok-num">.5</span> - <span class="tok-var">var(--live-py)</span>) * <span class="tok-num">16deg</span>);
   <span class="tok-prop">--ry</span>: <span class="tok-fn">calc</span>((<span class="tok-var">var(--live-px)</span> - <span class="tok-num">.5</span>) * <span class="tok-num">16deg</span>);
@@ -193,7 +191,7 @@
           <p class="index">02 / scroll</p>
           <h2>Reveal once, then stay</h2>
           <p class="desc">
-            Triggered, not linked. <code>--live-has-entered</code> latches once a
+            Triggered, not linked. <code>--const-has-entered</code> latches once a
             panel is fully in view, so each reveals once and stays. Scroll back up: a
             <code>view()</code> timeline would reverse, this won&rsquo;t.
           </p>
@@ -205,8 +203,8 @@
               <div class="reveal__node" aria-hidden="true">i</div>
               <div class="reveal__body">
                 <p class="reveal__t">
-                  One call wires every panel:
-                  <code>propsFor(panels, ['visibility'])</code>.
+                  One attribute wires every panel:
+                  <code>data-props-for="visibility"</code>.
                 </p>
                 <p class="reveal__state">
                   <span class="reveal__live">in view</span>
@@ -214,12 +212,13 @@
                 </p>
               </div>
             </article>
-            <article class="reveal" data-reveal>
+            <article class="reveal reveal--toggle" data-reveal>
               <div class="reveal__node" aria-hidden="true">ii</div>
               <div class="reveal__body">
                 <p class="reveal__t">
-                  <code>--live-visible</code> flips 1&#8202;/&#8202;0 as this
-                  panel enters and leaves.
+                  <code>--live-visible</code> flips to 1&#8202;/&#8202;0 only while
+                  this panel is fully in view &mdash; watch this card light while
+                  it&rsquo;s wholly on screen.
                 </p>
                 <p class="reveal__state">
                   <span class="reveal__live">in view</span>
@@ -231,7 +230,7 @@
               <div class="reveal__node" aria-hidden="true">iii</div>
               <div class="reveal__body">
                 <p class="reveal__t">
-                  <code>--live-has-entered</code> latches once the panel is fully
+                  <code>--const-has-entered</code> latches once the panel is fully
                   in view and never resets.
                 </p>
                 <p class="reveal__state">
@@ -256,14 +255,12 @@
           </div>
 
           <figure class="caption">
-            <figcaption>The entire JS</figcaption>
-            <pre><code><span class="tok-key">propsFor</span>(
-  <span class="tok-fn">document</span>.<span class="tok-fn">querySelectorAll</span>(<span class="tok-str">'[data-reveal]'</span>),
-  [<span class="tok-str">'visibility'</span>])</code></pre>
-            <figcaption>The reaction (CSS): reveal once, never reverse</figcaption>
+            <figcaption>HTML</figcaption>
+            <pre><code>&lt;<span class="tok-key">article</span> <span class="tok-prop">class</span>=<span class="tok-str">"reveal"</span> <span class="tok-prop">data-props-for</span>=<span class="tok-str">"visibility"</span>&gt;<span class="tok-com">&hellip;</span>&lt;/<span class="tok-key">article</span>&gt;</code></pre>
+            <figcaption>CSS</figcaption>
             <pre><code><span class="tok-sel">.reveal</span> {
-  <span class="tok-prop">opacity</span>: <span class="tok-fn">calc</span>(<span class="tok-num">.25</span> + <span class="tok-var">var(--live-has-entered)</span> * <span class="tok-num">.75</span>);
-  <span class="tok-prop">translate</span>: <span class="tok-num">0</span> <span class="tok-fn">calc</span>((<span class="tok-num">1</span> - <span class="tok-var">var(--live-has-entered)</span>) * <span class="tok-num">1.5rem</span>);
+  <span class="tok-prop">opacity</span>: <span class="tok-fn">calc</span>(<span class="tok-num">.25</span> + <span class="tok-var">var(--const-has-entered)</span> * <span class="tok-num">.75</span>);
+  <span class="tok-prop">translate</span>: <span class="tok-num">0</span> <span class="tok-fn">calc</span>((<span class="tok-num">1</span> - <span class="tok-var">var(--const-has-entered)</span>) * <span class="tok-num">1.5rem</span>);
   <span class="tok-prop">transition</span>: <span class="tok-num">.5s</span>;
 }</code></pre>
           </figure>
@@ -319,13 +316,11 @@
           </div>
 
           <figure class="caption">
-            <figcaption>The markup (HTML)</figcaption>
-            <pre><code>&lt;<span class="tok-key">div</span> <span class="tok-prop">id</span>=<span class="tok-str">"meter"</span>&gt;
+            <figcaption>HTML</figcaption>
+            <pre><code>&lt;<span class="tok-key">div</span> <span class="tok-prop">id</span>=<span class="tok-str">"meter"</span> <span class="tok-prop">data-props-for</span>=<span class="tok-str">"range"</span>&gt;
   &lt;<span class="tok-key">input</span> <span class="tok-prop">type</span>=<span class="tok-str">"range"</span> <span class="tok-prop">min</span>=<span class="tok-str">"0"</span> <span class="tok-prop">max</span>=<span class="tok-str">"100"</span> <span class="tok-prop">value</span>=<span class="tok-str">"42"</span>&gt;
 &lt;/<span class="tok-key">div</span>&gt;</code></pre>
-            <figcaption>The entire JS</figcaption>
-            <pre><code><span class="tok-key">propsFor</span>(meter, [<span class="tok-str">'range'</span>])</code></pre>
-            <figcaption>The reaction (CSS): gauge + slider, one value</figcaption>
+            <figcaption>CSS</figcaption>
             <pre><code><span class="tok-sel">.gauge__num::after</span> {
   <span class="tok-prop">counter-reset</span>: v <span class="tok-fn">calc</span>(<span class="tok-var">var(--live-value)</span>);
   <span class="tok-prop">content</span>: <span class="tok-fn">counter</span>(v);
@@ -395,13 +390,11 @@
           </div>
 
           <figure class="caption">
-            <figcaption>The markup (HTML)</figcaption>
-            <pre><code>&lt;<span class="tok-key">div</span> <span class="tok-prop">id</span>=<span class="tok-str">"level"</span>&gt;
+            <figcaption>HTML</figcaption>
+            <pre><code>&lt;<span class="tok-key">div</span> <span class="tok-prop">id</span>=<span class="tok-str">"level"</span> <span class="tok-prop">data-props-for</span>=<span class="tok-str">"range"</span>&gt;
   &lt;<span class="tok-key">input</span> <span class="tok-prop">type</span>=<span class="tok-str">"range"</span> <span class="tok-prop">min</span>=<span class="tok-str">"0"</span> <span class="tok-prop">max</span>=<span class="tok-str">"4"</span> <span class="tok-prop">step</span>=<span class="tok-str">"1"</span> <span class="tok-prop">value</span>=<span class="tok-str">"2"</span>&gt;
 &lt;/<span class="tok-key">div</span>&gt;</code></pre>
-            <figcaption>The entire JS</figcaption>
-            <pre><code><span class="tok-key">propsFor</span>(level, [<span class="tok-str">'range'</span>])</code></pre>
-            <figcaption>The reaction (CSS): a value becomes a word</figcaption>
+            <figcaption>CSS</figcaption>
             <pre><code><span class="tok-key">@container</span> <span class="tok-fn">style</span>(<span class="tok-var">--live-value</span>: <span class="tok-num">0</span>) {
   <span class="tok-sel">.level__word::after</span> { <span class="tok-prop">content</span>: <span class="tok-str">'Off'</span>; }
 }
@@ -451,13 +444,11 @@
           </div>
 
           <figure class="caption">
-            <figcaption>The markup (HTML)</figcaption>
-            <pre><code>&lt;<span class="tok-key">div</span> <span class="tok-prop">id</span>=<span class="tok-str">"note"</span> <span class="tok-prop">class</span>=<span class="tok-str">"field"</span> <span class="tok-prop">style</span>=<span class="tok-str">"--min: 12; --max: 120"</span>&gt;
+            <figcaption>HTML</figcaption>
+            <pre><code>&lt;<span class="tok-key">div</span> <span class="tok-prop">id</span>=<span class="tok-str">"note"</span> <span class="tok-prop">class</span>=<span class="tok-str">"field"</span> <span class="tok-prop">data-props-for</span>=<span class="tok-str">"field"</span> <span class="tok-prop">style</span>=<span class="tok-str">"--min: 12; --max: 120"</span>&gt;
   &lt;<span class="tok-key">textarea</span> <span class="tok-prop">minlength</span>=<span class="tok-str">"12"</span> <span class="tok-prop">maxlength</span>=<span class="tok-str">"120"</span>&gt;&lt;/<span class="tok-key">textarea</span>&gt;
 &lt;/<span class="tok-key">div</span>&gt;</code></pre>
-            <figcaption>The entire JS</figcaption>
-            <pre><code><span class="tok-key">propsFor</span>(note, [<span class="tok-str">'field'</span>])</code></pre>
-            <figcaption>The reaction (CSS)</figcaption>
+            <figcaption>CSS</figcaption>
             <pre><code><span class="tok-sel">.field__meter i</span> {
   <span class="tok-prop">inline-size</span>: <span class="tok-fn">calc</span>(<span class="tok-var">var(--live-length)</span> / <span class="tok-var">var(--max)</span> * <span class="tok-num">100%</span>);
 }
@@ -491,11 +482,9 @@
           </div>
 
           <figure class="caption">
-            <figcaption>The entire JS</figcaption>
-            <pre><code><span class="tok-key">propsFor</span>(
-  <span class="tok-fn">document</span>.<span class="tok-fn">querySelectorAll</span>(<span class="tok-str">'.eye'</span>),
-  [<span class="tok-str">'pointer-local'</span>])</code></pre>
-            <figcaption>The reaction (CSS): angle, then place on it</figcaption>
+            <figcaption>HTML</figcaption>
+            <pre><code>&lt;<span class="tok-key">div</span> <span class="tok-prop">class</span>=<span class="tok-str">"eye"</span> <span class="tok-prop">data-props-for</span>=<span class="tok-str">"pointer-local"</span>&gt;<span class="tok-com">&hellip;</span>&lt;/<span class="tok-key">div</span>&gt;</code></pre>
+            <figcaption>CSS</figcaption>
             <pre><code><span class="tok-sel">.eye</span> {
   <span class="tok-prop">--a</span>: <span class="tok-fn">atan2</span>(
     <span class="tok-fn">calc</span>(<span class="tok-var">var(--live-py)</span> - <span class="tok-num">.5</span>),
@@ -537,9 +526,9 @@
           </div>
 
           <figure class="caption">
-            <figcaption>The entire JS</figcaption>
-            <pre><code><span class="tok-key">propsFor</span>([<span class="tok-str">'clock'</span>])</code></pre>
-            <figcaption>The reaction (CSS)</figcaption>
+            <figcaption>HTML</figcaption>
+            <pre><code>&lt;<span class="tok-key">div</span> <span class="tok-prop">class</span>=<span class="tok-str">"clock"</span> <span class="tok-prop">data-props-for</span>=<span class="tok-str">"clock"</span>&gt;<span class="tok-com">&hellip;</span>&lt;/<span class="tok-key">div</span>&gt;</code></pre>
+            <figcaption>CSS</figcaption>
             <pre><code><span class="tok-sel">.clock__hand--sec</span> {
   <span class="tok-prop">rotate</span>: <span class="tok-fn">calc</span>(<span class="tok-var">var(--live-seconds)</span> * <span class="tok-num">6deg</span>);
 }
@@ -601,9 +590,9 @@
           </div>
 
           <figure class="caption">
-            <figcaption>The entire JS</figcaption>
-            <pre><code><span class="tok-key">propsFor</span>([<span class="tok-str">'online'</span>, <span class="tok-str">'network'</span>, <span class="tok-str">'battery'</span>, <span class="tok-str">'fps'</span>])</code></pre>
-            <figcaption>The reaction (CSS)</figcaption>
+            <figcaption>HTML</figcaption>
+            <pre><code>&lt;<span class="tok-key">div</span> <span class="tok-prop">class</span>=<span class="tok-str">"tiles"</span> <span class="tok-prop">data-props-for</span>=<span class="tok-str">"online network battery fps"</span>&gt;<span class="tok-com">&hellip;</span>&lt;/<span class="tok-key">div</span>&gt;</code></pre>
+            <figcaption>CSS</figcaption>
             <pre><code><span class="tok-key">@container</span> <span class="tok-fn">style</span>(<span class="tok-var">--live-online</span>: <span class="tok-num">0</span>) {
   <span class="tok-sel">.tile--online</span> { <span class="tok-prop">color</span>: <span class="tok-key">var(--limit)</span>; }
   <span class="tok-sel">.tile__online::after</span> { <span class="tok-prop">content</span>: <span class="tok-str">'offline'</span>; }
@@ -646,9 +635,9 @@
           </div>
 
           <figure class="caption">
-            <figcaption>The entire JS</figcaption>
-            <pre><code><span class="tok-key">propsFor</span>([<span class="tok-str">'scroll-velocity'</span>])</code></pre>
-            <figcaption>The reaction (CSS)</figcaption>
+            <figcaption>HTML</figcaption>
+            <pre><code>&lt;<span class="tok-key">div</span> <span class="tok-prop">class</span>=<span class="tok-str">"momentum"</span> <span class="tok-prop">data-props-for</span>=<span class="tok-str">"scroll-velocity"</span>&gt;<span class="tok-com">&hellip;</span>&lt;/<span class="tok-key">div</span>&gt;</code></pre>
+            <figcaption>CSS</figcaption>
             <pre><code><span class="tok-sel">.momentum__stack span</span> {
   <span class="tok-prop">transform</span>:
     <span class="tok-fn">translateX</span>(<span class="tok-fn">calc</span>(<span class="tok-var">var(--live-scroll-velocity)</span> * <span class="tok-var">var(--m)</span> * <span class="tok-num">1px</span>))
@@ -687,11 +676,9 @@
           </div>
 
           <figure class="caption">
-            <figcaption>The markup (HTML)</figcaption>
-            <pre><code>&lt;<span class="tok-key">div</span> <span class="tok-prop">id</span>=<span class="tok-str">"sizer"</span> <span class="tok-prop">style</span>=<span class="tok-str">"resize: both; overflow: auto"</span>&gt;&lt;/<span class="tok-key">div</span>&gt;</code></pre>
-            <figcaption>The entire JS</figcaption>
-            <pre><code><span class="tok-key">propsFor</span>(sizer, [<span class="tok-str">'size'</span>])</code></pre>
-            <figcaption>The reaction (CSS): a branch from <code>calc()</code></figcaption>
+            <figcaption>HTML</figcaption>
+            <pre><code>&lt;<span class="tok-key">div</span> <span class="tok-prop">id</span>=<span class="tok-str">"sizer"</span> <span class="tok-prop">data-props-for</span>=<span class="tok-str">"size"</span> <span class="tok-prop">style</span>=<span class="tok-str">"resize: both; overflow: auto"</span>&gt;&lt;/<span class="tok-key">div</span>&gt;</code></pre>
+            <figcaption>CSS</figcaption>
             <pre><code><span class="tok-sel">.sizer</span> {
   <span class="tok-prop">--landscape</span>: <span class="tok-fn">clamp</span>(<span class="tok-num">0</span>, <span class="tok-fn">calc</span>((<span class="tok-var">var(--live-aspect)</span> - <span class="tok-num">1</span>) * <span class="tok-num">100</span>), <span class="tok-num">1</span>);
 }
@@ -701,76 +688,11 @@
         </div>
       </section>
 
-      <!-- ──────────────────────── 11. ORBIT (TRIG) ──────────────────────── -->
-      <section class="demo" id="orbit">
+      <!-- ──────────────────────── 11. MEDIA ──────────────────────── -->
+      <section class="demo" id="media">
         <p class="watermark" aria-hidden="true">11</p>
         <div class="demo-head">
-          <p class="index">11 / orbit</p>
-          <h2>Orbits, placed by sine and cosine</h2>
-          <p class="desc">
-            <code>--live-seconds</code> becomes an angle; <code>cos()</code> and
-            <code>sin()</code> drop each dot onto its ring. Three rings, opposite
-            spins, one sweep a minute.
-          </p>
-        </div>
-
-        <div class="demo-body">
-          <div class="stage stage--orbit">
-            <div class="orbit" aria-hidden="true">
-              <span class="orbit__core"></span>
-              <div class="orbit__ring" style="--r: calc(var(--size) * 0.17); --n: 4; --dir: 1; --spd: 1.6; --dot: 0.95rem; --tint: 85%">
-                <span class="orbit__dot" style="--i: 0"></span>
-                <span class="orbit__dot" style="--i: 1"></span>
-                <span class="orbit__dot" style="--i: 2"></span>
-                <span class="orbit__dot" style="--i: 3"></span>
-              </div>
-              <div class="orbit__ring" style="--r: calc(var(--size) * 0.30); --n: 8; --dir: -1; --spd: 1; --dot: 0.8rem; --tint: 64%">
-                <span class="orbit__dot" style="--i: 0"></span>
-                <span class="orbit__dot" style="--i: 1"></span>
-                <span class="orbit__dot" style="--i: 2"></span>
-                <span class="orbit__dot" style="--i: 3"></span>
-                <span class="orbit__dot" style="--i: 4"></span>
-                <span class="orbit__dot" style="--i: 5"></span>
-                <span class="orbit__dot" style="--i: 6"></span>
-                <span class="orbit__dot" style="--i: 7"></span>
-              </div>
-              <div class="orbit__ring" style="--r: calc(var(--size) * 0.43); --n: 12; --dir: 1; --spd: 0.6; --dot: 0.6rem; --tint: 46%">
-                <span class="orbit__dot" style="--i: 0"></span>
-                <span class="orbit__dot" style="--i: 1"></span>
-                <span class="orbit__dot" style="--i: 2"></span>
-                <span class="orbit__dot" style="--i: 3"></span>
-                <span class="orbit__dot" style="--i: 4"></span>
-                <span class="orbit__dot" style="--i: 5"></span>
-                <span class="orbit__dot" style="--i: 6"></span>
-                <span class="orbit__dot" style="--i: 7"></span>
-                <span class="orbit__dot" style="--i: 8"></span>
-                <span class="orbit__dot" style="--i: 9"></span>
-                <span class="orbit__dot" style="--i: 10"></span>
-                <span class="orbit__dot" style="--i: 11"></span>
-              </div>
-            </div>
-          </div>
-
-          <figure class="caption">
-            <figcaption>The entire JS</figcaption>
-            <pre><code><span class="tok-key">propsFor</span>([<span class="tok-str">'clock'</span>])</code></pre>
-            <figcaption>The reaction (CSS): one dot, any ring</figcaption>
-            <pre><code><span class="tok-sel">.orbit__dot</span> {
-  <span class="tok-prop">--a</span>: <span class="tok-fn">calc</span>(<span class="tok-var">var(--live-seconds)</span> * <span class="tok-num">6deg</span> * <span class="tok-var">var(--spd)</span> * <span class="tok-var">var(--dir)</span>
-    + <span class="tok-var">var(--i)</span> / <span class="tok-var">var(--n)</span> * <span class="tok-num">360deg</span>);
-  <span class="tok-prop">translate</span>:
-    <span class="tok-fn">calc</span>(<span class="tok-fn">cos</span>(<span class="tok-var">var(--a)</span>) * <span class="tok-var">var(--r)</span>)
-    <span class="tok-fn">calc</span>(<span class="tok-fn">sin</span>(<span class="tok-var">var(--a)</span>) * <span class="tok-var">var(--r)</span>);
-}</code></pre>
-          </figure>
-        </div>
-      </section>
-
-      <!-- ──────────────────────── 12. MEDIA ──────────────────────── -->
-      <section class="demo" id="media">
-        <p class="watermark" aria-hidden="true">12</p>
-        <div class="demo-head">
-          <p class="index">12 / media</p>
+          <p class="index">11 / media</p>
           <h2>A progress ring, straight from playback</h2>
           <p class="desc">
             A <code>conic-gradient</code> ring fills from
@@ -787,10 +709,12 @@
                 <video
                   class="player__video"
                   src="https://mdn.github.io/shared-assets/videos/flower.mp4"
+                  controls
                   muted
                   loop
                   autoplay
                   playsinline
+                  loading="lazy"
                   aria-label="Looping sample video"
                 ></video>
               </div>
@@ -801,15 +725,13 @@
           </div>
 
           <figure class="caption">
-            <figcaption>The markup (HTML)</figcaption>
-            <pre><code>&lt;<span class="tok-key">div</span> <span class="tok-prop">id</span>=<span class="tok-str">"player"</span>&gt;
+            <figcaption>HTML</figcaption>
+            <pre><code>&lt;<span class="tok-key">div</span> <span class="tok-prop">id</span>=<span class="tok-str">"player"</span> <span class="tok-prop">data-props-for</span>=<span class="tok-str">"media"</span>&gt;
   &lt;<span class="tok-key">video</span> <span class="tok-prop">src</span>=<span class="tok-str">"clip.mp4"</span> <span class="tok-prop">muted</span> <span class="tok-prop">loop</span> <span class="tok-prop">autoplay</span>&gt;&lt;/<span class="tok-key">video</span>&gt;
 &lt;/<span class="tok-key">div</span>&gt;</code></pre>
-            <figcaption>The entire JS</figcaption>
-            <pre><code><span class="tok-key">propsFor</span>(player, [<span class="tok-str">'media'</span>])</code></pre>
             <figcaption>The setup: typed props become interpolatable</figcaption>
             <pre><code><span class="tok-key">configure</span>({ <span class="tok-prop">typed</span>: <span class="tok-key">true</span> }) <span class="tok-com">// register --live-* as @property</span></code></pre>
-            <figcaption>The reaction (CSS): transition the live value itself</figcaption>
+            <figcaption>CSS</figcaption>
             <pre><code><span class="tok-sel">.player</span> { <span class="tok-prop">transition</span>: <span class="tok-var">--live-progress</span> <span class="tok-num">.25s</span> <span class="tok-key">linear</span>; }
 
 <span class="tok-sel">.player__ring</span> {
@@ -820,11 +742,11 @@
         </div>
       </section>
 
-      <!-- ──────────────────────── 13. AMBIENT ──────────────────────── -->
+      <!-- ──────────────────────── 12. AMBIENT ──────────────────────── -->
       <section class="demo" id="ambient">
-        <p class="watermark" aria-hidden="true">13</p>
+        <p class="watermark" aria-hidden="true">12</p>
         <div class="demo-head">
-          <p class="index">13 / ambient</p>
+          <p class="index">12 / ambient</p>
           <h2>UI that saves your battery</h2>
           <p class="desc">
             Below 20% battery, a <code>@container style()</code> strips the
@@ -848,7 +770,7 @@
           </div>
 
           <figure class="caption">
-            <figcaption>The reaction (CSS): a branch from the level</figcaption>
+            <figcaption>CSS</figcaption>
             <pre><code><span class="tok-sel">.ambient</span> {
   <span class="tok-prop">--low</span>: <span class="tok-fn">clamp</span>(<span class="tok-num">0</span>, <span class="tok-fn">round</span>(<span class="tok-key">up</span>, <span class="tok-fn">calc</span>(<span class="tok-num">.2</span> - <span class="tok-var">var(--live-battery-level, 1)</span>), <span class="tok-num">1</span>), <span class="tok-num">1</span>);
 }
@@ -860,11 +782,11 @@
         </div>
       </section>
 
-      <!-- ──────────────────────── 14. DRAG ──────────────────────── -->
+      <!-- ──────────────────────── 13. DRAG ──────────────────────── -->
       <section class="demo" id="drag">
-        <p class="watermark" aria-hidden="true">14</p>
+        <p class="watermark" aria-hidden="true">13</p>
         <div class="demo-head">
-          <p class="index">14 / drag</p>
+          <p class="index">13 / drag</p>
           <h2>Drag, with no drag handler</h2>
           <p class="desc">
             <code>:active</code> is the interaction gate; while you hold a token
@@ -885,13 +807,11 @@
           </div>
 
           <figure class="caption">
-            <figcaption>The markup (HTML)</figcaption>
-            <pre><code>&lt;<span class="tok-key">div</span> <span class="tok-prop">id</span>=<span class="tok-str">"dragboard"</span>&gt;
+            <figcaption>HTML</figcaption>
+            <pre><code>&lt;<span class="tok-key">div</span> <span class="tok-prop">id</span>=<span class="tok-str">"dragboard"</span> <span class="tok-prop">data-props-for</span>=<span class="tok-str">"pointer-local size"</span>&gt;
   &lt;<span class="tok-key">span</span> <span class="tok-prop">class</span>=<span class="tok-str">"drag-token"</span>&gt;<span class="tok-com">&hellip;</span>&lt;/<span class="tok-key">span</span>&gt;
 &lt;/<span class="tok-key">div</span>&gt;</code></pre>
-            <figcaption>The entire JS</figcaption>
-            <pre><code><span class="tok-key">propsFor</span>(dragboard, [<span class="tok-str">'pointer-local'</span>, <span class="tok-str">'size'</span>])</code></pre>
-            <figcaption>The reaction (CSS): <code>:active</code> gates, pointer drives</figcaption>
+            <figcaption>CSS</figcaption>
             <pre><code><span class="tok-sel">.drag-token:active</span> {
   <span class="tok-prop">translate</span>:
     <span class="tok-fn">calc</span>((<span class="tok-var">var(--live-px)</span> - <span class="tok-var">var(--hx)</span>) * <span class="tok-var">var(--live-w)</span> * <span class="tok-num">1px</span>)
@@ -902,66 +822,205 @@
         </div>
       </section>
 
-      <!-- ───────────────────────── ∑. LIVE TELEMETRY ───────────────────────── -->
-      <section class="demo telemetry" id="telemetry">
-        <p class="watermark" aria-hidden="true">&sum;</p>
+      <!-- ──────────────────────── 14. FIELD STATE ──────────────────────── -->
+      <section class="demo" id="formstate">
+        <p class="watermark" aria-hidden="true">14</p>
         <div class="demo-head">
-          <p class="index">live / :root</p>
-          <h2>Everything, live</h2>
+          <p class="index">14 / form state</p>
+          <h2>The form state CSS can&rsquo;t see</h2>
           <p class="desc">
-            Every <code>--live-*</code> on <code>:root</code>, read straight into
-            this panel. Numbers are CSS counters; bars are <code>calc()</code>
-            widths. Still no JS reading values.
+            <code>field-state</code> tracks the interaction history pseudo-classes
+            can&rsquo;t &mdash; <code>--live-dirty</code>, <code>--live-touched</code>,
+            <code>--live-changed</code>, <code>--live-submitted</code>, per input.
+            <code>form-state</code> aggregates the whole form &mdash;
+            <code>--live-valid-count</code>, <code>--live-all-valid</code>,
+            <code>--live-completion</code> &mdash; to drive the progress bar and gate
+            Submit. Type then delete back: <em>dirty</em> stays, <em>changed</em>
+            clears. Empty a required field: completion drops, the gate closes.
           </p>
         </div>
 
-        <div class="telemetry__grid">
-          <!-- a radial vitals gauge: the ring fills with the live frame rate,
-               a satellite orbits at the clock's seconds angle. Two sources, no
-               pointer — the ambient state CSS reads straight off :root. -->
-          <figure class="vitals" aria-hidden="true">
-            <span class="vitals__ring"></span>
-            <span class="vitals__orbit"><span class="vitals__sat"></span></span>
-            <p class="vitals__num"></p>
-            <p class="vitals__k">frames / sec</p>
-            <figcaption>fps&nbsp;&middot;&nbsp;clock</figcaption>
-          </figure>
+        <div class="demo-body">
+          <div class="fstate-wrap" id="fstate-wrap">
+            <!-- form-state, as a quiet topper above the card: a conic completion
+                 ring, the valid count, and the gate status -->
+            <div class="fstate__topper" aria-hidden="true">
+              <span class="fstate__ring"></span>
+              <span class="fstate__count"></span>
+              <span class="fstate__status"></span>
+            </div>
 
-          <dl class="readout">
-            <div class="readout__row" style="--n: var(--live-pointer-x, 0); --bar: var(--live-pointer-x-ratio, 0)">
-              <dt>pointer.x</dt><dd class="num"></dd><span class="bar"><i></i></span>
+            <div class="stage stage--formstate">
+              <form class="fstate" id="fstate">
+                <div class="fstate__field">
+                  <label class="fstate__label" for="fstate-name">display name</label>
+                  <input
+                    id="fstate-name"
+                    class="fstate__input"
+                    type="text"
+                    name="name"
+                    required
+                    value="ada"
+                    autocomplete="off"
+                    spellcheck="false"
+                  />
+                  <ul class="fstate__chips" aria-hidden="true">
+                    <li class="fstate__chip fstate__chip--dirty"><span></span>dirty</li>
+                    <li class="fstate__chip fstate__chip--touched"><span></span>touched</li>
+                    <li class="fstate__chip fstate__chip--changed"><span></span>changed</li>
+                    <li class="fstate__chip fstate__chip--submitted"><span></span>submitted</li>
+                  </ul>
+                </div>
+
+                <div class="fstate__field">
+                  <label class="fstate__label" for="fstate-email">email</label>
+                  <input
+                    id="fstate-email"
+                    class="fstate__input"
+                    type="email"
+                    name="email"
+                    required
+                    value="ada@example.com"
+                    autocomplete="off"
+                    spellcheck="false"
+                  />
+                  <ul class="fstate__chips" aria-hidden="true">
+                    <li class="fstate__chip fstate__chip--dirty"><span></span>dirty</li>
+                    <li class="fstate__chip fstate__chip--touched"><span></span>touched</li>
+                    <li class="fstate__chip fstate__chip--changed"><span></span>changed</li>
+                    <li class="fstate__chip fstate__chip--submitted"><span></span>submitted</li>
+                  </ul>
+                </div>
+
+                <div class="fstate__bar">
+                  <button type="submit" class="fstate__btn fstate__btn--go">Submit</button>
+                  <button type="reset" class="fstate__btn">Reset</button>
+                </div>
+              </form>
             </div>
-            <div class="readout__row" style="--n: var(--live-pointer-y, 0); --bar: var(--live-pointer-y-ratio, 0)">
-              <dt>pointer.y</dt><dd class="num"></dd><span class="bar"><i></i></span>
+          </div>
+
+          <figure class="caption">
+            <figcaption>HTML</figcaption>
+            <pre><code>&lt;<span class="tok-key">form</span> <span class="tok-prop">data-props-for</span>=<span class="tok-str">"form-state"</span>&gt;
+  &lt;<span class="tok-key">div</span> <span class="tok-prop">data-props-for</span>=<span class="tok-str">"field-state"</span>&gt;&lt;<span class="tok-key">input</span> <span class="tok-prop">name</span>=<span class="tok-str">"name"</span> <span class="tok-prop">required</span>&gt;&lt;/<span class="tok-key">div</span>&gt;
+  &lt;<span class="tok-key">div</span> <span class="tok-prop">data-props-for</span>=<span class="tok-str">"field-state"</span>&gt;&lt;<span class="tok-key">input</span> <span class="tok-prop">type</span>=<span class="tok-str">"email"</span> <span class="tok-prop">required</span>&gt;&lt;/<span class="tok-key">div</span>&gt;
+&lt;/<span class="tok-key">form</span>&gt;</code></pre>
+            <figcaption>CSS</figcaption>
+            <pre><code><span class="tok-sel">.ring</span> { <span class="tok-com">/* form-state completion, as a conic */</span>
+  <span class="tok-prop">background</span>: <span class="tok-fn">conic-gradient</span>(<span class="tok-key">in oklch</span>,
+    <span class="tok-key">var(--accent)</span> <span class="tok-fn">calc</span>(<span class="tok-var">var(--live-completion)</span> * <span class="tok-num">360deg</span>), <span class="tok-num">#0000</span> <span class="tok-num">0</span>);
+}
+<span class="tok-key">@container</span> <span class="tok-fn">style</span>(<span class="tok-var">--live-all-valid</span>: <span class="tok-num">1</span>) {
+  <span class="tok-sel">.submit</span> { <span class="tok-prop">opacity</span>: <span class="tok-num">1</span>; } <span class="tok-com">/* the gate opens */</span>
+}</code></pre>
+          </figure>
+        </div>
+      </section>
+
+      <!-- ──────────────────────── 15. IMG COLOR ──────────────────────── -->
+      <section class="demo" id="sun">
+        <p class="watermark" aria-hidden="true">15</p>
+        <div class="demo-head">
+          <p class="index">15 / img-color</p>
+          <h2>A shadow the colour of the picture</h2>
+          <p class="desc">
+            CSS can&rsquo;t read an image&rsquo;s pixels. <code>img-color</code> does
+            &mdash; it pulls a small palette (dominant, accent, dark, light, average)
+            into <code>--live-img-*</code>. The <em>dominant</em> tints a drop shadow
+            that <code>pointer-local</code> casts away from your cursor, so the cursor
+            is the sun; the swatches below show the rest. Pick another image and the
+            whole palette re-reads.
+          </p>
+        </div>
+
+        <div class="demo-body">
+          <div class="stage stage--sun" id="sun-stage">
+            <figure class="sun-card" id="sun-card">
+              <img class="sun-card__img" id="sun-img" alt="" decoding="async" />
+            </figure>
+            <ul class="sun-palette" aria-hidden="true">
+              <li class="sun-sw sun-sw--dominant"><i></i>dominant</li>
+              <li class="sun-sw sun-sw--accent"><i></i>accent</li>
+              <li class="sun-sw sun-sw--dark"><i></i>dark</li>
+              <li class="sun-sw sun-sw--light"><i></i>light</li>
+              <li class="sun-sw sun-sw--avg"><i></i>avg</li>
+            </ul>
+            <div class="sun-picker" id="sun-picker">
+              <button class="sun-dot" type="button" data-img="0" aria-label="photo one"></button>
+              <button class="sun-dot" type="button" data-img="1" aria-label="photo two"></button>
+              <button class="sun-dot" type="button" data-grad="lime" aria-label="lime gradient"></button>
+              <button class="sun-dot" type="button" data-grad="berry" aria-label="berry gradient"></button>
             </div>
-            <div class="readout__row" style="--n: calc(var(--live-pointer-x-ratio, 0) * 100); --bar: var(--live-pointer-x-ratio, 0); --suffix: '%'">
-              <dt>pointer.x&#8201;ratio</dt><dd class="num"></dd><span class="bar"><i></i></span>
-            </div>
-            <div class="readout__row" style="--n: calc(var(--live-pointer-y-ratio, 0) * 100); --bar: var(--live-pointer-y-ratio, 0); --suffix: '%'">
-              <dt>pointer.y&#8201;ratio</dt><dd class="num"></dd><span class="bar"><i></i></span>
-            </div>
-            <div class="readout__row" style="--n: var(--live-vw, 0); --bar: calc(var(--live-vw, 0) / 2400)">
-              <dt>viewport.w</dt><dd class="num"></dd><span class="bar"><i></i></span>
-            </div>
-            <div class="readout__row" style="--n: var(--live-vh, 0); --bar: calc(var(--live-vh, 0) / 1400)">
-              <dt>viewport.h</dt><dd class="num"></dd><span class="bar"><i></i></span>
-            </div>
-            <div class="readout__row" style="--n: var(--live-fps, 0); --bar: calc(var(--live-fps, 0) / 120)">
-              <dt>fps</dt><dd class="num"></dd><span class="bar"><i></i></span>
-            </div>
-            <div class="readout__row" style="--n: var(--live-online, 0); --bar: var(--live-online, 0)">
-              <dt>online</dt><dd class="num"></dd><span class="bar"><i></i></span>
-            </div>
-            <div class="readout__row" style="--n: calc(var(--live-battery-level, 0) * 100); --bar: var(--live-battery-level, 0); --suffix: '%'">
-              <dt>battery.level</dt><dd class="num"></dd><span class="bar"><i></i></span>
-            </div>
-            <div class="readout__row" style="--n: var(--live-net-downlink, 0); --bar: calc(var(--live-net-downlink, 0) / 20)">
-              <dt>net.downlink</dt><dd class="num"></dd><span class="bar"><i></i></span>
-            </div>
-            <div class="readout__row" style="--n: var(--live-net-rtt, 0); --bar: calc(var(--live-net-rtt, 0) / 400)">
-              <dt>net.rtt</dt><dd class="num"></dd><span class="bar"><i></i></span>
-            </div>
-          </dl>
+          </div>
+
+          <figure class="caption">
+            <figcaption>HTML</figcaption>
+            <pre><code>&lt;<span class="tok-key">figure</span> <span class="tok-prop">data-props-for</span>=<span class="tok-str">"img-color"</span>&gt;
+  &lt;<span class="tok-key">img</span> <span class="tok-prop">src</span>=<span class="tok-str">"art.jpg"</span>&gt;
+&lt;/<span class="tok-key">figure</span>&gt;</code></pre>
+            <figcaption>CSS</figcaption>
+            <pre><code><span class="tok-sel">.sun-card</span> { <span class="tok-com">/* shadow: image colour, cast off the cursor */</span>
+  <span class="tok-prop">box-shadow</span>:
+    <span class="tok-fn">calc</span>((<span class="tok-num">.5</span> - <span class="tok-var">var(--live-px)</span>) * <span class="tok-num">8rem</span>)
+    <span class="tok-fn">calc</span>((<span class="tok-num">.5</span> - <span class="tok-var">var(--live-py)</span>) * <span class="tok-num">8rem</span>) <span class="tok-num">3rem</span>
+    <span class="tok-fn">oklch</span>(<span class="tok-key">from</span> <span class="tok-fn">rgb</span>(<span class="tok-var">var(--live-img-r)</span> <span class="tok-var">var(--live-img-g)</span> <span class="tok-var">var(--live-img-b)</span>) <span class="tok-key">l c h</span> / <span class="tok-num">.6</span>);
+}</code></pre>
+          </figure>
+        </div>
+      </section>
+
+      <!-- ──────────────────────── 16. VIDEO COLOR ──────────────────────── -->
+      <section class="demo" id="vidcolor">
+        <p class="watermark" aria-hidden="true">16</p>
+        <div class="demo-head">
+          <p class="index">16 / video-color</p>
+          <h2>A glow that watches the footage</h2>
+          <p class="desc">
+            The same idea, in motion. <code>video-color</code> samples a playing
+            <code>&lt;video&gt;</code> (~4&times;/sec, riding
+            <code>requestVideoFrameCallback</code>) for its <em>dominant</em> and
+            <em>accent</em> colours. The accent pours into a box-shadow glow, so the
+            player looks backlit by whatever is on screen, easing colour to colour as
+            the shot changes; both swatches sit below.
+          </p>
+        </div>
+
+        <div class="demo-body">
+          <div class="stage stage--vid" id="vid-stage">
+            <figure class="vid-card" id="vid-card">
+              <video
+                class="vid-card__v"
+                id="vid"
+                src="https://cdn.jsdelivr.net/gh/mediaelement/mediaelement-files@master/big_buck_bunny.mp4"
+                crossorigin="anonymous"
+                controls
+                muted
+                loop
+                autoplay
+                playsinline
+                loading="lazy"
+                aria-label="Big Buck Bunny, looping"
+              ></video>
+            </figure>
+            <ul class="vid-palette" aria-hidden="true">
+              <li class="vid-sw vid-sw--dominant"><i></i>dominant</li>
+              <li class="vid-sw vid-sw--accent"><i></i>accent</li>
+            </ul>
+          </div>
+
+          <figure class="caption">
+            <figcaption>HTML</figcaption>
+            <pre><code>&lt;<span class="tok-key">figure</span> <span class="tok-prop">data-props-for</span>=<span class="tok-str">"video-color"</span>&gt;
+  &lt;<span class="tok-key">video</span> <span class="tok-prop">src</span>=<span class="tok-str">"clip.mp4"</span> <span class="tok-prop">crossorigin muted loop autoplay</span>&gt;&lt;/<span class="tok-key">video</span>&gt;
+&lt;/<span class="tok-key">figure</span>&gt;</code></pre>
+            <figcaption>CSS</figcaption>
+            <pre><code><span class="tok-sel">.player</span> { <span class="tok-com">/* backlit by the accent, eased between samples */</span>
+  <span class="tok-prop">box-shadow</span>: <span class="tok-num">0 0 6rem</span> <span class="tok-fn">oklch</span>(<span class="tok-key">from</span>
+    <span class="tok-fn">rgb</span>(<span class="tok-var">var(--live-video-accent-r)</span> <span class="tok-var">var(--live-video-accent-g)</span> <span class="tok-var">var(--live-video-accent-b)</span>) <span class="tok-key">l c h</span> / <span class="tok-num">.7</span>);
+  <span class="tok-prop">transition</span>: <span class="tok-prop">box-shadow</span> <span class="tok-num">.3s</span> <span class="tok-key">linear</span>;
+}</code></pre>
+          </figure>
         </div>
       </section>
 
@@ -1041,6 +1100,13 @@
             <p class="src__desc">Power level and charging state.</p>
           </article>
           <article class="src">
+            <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="7.5" y="7.5" width="9" height="9" rx="1.5"/><path d="M10 7.5V4M14 7.5V4M10 20v-3.5M14 20v-3.5M7.5 10H4M7.5 14H4M20 10h-3.5M20 14h-3.5"/></svg></span><code class="src__key">cpu-pressure</code><span class="src__scope">global</span><span class="src__tag">Chromium</span></header>
+            <dl class="src__vars">
+              <div class="src__var" style="--val: var(--live-cpu-pressure, 0)"><dt>--live-cpu-pressure</dt><dd></dd></div>
+            </dl>
+            <p class="src__desc">CPU compute pressure, 0&ndash;3.</p>
+          </article>
+          <article class="src">
             <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 5l5 5 5-5M7 13l5 5 5-5"/></svg></span><code class="src__key">scroll-velocity</code><span class="src__scope">global</span></header>
             <dl class="src__vars">
               <div class="src__var" style="--val: calc(var(--live-scroll-velocity, 0))"><dt>--live-scroll-velocity</dt><dd></dd></div>
@@ -1107,9 +1173,9 @@
             <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg></span><code class="src__key">visibility</code><span class="src__scope src__scope--el">element</span></header>
             <dl class="src__vars">
               <div class="src__var src__var--scoped"><dt>--live-visible</dt><dd></dd></div>
-              <div class="src__var src__var--scoped"><dt>--live-has-entered</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--const-has-entered</dt><dd></dd></div>
             </dl>
-            <p class="src__desc">In view, plus a latch once fully entered.</p>
+            <p class="src__desc">Fully in view, plus a latch once entered.</p>
           </article>
           <article class="src">
             <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 8h16M4 16h16"/><circle cx="9" cy="8" r="2.3"/><circle cx="15" cy="16" r="2.3"/></svg></span><code class="src__key">range</code><span class="src__scope src__scope--el">element</span></header>
@@ -1129,6 +1195,26 @@
             <p class="src__desc">Text field length and validity.</p>
           </article>
           <article class="src">
+            <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12l3 2.5 5-6"/></svg></span><code class="src__key">field-state</code><span class="src__scope src__scope--el">element</span></header>
+            <dl class="src__vars">
+              <div class="src__var src__var--scoped"><dt>--live-dirty</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-touched</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-changed</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-submitted</dt><dd></dd></div>
+            </dl>
+            <p class="src__desc">Form interaction history pseudo-classes can&rsquo;t see: edited, blurred, changed, submitted.</p>
+          </article>
+          <article class="src">
+            <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h9M4 18h6"/><path d="M14.5 17.5l2.5 2.5 4.5-5"/></svg></span><code class="src__key">form-state</code><span class="src__scope src__scope--el">element</span></header>
+            <dl class="src__vars">
+              <div class="src__var src__var--scoped"><dt>--live-field-count</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-valid-count</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-all-valid</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-completion</dt><dd></dd></div>
+            </dl>
+            <p class="src__desc">Form-wide validity &amp; completion CSS can&rsquo;t count: valid/invalid totals, the all-valid gate.</p>
+          </article>
+          <article class="src">
             <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M10.5 8.5l5.5 3.5-5.5 3.5z" fill="currentColor" stroke="none"/></svg></span><code class="src__key">media</code><span class="src__scope src__scope--el">element</span></header>
             <dl class="src__vars">
               <div class="src__var src__var--scoped"><dt>--live-progress</dt><dd></dd></div>
@@ -1138,6 +1224,36 @@
               <div class="src__var src__var--scoped"><dt>--live-volume</dt><dd></dd></div>
             </dl>
             <p class="src__desc">A <code>&lt;video&gt;</code> or <code>&lt;audio&gt;</code> element.</p>
+          </article>
+          <article class="src">
+            <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.6"/><path d="M21 15l-5-5-9 9"/></svg></span><code class="src__key">img</code><span class="src__scope src__scope--el">element</span></header>
+            <dl class="src__vars">
+              <div class="src__var src__var--scoped"><dt>--live-natural-w</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-natural-h</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-loaded</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-broken</dt><dd></dd></div>
+            </dl>
+            <p class="src__desc">Intrinsic size and load state of an <code>&lt;img&gt;</code>.</p>
+          </article>
+          <article class="src">
+            <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3c3.4 4.6 5.5 7.4 5.5 9.8a5.5 5.5 0 0 1-11 0C6.5 10.4 8.6 7.6 12 3z"/></svg></span><code class="src__key">img-color</code><span class="src__scope src__scope--el">element</span></header>
+            <dl class="src__vars">
+              <div class="src__var src__var--scoped"><dt>--live-img-r</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-img-accent-r</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-img-dark-r</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-img-temp</dt><dd></dd></div>
+            </dl>
+            <p class="src__desc">A 5-swatch palette (dominant, accent, dark, light, avg) + warm/cool temp, from an <code>&lt;img&gt;</code>&rsquo;s pixels.</p>
+          </article>
+          <article class="src">
+            <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M10 9.5l4.5 2.5-4.5 2.5z" fill="currentColor" stroke="none"/></svg></span><code class="src__key">video-color</code><span class="src__scope src__scope--el">element</span></header>
+            <dl class="src__vars">
+              <div class="src__var src__var--scoped"><dt>--live-video-r</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-video-g</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-video-b</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-video-l</dt><dd></dd></div>
+            </dl>
+            <p class="src__desc">Dominant colour of a playing <code>&lt;video&gt;</code>, sampled ~4&times;/sec for an ambient glow.</p>
           </article>
         </div>
       </section>

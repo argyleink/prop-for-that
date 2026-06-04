@@ -1,0 +1,123 @@
+---
+// Video-color demo: there's no external video file to read (and a cross-origin
+// one would taint the canvas), so we generate one — a muted, slowly hue-cycling
+// background with a vivid accent blob drifting across it, drawn to an offscreen
+// canvas and captured as the <video>'s MediaStream. video-color reads that frame
+// back 16×16 on requestVideoFrameCallback, so the caption themes from the
+// dominant (the muted backdrop) and the glow from the accent (the vivid blob) —
+// two visibly different colours, both live.
+---
+<div class="pft-stage video-color-demo">
+  <figure class="vc__card" data-pft-videocolor>
+    <video class="vc__video" muted playsinline loop></video>
+    <figcaption class="vc__cap">
+      <span class="vc__name">Now playing</span>
+      <span class="vc__meta">
+        <span class="vc__rgb">rgb(<b class="vc__r"></b> <b class="vc__g"></b> <b class="vc__b"></b>)</span>
+        <i class="vc__accent" title="accent"></i>
+      </span>
+    </figcaption>
+  </figure>
+
+  <p class="pft-hint">
+    The frame is read 16×16 on <code>requestVideoFrameCallback</code> (throttled
+    to ~4&nbsp;Hz), so the caption — <code>rgb(var(--live-video-r) …)</code>, the
+    dominant colour, text flipped by <code>--live-video-l</code> — and the glow and
+    chip — <code>--live-video-accent-*</code>, the vibrant blob — both track the
+    picture and stop the moment the video pauses or scrolls offscreen. The video is
+    a canvas-captured stream, so there's no file and no cross-origin taint.
+  </p>
+</div>
+
+<style>
+  .vc__card {
+    margin: 0 auto;
+    max-inline-size: 28rem;
+    border-radius: 0.8rem;
+    overflow: hidden;
+    border: 1px solid var(--sl-color-gray-5);
+    /* an ambient glow in the video's accent colour, smoothed across samples */
+    box-shadow: 0 0 3rem -0.4rem
+      rgb(var(--live-video-accent-r, 128) var(--live-video-accent-g, 128) var(--live-video-accent-b, 128));
+    transition: box-shadow 0.3s ease;
+  }
+  .vc__video {
+    display: block;
+    inline-size: 100%;
+    block-size: 12rem;
+    object-fit: cover;
+    background: #000;
+  }
+  .vc__cap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.5rem 0.7rem;
+    background: rgb(var(--live-video-r, 128) var(--live-video-g, 128) var(--live-video-b, 128));
+    /* round(luminance) → 0 or 1 → black or white text, full contrast either way */
+    color: hsl(0 0% calc((1 - round(var(--live-video-l, 0.5), 1)) * 100%));
+    font-family: var(--sl-font-mono, ui-monospace, monospace);
+    transition: background 0.3s ease;
+  }
+  .vc__name { font-weight: 700; font-size: 0.85rem; }
+  .vc__meta { display: inline-flex; align-items: center; gap: 0.5rem; }
+  .vc__rgb { font-size: 0.7rem; opacity: 0.85; font-variant-numeric: tabular-nums; }
+  .vc__r::after { counter-reset: c calc(var(--live-video-r, 0)); content: counter(c); }
+  .vc__g::after { counter-reset: c calc(var(--live-video-g, 0)); content: counter(c); }
+  .vc__b::after { counter-reset: c calc(var(--live-video-b, 0)); content: counter(c); }
+  /* a chip of the live accent colour, sitting on the dominant-coloured caption */
+  .vc__accent {
+    inline-size: 1.1rem;
+    block-size: 1.1rem;
+    border-radius: 0.25rem;
+    background: rgb(var(--live-video-accent-r, 128) var(--live-video-accent-g, 128) var(--live-video-accent-b, 128));
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+  }
+</style>
+
+<script>
+  import { propsFor, register } from 'prop-for-that'
+  import { videoColor } from 'prop-for-that/plugins'
+
+  register(videoColor)
+
+  for (const card of document.querySelectorAll<HTMLElement>('[data-pft-videocolor]')) {
+    const video = card.querySelector('video')!
+
+    // A muted hue-cycling backdrop (low saturation → the dominant) with a vivid,
+    // drifting accent blob (high saturation → the accent), captured as the
+    // <video>'s stream. Same-origin pixels, so no CORS taint.
+    const canvas = document.createElement('canvas')
+    canvas.width = 320
+    canvas.height = 180
+    const c = canvas.getContext('2d')!
+    const { width: w, height: h } = canvas
+
+    let t = 0
+    const draw = () => {
+      t += 0.4
+      const hue = t % 360
+      const g = c.createLinearGradient(0, 0, w, h)
+      g.addColorStop(0, `hsl(${hue} 24% 34%)`) // desaturated → dominant
+      g.addColorStop(1, `hsl(${(hue + 40) % 360} 24% 26%)`)
+      c.fillStyle = g
+      c.fillRect(0, 0, w, h)
+
+      const ax = w * 0.5 + Math.cos(t / 34) * w * 0.3
+      const ay = h * 0.5 + Math.sin(t / 26) * h * 0.26
+      c.beginPath()
+      c.arc(ax, ay, 34, 0, Math.PI * 2)
+      c.fillStyle = `hsl(${(hue + 180) % 360} 90% 56%)` // vivid complement → accent
+      c.fill()
+
+      requestAnimationFrame(draw)
+    }
+    draw()
+
+    video.srcObject = canvas.captureStream(30)
+    video.play()
+
+    propsFor(card, ['video-color'])
+  }
+</script>

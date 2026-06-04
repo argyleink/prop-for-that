@@ -1,0 +1,74 @@
+---
+title: Form state
+description: A live demo of the form-state plugin — valid-count, invalid-count, all-valid, and completion, aggregated across a whole form.
+---
+
+import FormStateDemo from '../../../components/FormStateDemo.astro';
+
+CSS can match a *single* invalid control with `:invalid`, but it can't **count** invalid fields across a form or branch on "are they *all* valid yet?" — the two things you need for a progress bar or a submit gate. The `form-state` plugin aggregates a form's constraint-validation state into readable numbers.
+
+It's the validity counterpart to [`field-state`](/demos/field-state/) (interaction history) and the [`field`](/reference/plugins/#element-plugins) plugin (per-field `--live-valid`): put `field` on a control, `form-state` on the form.
+
+<FormStateDemo />
+
+Fill the fields with valid values and watch the bar fill, the count drop, and the Submit button enable. Per-field red/green borders are native `:user-valid` / `:user-invalid`; everything else is `form-state`.
+
+## The props
+
+Written on the bound element on the [`live`](/concepts/naming-and-cadence/) cadence.
+
+| Property | What it is |
+| --- | --- |
+| `--live-field-count` | controls subject to constraint validation — excludes disabled, readonly, buttons, and hidden inputs (anything with `willValidate === false`) |
+| `--live-valid-count` | how many of those currently **pass** validation |
+| `--live-invalid-count` | how many currently **fail** |
+| `--live-all-valid` | `1` when no invalid controls remain — your submit gate |
+| `--live-completion` | `0`–`1`: valid **required** controls ÷ required controls (`1` if the form has no required fields) — a "how done is it" ratio |
+
+`completion` keys off *required* fields specifically (a required-but-empty field is invalid via `valueMissing`, so it doesn't count as done), which makes it a meaningful progress signal even when a form has optional fields the user can skip.
+
+## Bind it to the form
+
+```html
+<script type="module">
+  import 'prop-for-that/auto'
+  import { registerPlugins, formState } from 'prop-for-that/plugins'
+  registerPlugins(formState)
+</script>
+
+<form data-props-for="form-state">
+  <input name="name" required>
+  <input name="email" type="email" required>
+  <button type="submit">Save</button>
+</form>
+```
+
+```css
+/* progress bar from the completion ratio */
+.bar { scale: var(--live-completion) 1; transform-origin: left; }
+
+/* a live "N to fix" count, no JS reading the form */
+.errors::after { counter-reset: n calc(var(--live-invalid-count)); content: counter(n) ' to fix'; }
+
+/* the submit gate — a discrete state, so read it with a style query */
+button[type="submit"] { opacity: 0.5; pointer-events: none; }
+@container style(--live-all-valid: 1) {
+  button[type="submit"] { opacity: 1; pointer-events: auto; }
+}
+```
+
+:::tip[Pair it with `field-state`]
+Bind **both** to the same form for the full picture: `form-state` answers *"is it correct and complete?"* while [`field-state`](/demos/field-state/) answers *"has it been touched / edited / submitted?"* — e.g. only surface the error count once `--live-submitted` is `1`.
+:::
+
+## The wiring
+
+```js
+import { propsFor, register } from 'prop-for-that'
+import { formState } from 'prop-for-that/plugins'
+
+register(formState)
+propsFor(document.querySelector('form'), ['form-state'])
+```
+
+Validity recomputes on every `input` / `change`, and once more on the frame after a `reset` (so it reflects the reverted values). The disposer removes the listeners and the properties it wrote.

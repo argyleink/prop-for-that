@@ -16,14 +16,14 @@ npm i prop-for-that
 Import `prop-for-that/auto` and it wires everything for you:
 
 - Attaches the default global sources (`viewport`, `pointer`) to `:root`.
-- Scans the DOM for `[data-prop]` attributes and binds the named sources to those elements.
-- Keeps everything in sync with a single `MutationObserver`: elements added later are bound, removed elements are torn down and their properties cleaned up, and editing an element's `data-prop` value re-syncs just the keys that changed — so you can add or drop a source at runtime by changing the attribute alone.
+- Scans the DOM for `[data-props-for]` attributes and binds the named sources to those elements.
+- Keeps everything in sync with a single `MutationObserver`: elements added later are bound, removed elements are torn down and their properties cleaned up, and editing an element's `data-props-for` value re-syncs just the keys that changed — so you can add or drop a source at runtime by changing the attribute alone.
 
 ```html
 <script type="module">import 'prop-for-that/auto'</script>
 
-<input type="range" min="0" max="100" data-prop="range">
-<section data-prop="size visibility">…</section>
+<input type="range" min="0" max="100" data-props-for="range">
+<section data-props-for="size visibility">…</section>
 ```
 
 ```css
@@ -32,10 +32,30 @@ input {
 }
 
 section {
-  opacity: var(--live-has-entered);
+  opacity: var(--const-has-entered);
   transition: opacity 0.4s;
 }
 ```
+
+:::tip[One element, many sources]
+`data-props-for` takes **one or more source keys, separated by spaces**. `data-props-for="size visibility"` binds *both* `size` and `visibility` to that element, and each writes its own `--live-*` / `--const-*` properties side by side:
+
+```html
+<article data-props-for="size visibility pointer-local">…</article>
+```
+
+```css
+article {
+  /* size → --live-w/--live-h, visibility → --const-has-entered,
+     pointer-local → --live-px/--live-py — all on this one element */
+  aspect-ratio: var(--live-w) / var(--live-h);
+  opacity: var(--const-has-entered);
+  background: radial-gradient(circle at calc(var(--live-px) * 100%) calc(var(--live-py) * 100%), white, transparent);
+}
+```
+
+Order doesn't matter and duplicates are ignored. You can mix core and registered plugin keys. Because the list is re-synced whenever the attribute changes, adding or removing a key at runtime binds or tears down just that one source — the others keep running.
+:::
 
 ### 2. Imperative
 
@@ -71,7 +91,7 @@ A few values are read once and matter for the first paint: scrollbar width, devi
 ```html
 <head>
   <script type="module">import 'prop-for-that/head'</script>
-  <!-- sets --const-scrollbar-w, --const-dpr, --const-cores, and more -->
+  <!-- sets --const-scrollbar-w, --const-scrollbar-thin-w, --const-dpr, --const-cores -->
 </head>
 ```
 

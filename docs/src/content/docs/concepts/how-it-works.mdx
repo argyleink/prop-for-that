@@ -63,4 +63,4 @@ Every `propsFor()` call returns a disposer. Calling it:
 - Removes the source's entry from the element's binding map.
 - If no sources remain for that element, removes the element from the bindings map.
 
-The `auto` entry wraps all of this in a single `MutationObserver` over the document. Elements with `data-prop` added later are bound; removed elements are `unbind`-ed and their written properties cleaned up; and changing an element's `data-prop` value re-syncs only the keys that were added or removed. It tracks the keys it bound per element, so it touches just the delta and never clobbers bindings you made through the imperative API.
+The `auto` entry wraps all of this in a single `MutationObserver` over the document. Elements with `data-props-for` added later are bound; removed elements are `unbind`-ed and their written properties cleaned up; and changing an element's `data-props-for` value re-syncs only the keys that were added or removed. It tracks the keys it bound per element, so it touches just the delta and never clobbers bindings you made through the imperative API.
