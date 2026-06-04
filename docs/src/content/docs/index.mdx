@@ -9,7 +9,7 @@ hero:
       link: /start/introduction/
       icon: right-arrow
     - text: See it live
-      link: /demos/pointer/
+      link: /
       icon: laptop
       variant: secondary
     - text: API reference
@@ -78,8 +78,10 @@ Any element with an `id` is already a global in JS, so `propsFor(card, …)` nee
   </Card>
 </CardGrid>
 
+{/* Component props aren't touched by the rehype base-prefix pass (that only
+    rewrites Markdown body links), so prefix this href with the base by hand. */}
 <LinkCard
   title="Play with the live demos →"
   description="Cursor-tilt cards, fluid type from an element's own width, scroll-triggered reveals, and a slider driving CSS — all reacting in real time, with the wiring shown for each."
-  href="/demos/pointer/"
+  href={import.meta.env.BASE_URL.replace(/\/$/, '') + '/demos/pointer/'}
 />

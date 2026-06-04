@@ -63,6 +63,11 @@ export default defineConfig({
 			title: 'prop-for-that',
 			description: 'Expose what JavaScript knows but CSS can\'t see.',
 			customCss: ['./src/styles/demos.css'],
+			// Hero action links are passed through without `base`; this override
+			// prefixes them so they work under /docsite. See src/components/Hero.astro.
+			components: {
+				Hero: './src/components/Hero.astro',
+			},
 			social: [
 				{ icon: 'github', label: 'GitHub', href: 'https://github.com/argyleink/prop-for-that' },
 			],

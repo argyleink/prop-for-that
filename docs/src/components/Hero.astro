@@ -1,0 +1,29 @@
+---
+// Starlight passes hero action links (from page frontmatter) through to
+// LinkButton verbatim — unlike sidebar links, it does NOT apply Astro's `base`.
+// Under the production `/docsite` base those root-absolute links resolve against
+// the demos site at the domain root and 404. This override prefixes each
+// root-absolute action link with the base before the default Hero renders.
+//
+// A bare "/" is left untouched on purpose: it targets the true origin root (the
+// demos app), which lives outside the docs base.
+import Default from '@astrojs/starlight/components/Hero.astro';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, ''); // '' when base is '/'
+const hero = Astro.locals.starlightRoute.entry.data.hero;
+if (base && hero?.actions) {
+	for (const action of hero.actions) {
+		const link = action.link;
+		if (
+			link.startsWith('/') &&
+			!link.startsWith('//') &&
+			link !== '/' &&
+			!link.startsWith(base + '/')
+		) {
+			action.link = base + link;
+		}
+	}
+}
+---
+
+<Default><slot /></Default>
