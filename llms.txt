@@ -103,6 +103,7 @@ prefix; constants use `--const-`. Values are unitless numbers unless noted.
 | `--const-scrollbar-thin-w` | scrollbar width in px with `scrollbar-width: thin` (= `--const-scrollbar-w` where unsupported) |
 | `--const-dpr` | `devicePixelRatio` |
 | `--const-cores` | `navigator.hardwareConcurrency` |
+| `--const-mem` | `navigator.deviceMemory` in GiB (Chromium-only, coarse; `0` elsewhere) |
 
 ### Plugins (`prop-for-that/plugins`)
 

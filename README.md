@@ -62,7 +62,7 @@ Bind any element with `data-props-for="key …"` and read its `--live-*` propert
 | --- | --- |
 | `prop-for-that/auto` | Zero-config: attaches global state and binds every `data-props-for` element, kept in sync with the DOM. |
 | `prop-for-that` | Imperative API — `propsFor()`, `register()`, `configure()` — for explicit control and teardown. |
-| `prop-for-that/head` | Synchronous, FOUC-safe constants (scrollbar width, DPR, core count) before first paint. |
+| `prop-for-that/head` | Synchronous, FOUC-safe constants (scrollbar width, DPR, core count, device memory) before first paint. |
 | `prop-for-that/plugins` | The opt-in plugin catalog. |
 
 Full API and concepts: **[prop-for-that.netlify.app/docsite](https://prop-for-that.netlify.app/docsite/)**.

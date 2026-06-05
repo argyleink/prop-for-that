@@ -8,6 +8,15 @@ backwards-compatible change (semver's `1.0.0`+ rules kick in at v1).
 Only the published library (`dist/`) is versioned here; the demo and docs site
 are repo-only and not part of the npm package.
 
+## [0.6.1]
+
+### Added
+- **`--const-mem` head constant** — `prop-for-that/head` now writes
+  `navigator.deviceMemory` (approximate device RAM in GiB) alongside the existing
+  scrollbar/DPR/core constants. Chromium-only and deliberately coarse (`0.25`–`8`,
+  capped for fingerprinting resistance); falls back to `0` where unsupported,
+  matching the `--const-cores` pattern.
+
 ## [0.6.0]
 
 ### Changed

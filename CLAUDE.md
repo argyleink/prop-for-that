@@ -93,7 +93,7 @@ the README tables.
   DOM via a single `MutationObserver`. Tracks per-element keys so it only touches the delta
   and never clobbers imperatively-added bindings.
 - **`./head` (`src/head.ts`)** — synchronous, FOUC-safe constants for inline use in
-  `<head>`. Writes `--const-scrollbar-w`, `--const-scrollbar-thin-w`, `--const-dpr`, `--const-cores` immediately,
+  `<head>`. Writes `--const-scrollbar-w`, `--const-scrollbar-thin-w`, `--const-dpr`, `--const-cores`, `--const-mem` immediately,
   **bypassing the rAF writer on purpose** (these affect first paint).
 - **`./plugins` (`src/plugins/index.ts`)** — the opt-in plugin catalog.
 

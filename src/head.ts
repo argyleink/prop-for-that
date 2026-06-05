@@ -26,6 +26,8 @@ function writeConstants(): void {
 
   set('dpr', window.devicePixelRatio || 1)
   set('cores', navigator.hardwareConcurrency || 0)
+  // Chromium-only and deliberately coarse (0.25–8 GiB); 0 elsewhere.
+  set('mem', (navigator as Navigator & { deviceMemory?: number }).deviceMemory || 0)
 }
 
 if (typeof document !== 'undefined') writeConstants()
