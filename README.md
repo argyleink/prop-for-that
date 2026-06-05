@@ -9,7 +9,7 @@
 ![zero dependencies](https://img.shields.io/badge/dependencies-0-22aa77)
 ![license MIT](https://img.shields.io/badge/license-MIT-blue)
 
-[**Docs**](https://prop-for-that.netlify.app/docsite/) · [**Demos**](https://prop-for-that.netlify.app/) · [**Changelog**](./CHANGELOG.md)
+[**Docs**](https://prop-for-that.netlify.app/docsite/) · [**Demos**](https://prop-for-that.netlify.app/) · [**Changelog**](./CHANGELOG.md) · [**llms.txt**](https://prop-for-that.netlify.app/llms.txt)
 
 </div>
 
@@ -66,6 +66,10 @@ Bind any element with `data-props-for="key …"` and read its `--live-*` propert
 | `prop-for-that/plugins` | The opt-in plugin catalog. |
 
 Full API and concepts: **[prop-for-that.netlify.app/docsite](https://prop-for-that.netlify.app/docsite/)**.
+
+## For LLMs / AI tools
+
+A condensed, single-file reference — entry points, the full variable catalog, recipes, and gotchas — lives at **[llms.txt](./llms.txt)**, hosted at [prop-for-that.netlify.app/llms.txt](https://prop-for-that.netlify.app/llms.txt) and shipped in the npm package (`node_modules/prop-for-that/llms.txt`).
 
 ## License
 

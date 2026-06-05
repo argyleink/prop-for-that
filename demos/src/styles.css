@@ -264,8 +264,6 @@ h2 {
   font-family: var(--font-mono);
   font-size: var(--step--1);
   font-weight: 600;
-  letter-spacing: 0.32em;
-  text-transform: uppercase;
   color: var(--accent-ink);
   margin: 0 0 var(--space-4);
 }
