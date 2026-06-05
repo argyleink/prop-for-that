@@ -1,4 +1,4 @@
-import { propsFor, configure } from 'prop-for-that'
+import { propsFor, configure, register, unbind, pause, resume, type Source } from 'prop-for-that'
 import {
   registerPlugins,
   pointerLocal,
@@ -33,8 +33,8 @@ configure({
   defaults: {
     'pointer-x-ratio': 0.5,
     'pointer-y-ratio': 0.5,
-    px: 0.5,
-    py: 0.5,
+    'local-pointer-x-ratio': 0.5,
+    'local-pointer-y-ratio': 0.5,
     'battery-level': 1,
     aspect: 1,
     'vvp-scale': 1,
@@ -93,8 +93,8 @@ if ('getBattery' in navigator) root.dataset.hasBattery = ''
 if ('connection' in navigator) root.dataset.hasNetwork = ''
 
 // Demo 1: bind pointer-local to BOTH the FRAME (#card) and the card (.tilt-card).
-// The frame's --live-px / --live-py (0–1 across the frame) drive the behind-card
-// gradient + border shine; the card's OWN --live-px / --live-py (0–1 across the
+// The frame's --live-local-pointer-x-ratio / --live-local-pointer-y-ratio (0–1 across the frame) drive the behind-card
+// gradient + border shine; the card's OWN --live-local-pointer-x-ratio / --live-local-pointer-y-ratio (0–1 across the
 // card) drive its glow / glare / texture, so the highlight tracks the cursor
 // exactly over the card instead of feeling offset by the frame padding.
 const card = document.getElementById('card')
@@ -152,7 +152,7 @@ if (fstate && fstateWrap) {
 // other two are canvas-generated gradients (same-origin, no taint). Picking one
 // swaps the <img>; img-color re-reads the dominant colour into --live-img (hex)
 // on the card, which tints the drop shadow. pointer-local on the stage drives
-// --live-px/py, and CSS casts the shadow AWAY from the cursor — the cursor is the sun.
+// --live-local-pointer-x-ratio/y-ratio, and CSS casts the shadow AWAY from the cursor — the cursor is the sun.
 const SUN_IMAGES = [
   'https://picsum.photos/id/1080/240/300', // strawberries — vivid red
   'https://picsum.photos/id/225/240/300', // dog — warm earth tones
@@ -211,11 +211,11 @@ const vidStage = document.getElementById('vid-stage')
 if (vidStage) propsFor(vidStage, ['video-color'])
 
 // ── Demo 6 (CSS trig): bind pointer-local to EACH eye, so every eye gets its
-// own --live-px / --live-py and can aim its pupil with atan2()/sin()/cos() —
+// own --live-local-pointer-x-ratio / --live-local-pointer-y-ratio and can aim its pupil with atan2()/sin()/cos() —
 // the angle from that eye's own centre to the cursor. No JS does the maths.
 propsFor(document.querySelectorAll('.eye'), ['pointer-local'])
 
-// ── Demo 7 flourish: bind pointer-local to the clock FACE so --live-px / --live-py
+// ── Demo 7 flourish: bind pointer-local to the clock FACE so --live-local-pointer-x-ratio / --live-local-pointer-y-ratio
 // are the cursor's position inside the watch. CSS eases the face's gradient toward
 // them (magnetic pull), releasing back to centre when the pointer leaves.
 const clockFace = document.getElementById('clock-face')
@@ -227,7 +227,7 @@ const sizer = document.getElementById('sizer')
 if (sizer) propsFor(sizer, ['size'])
 
 // ── Demo 13 (drag): bind pointer-local AND size to the board. CSS gates on
-// :active and computes each token's translate from --live-px / --live-py and the
+// :active and computes each token's translate from --live-local-pointer-x-ratio / --live-local-pointer-y-ratio and the
 // board's --live-w / --live-h. No JS drag handler, no pointer math in JS.
 const dragboard = document.getElementById('dragboard')
 if (dragboard) propsFor(dragboard, ['pointer-local', 'size'])
@@ -246,7 +246,7 @@ if (player) propsFor(player, ['media', 'video-color'])
 import('prop-for-that/auto')
 
 // ── Hero panels: bind pointer-local to EACH chip so every panel gets its own
-// --live-px / --live-py (0–1 within the panel) + --live-pointer-inside. CSS draws
+// --live-local-pointer-x-ratio / --live-local-pointer-y-ratio (0–1 within the panel) + --live-local-pointer-inside. CSS draws
 // a conic border shine that follows the pointer around that panel's rim and grows
 // brighter the closer to its edge the pointer is. propsFor takes a NodeList, so
 // one call binds them all.
@@ -261,6 +261,184 @@ hueTrack?.addEventListener('pointermove', (e) => {
   const r = hueTrack.getBoundingClientRect()
   const px = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width))
   document.documentElement.style.setProperty('--accent-h', String(Math.round(px * 360)))
+})
+
+// ── Touch fallback: drive the pointer effects from device tilt ──────────────
+// Every pointer demo above (the card's 3D lean + glare, the hero border-shine,
+// the eyes, the parallax backdrop) reads --live-local-pointer-x-ratio /
+// --live-local-pointer-y-ratio / --live-local-pointer-inside and the global
+// --live-pointer-*-ratio. A mouse moves those; a finger
+// can't, so on a touch screen they'd sit frozen at their 0.5 rest. So on a
+// no-hover device we offer to feed those SAME vars from the phone's orientation
+// instead — the effects don't change, they just get a new input. Writing them on
+// :root (where the pointer globals live) lets the inherited --live-local-pointer-x-ratio / --live-local-pointer-y-ratio
+// reach every pointer-local element that, lacking a pointermove, never wrote its
+// own value — so the whole page leans as one with the device.
+
+// How far you must tilt (degrees, from the pose held when enabling) for a var to
+// reach its 0 / 1 extreme, and how hard each reading eases toward target. Both are
+// deliberately tame — a small tilt window plus heavy smoothing keep it from ever
+// whipping to the edges or jittering.
+const TILT_RANGE = 22
+const TILT_EASE = 0.12
+const TILT_DIR_X = 1 // tilt right → lean/highlight right
+const TILT_DIR_Y = -1 // tilt the top away → lean/highlight up
+
+const r4 = (n: number) => Math.round(n * 1e4) / 1e4
+const clamp01 = (n: number) => (n < 0 ? 0 : n > 1 ? 1 : n)
+// signed tilt delta (deg) → 0–1, clamped so past the range it pins at the edge
+const tiltRatio = (deg: number) =>
+  clamp01(0.5 + Math.max(-TILT_RANGE, Math.min(TILT_RANGE, deg)) / (2 * TILT_RANGE))
+
+// Fired once, on the first real reading — lets the UI flip from "asking" to "on",
+// and distinguishes "granted but no sensor ever fires" from "actually tilting".
+let onFirstTilt: (() => void) | null = null
+
+const tiltPointer: Source = {
+  key: 'tilt-pointer',
+  scope: 'global',
+  start(ctx) {
+    let baseX: number | null = null // neutral pose, captured on the first reading
+    let baseY = 0
+    let x = 0.5 // eased ratios (start at rest so there's no jump-in)
+    let y = 0.5
+    const onOrient = (e: DeviceOrientationEvent) => {
+      if (e.gamma == null && e.beta == null) return
+      const g = e.gamma ?? 0 // left/right tilt → x
+      const b = e.beta ?? 0 // front/back tilt → y
+      if (baseX == null) {
+        baseX = g
+        baseY = b
+        onFirstTilt?.()
+        onFirstTilt = null
+      }
+      const tx = tiltRatio(TILT_DIR_X * (g - baseX))
+      const ty = tiltRatio(TILT_DIR_Y * (b - baseY))
+      x += (tx - x) * TILT_EASE
+      y += (ty - y) * TILT_EASE
+      ctx.write('local-pointer-x-ratio', r4(x))
+      ctx.write('local-pointer-y-ratio', r4(y))
+      ctx.write('pointer-x-ratio', r4(x))
+      ctx.write('pointer-y-ratio', r4(y))
+      ctx.write('local-pointer-inside', 1) // wake the shine/glare/eyes that gate on it
+    }
+    window.addEventListener('deviceorientation', onOrient, { passive: true })
+    return () => window.removeEventListener('deviceorientation', onOrient)
+  },
+}
+
+// Offer the fallback only where it's both needed (no hover) and possible
+// (orientation events exist). On a mouse, none of this runs.
+const noHover = matchMedia('(hover: none)').matches
+const hasOrient = typeof DeviceOrientationEvent !== 'undefined'
+const tiltBtn = document.getElementById('tilt-enable')
+
+if (noHover && hasOrient && tiltBtn) {
+  const setTiltState = (s: 'offer' | 'on' | 'denied') => {
+    root.dataset.tilt = s
+    // the blocked note self-clears back to the offer, so the button returns for a retry
+    if (s === 'denied')
+      setTimeout(() => root.dataset.tilt === 'denied' && (root.dataset.tilt = 'offer'), 4000)
+  }
+  setTiltState('offer')
+
+  // iOS gates deviceorientation behind a per-gesture permission call; elsewhere it
+  // just flows. Either way we start from a real tap, which satisfies iOS.
+  const requestOrient = (): Promise<boolean> => {
+    const reqPerm = (
+      DeviceOrientationEvent as unknown as {
+        requestPermission?: () => Promise<'granted' | 'denied'>
+      }
+    ).requestPermission
+    if (typeof reqPerm !== 'function') return Promise.resolve(true)
+    return reqPerm()
+      .then((r) => r === 'granted')
+      .catch(() => false)
+  }
+
+  tiltBtn.addEventListener('click', async () => {
+    if (!(await requestOrient())) return setTiltState('denied')
+    // Each pointer demo binds pointer-local, which writes its OWN inline
+    // --live-local-pointer-x-ratio/y-ratio the instant any pointermove fires — including the very tap
+    // that enabled this — then sits frozen, shadowing the inherited root value
+    // the tilt bridge writes. A touch device has no hovering pointer to track
+    // anyway, so detach pointer-local from those hosts (mirrors the bindings
+    // above); unbind also clears the stale props, so each element falls back to
+    // the root values tilt now drives. Combined bindings keep their other keys.
+    document
+      .querySelectorAll<HTMLElement>(
+        '#card, #card .tilt-card, #sun-stage, .eye, #clock-face, #dragboard, .hero-stage .hchip',
+      )
+      .forEach((el) => unbind(el, ['pointer-local']))
+
+    register(tiltPointer)
+    let guard = 0
+    // assign before starting so the first reading (a later task) can never slip past
+    onFirstTilt = () => {
+      clearTimeout(guard)
+      setTiltState('on')
+    }
+    const stop = propsFor(['tilt-pointer'])
+    // permission can be granted yet no sensor ever fire (desktop emulators,
+    // sensor-less hardware) — if nothing reads within 1.5s, fall back gracefully
+    guard = window.setTimeout(() => {
+      stop()
+      onFirstTilt = null
+      setTiltState('denied')
+    }, 1500)
+  })
+}
+
+// ── HUD play/pause: freeze / unfreeze the whole library ─────────────────────
+// pause() cancels the single shared frame loop, so every --live-* across the page
+// holds its last value — the HUD's own pointer x/y % stop counting — and resume()
+// picks sampling and queued writes back up. One global switch for all reactivity.
+const hud = document.querySelector<HTMLElement>('.hud')
+const loopBtn = document.getElementById('loop-toggle')
+if (hud && loopBtn) {
+  let paused = false
+  loopBtn.addEventListener('click', () => {
+    paused = !paused
+    paused ? pause() : resume()
+    hud.toggleAttribute('data-paused', paused)
+    loopBtn.setAttribute('aria-pressed', String(paused))
+    loopBtn.setAttribute('aria-label', paused ? 'Resume live updates' : 'Pause live updates')
+  })
+}
+
+// ── Reference gallery: link each source card to its docsite page. The cards use
+// CSS subgrid, so a wrapping <a> would break the grid; instead lay a stretched
+// link over each card. Core/element sources with a demo page point at it; the
+// rest (plugins without one) point at the plugins reference, by section.
+const DOC_BASE = '/docsite'
+const DEMO_PAGE: Record<string, string> = {
+  pointer: 'pointer',
+  'pointer-local': 'pointer',
+  viewport: 'size',
+  size: 'size',
+  visibility: 'visibility',
+  range: 'range',
+  select: 'select',
+  'color-input': 'color-input',
+  field: 'field',
+  'field-state': 'field-state',
+  'form-state': 'form-state',
+  'img-color': 'img-color',
+  'video-color': 'video-color',
+}
+const ELEMENT_PLUGINS = new Set(['media', 'img'])
+const docUrlFor = (key: string): string =>
+  key in DEMO_PAGE
+    ? `${DOC_BASE}/demos/${DEMO_PAGE[key]}/`
+    : `${DOC_BASE}/reference/plugins/#${ELEMENT_PLUGINS.has(key) ? 'element' : 'global'}-plugins`
+document.querySelectorAll<HTMLElement>('.src').forEach((card) => {
+  const key = card.querySelector('.src__key')?.textContent?.trim()
+  if (!key) return
+  const link = document.createElement('a')
+  link.className = 'src__link'
+  link.href = docUrlFor(key)
+  link.setAttribute('aria-label', `${key} source — read the docs`)
+  card.append(link)
 })
 
 // Everything visual above is CSS reading var(--live-*). Nothing below touches

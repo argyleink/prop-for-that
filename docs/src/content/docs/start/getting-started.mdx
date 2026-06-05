@@ -47,10 +47,10 @@ section {
 ```css
 article {
   /* size → --live-w/--live-h, visibility → --const-has-entered,
-     pointer-local → --live-px/--live-py — all on this one element */
+     pointer-local → --live-local-pointer-x-ratio/--live-local-pointer-y-ratio — all on this one element */
   aspect-ratio: var(--live-w) / var(--live-h);
   opacity: var(--const-has-entered);
-  background: radial-gradient(circle at calc(var(--live-px) * 100%) calc(var(--live-py) * 100%), white, transparent);
+  background: radial-gradient(circle at calc(var(--live-local-pointer-x-ratio) * 100%) calc(var(--live-local-pointer-y-ratio) * 100%), white, transparent);
 }
 ```
 

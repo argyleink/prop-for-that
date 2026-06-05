@@ -201,6 +201,50 @@ h2 {
 .hud-py::after {
   counter-reset: n calc(var(--live-pointer-y-ratio, 0.5) * 100);
 }
+/* play/pause control: the only interactive bit of the otherwise-decorative HUD,
+   so it alone re-enables pointer events. Toggles the shared frame loop. */
+.hud__toggle {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 1px;
+  padding: 0 0 0.4rem;
+  border: 0;
+  border-block-end: 1px solid var(--line);
+  background: none;
+  color: var(--accent-ink);
+  font: inherit;
+  font-size: inherit;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.hud__ico {
+  inline-size: 0.6rem;
+  block-size: 0.6rem;
+  fill: currentColor;
+}
+.hud__ico--play {
+  display: none;
+}
+.hud__label::after {
+  content: 'live';
+}
+/* paused: show the play glyph, relabel, and grey the now-frozen readout */
+.hud[data-paused] .hud__ico--pause {
+  display: none;
+}
+.hud[data-paused] .hud__ico--play {
+  display: inline;
+}
+.hud[data-paused] .hud__label::after {
+  content: 'paused';
+}
+.hud[data-paused] .hud__row b {
+  color: var(--ink-faint);
+}
 @media (max-width: 40rem) {
   .hud {
     display: none;
@@ -224,15 +268,6 @@ h2 {
   text-transform: uppercase;
   color: var(--accent-ink);
   margin: 0 0 var(--space-4);
-}
-.eyebrow::before {
-  content: '';
-  display: inline-block;
-  width: 2.4rem;
-  height: 1px;
-  margin-right: 0.9rem;
-  vertical-align: middle;
-  background: currentColor;
 }
 .display {
   font-size: clamp(2.75rem, 1.8rem + 4.6vw, 6.4rem);
@@ -273,11 +308,12 @@ h2 {
   }
 }
 .masthead__sub {
-  font-size: var(--step-2);
+  font-size: var(--step-1);
   font-weight: 300;
   letter-spacing: -0.02em;
   color: var(--ink-soft);
   margin: var(--space-3) 0 var(--space-4);
+  line-height: 1.1;
   text-wrap: balance;
 }
 .masthead__sub em {
@@ -559,12 +595,12 @@ kbd {
   min-block-size: 4.7rem;
 }
 /* per-panel border shine: pointer-local is bound to every chip, so each carries
-   its own --live-px / --live-py (0–1 within the panel) + --live-pointer-inside. A
+   its own --live-local-pointer-x-ratio / --live-local-pointer-y-ratio (0–1 within the panel) + --live-local-pointer-inside. A
    conic gradient rotated to the pointer's angle around the panel centre lights the
    rim nearest the cursor as it circles the edge; the padding-box mask trick leaves
    only the 1px border lit. Brightness scales with --edge (0 at centre → 1 at any
    edge, the Chebyshev distance to the nearest side) and is gated by
-   --live-pointer-inside, so the shine is invisible until the pointer enters and
+   --live-local-pointer-inside, so the shine is invisible until the pointer enters and
    peaks as it nears the rim. */
 .hchip::before {
   content: '';
@@ -573,10 +609,10 @@ kbd {
   z-index: 2;
   border-radius: inherit;
   padding: 1px;
-  --edge-ang: atan2(calc(var(--live-py, 0.5) - 0.5), calc(var(--live-px, 0.5) - 0.5));
+  --edge-ang: atan2(calc(var(--live-local-pointer-y-ratio, 0.5) - 0.5), calc(var(--live-local-pointer-x-ratio, 0.5) - 0.5));
   --edge: clamp(
     0,
-    calc(max(abs(var(--live-px, 0.5) - 0.5), abs(var(--live-py, 0.5) - 0.5)) * 2),
+    calc(max(abs(var(--live-local-pointer-x-ratio, 0.5) - 0.5), abs(var(--live-local-pointer-y-ratio, 0.5) - 0.5)) * 2),
     1
   );
   background: conic-gradient(
@@ -591,7 +627,7 @@ kbd {
     linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
-  opacity: calc(var(--live-pointer-inside, 0) * (0.12 + var(--edge) * 0.8));
+  opacity: calc(var(--live-local-pointer-inside, 0) * (0.12 + var(--edge) * 0.8));
   transition: opacity 200ms var(--ease-out);
   pointer-events: none;
 }
@@ -844,8 +880,55 @@ main {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
   align-items: start;
 }
+/* sticky-aside scrollytelling: the rail (the idea + the CSS) pins on the left
+   while the reveal steps scroll past on the right, each latching as it enters. */
 #scroll .demo-body {
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+  gap: var(--gutter) clamp(2rem, 6vw, 5rem);
+}
+.scrolly {
+  position: sticky;
+  top: clamp(var(--space-4), 14vh, 8rem);
+  align-self: start;
+  display: grid;
+  gap: var(--space-4);
+}
+.scrolly__hint {
+  display: flex;
+  align-items: center;
+  gap: 0.6ch;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+}
+.scrolly__hint span {
+  font-size: 1.1em;
+  animation: scrolly-bob 1.8s var(--ease-out) infinite;
+}
+@keyframes scrolly-bob {
+  0%,
+  100% {
+    translate: 0 -0.15rem;
+  }
+  50% {
+    translate: 0 0.3rem;
+  }
+}
+@media (max-width: 52rem) {
+  #scroll .demo-body {
+    grid-template-columns: 1fr;
+  }
+  .scrolly {
+    position: static;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scrolly__hint span {
+    animation: none;
+  }
 }
 
 /* ─────────────────────────────── stages ─────────────────────────────── */
@@ -911,13 +994,13 @@ main {
 
 /* ═══════════════════════ 1. POINTER-REACTIVE CARD ═════════════════════════
    pointer-local is bound to BOTH the FRAME (#card) and the card (.tilt-card).
-   The frame's --live-px / --live-py drive the behind-card halo + border shine;
-   the card's OWN --live-px / --live-py drive its glow / glare / texture, so the
+   The frame's --live-local-pointer-x-ratio / --live-local-pointer-y-ratio drive the behind-card halo + border shine;
+   the card's OWN --live-local-pointer-x-ratio / --live-local-pointer-y-ratio drive its glow / glare / texture, so the
    highlight tracks the cursor exactly over the card (no frame-vs-card offset). */
 .stage--pointer {
-  --px: var(--live-px, 0.5);
-  --py: var(--live-py, 0.5);
-  --act: var(--live-pointer-inside, 0);
+  --px: var(--live-local-pointer-x-ratio, 0.5);
+  --py: var(--live-local-pointer-y-ratio, 0.5);
+  --act: var(--live-local-pointer-inside, 0);
   position: relative;
   min-height: 21rem;
   padding: clamp(var(--space-3), 5vw, 3.25rem);
@@ -963,9 +1046,9 @@ main {
      texture read the card's OWN --px / --py / --act — the highlight tracks the
      cursor exactly over the card instead of the larger frame. (The frame keeps
      its own binding for the behind-card halo + border shine.) */
-  --px: var(--live-px, 0.5);
-  --py: var(--live-py, 0.5);
-  --act: var(--live-pointer-inside, 0);
+  --px: var(--live-local-pointer-x-ratio, 0.5);
+  --py: var(--live-local-pointer-y-ratio, 0.5);
+  --act: var(--live-local-pointer-inside, 0);
   /* The parallax tilt follows the GLOBAL pointer (root --live-pointer-*-ratio,
      0–1 across the viewport), so the card leans toward the cursor anywhere on the
      page — ambient, not gated to the frame. */
@@ -1114,7 +1197,7 @@ main {
 .reveals {
   position: relative;
   display: grid;
-  gap: var(--space-4);
+  gap: var(--space-3);
 }
 /* the rail: a faint vertical track the index coins sit on */
 .reveals::before {
@@ -1135,6 +1218,11 @@ main {
   grid-template-columns: 2.7rem 1fr;
   gap: var(--space-3);
   align-items: start;
+  /* each step is a tall, airy band with its content centred — the scroll runway
+     between steps is what lands the reveals one at a time as the rail pins beside
+     them. Kept under 100vh so --live-visible can still reach 1 in full view. */
+  min-block-size: 38vh;
+  align-content: center;
   /* develop into focus: lift + unblur + fade. Driven by the LATCH, so it plays
      once on first entry and never reverses when you scroll back up. */
   opacity: calc(0.14 + var(--seen) * 0.86);
@@ -1187,7 +1275,7 @@ main {
   bottom: 100%;
   translate: -50% 0;
   inline-size: 2px;
-  block-size: calc(var(--space-4) + 0.25rem);
+  block-size: clamp(var(--space-5), 40vh, 22rem);
   background: color-mix(in oklab, var(--accent) calc(var(--seen) * 100%), transparent);
   transition: background 550ms var(--ease-out);
 }
@@ -1220,9 +1308,9 @@ main {
     box-shadow 320ms var(--ease-out);
 }
 .reveal__t {
-  font-size: var(--step-1);
+  font-size: var(--step-0);
   font-weight: 400;
-  line-height: 1.4;
+  line-height: 1.5;
   margin: 0;
   text-wrap: balance;
 }
@@ -2019,7 +2107,7 @@ main {
 }
 
 /* ══════════════════════════════ 6. CSS TRIG (EYES) ════════════════════════
-   Each eye is bound to pointer-local, so --live-px / --live-py are relative to
+   Each eye is bound to pointer-local, so --live-local-pointer-x-ratio / --live-local-pointer-y-ratio are relative to
    THAT eye. atan2(py - .5, px - .5) is the heading from the eye's centre to the
    cursor; cos()/sin() drop the pupil onto a circle along that heading. */
 .stage--trig {
@@ -2034,7 +2122,7 @@ main {
   gap: clamp(var(--space-2), 3vw, var(--space-4));
 }
 .eye {
-  --a: atan2(calc(var(--live-py, 0.5) - 0.5), calc(var(--live-px, 0.5) - 0.5));
+  --a: atan2(calc(var(--live-local-pointer-y-ratio, 0.5) - 0.5), calc(var(--live-local-pointer-x-ratio, 0.5) - 0.5));
   position: relative;
   display: grid;
   place-items: center;
@@ -2092,15 +2180,15 @@ main {
   initial-value: 0.5;
 }
 .clock__face {
-  /* pointer-local is bound to this face, so --live-px/py are the cursor's spot
+  /* pointer-local is bound to this face, so --live-local-pointer-x-ratio/y-ratio are the cursor's spot
      INSIDE the watch. The glow is pulled ~82% of the way toward it while the
-     pointer is in (--live-pointer-inside), and eases back to centre on leave —
+     pointer is in (--live-local-pointer-inside), and eases back to centre on leave —
      so the mouse feels like it's tugging the gradient around inside the dial. */
   --magnet-x: calc(
-    0.5 + (var(--live-px, 0.5) - 0.5) * 0.82 * var(--live-pointer-inside, 0)
+    0.5 + (var(--live-local-pointer-x-ratio, 0.5) - 0.5) * 0.82 * var(--live-local-pointer-inside, 0)
   );
   --magnet-y: calc(
-    0.5 + (var(--live-py, 0.5) - 0.5) * 0.82 * var(--live-pointer-inside, 0)
+    0.5 + (var(--live-local-pointer-y-ratio, 0.5) - 0.5) * 0.82 * var(--live-local-pointer-inside, 0)
   );
   position: relative;
   inline-size: clamp(8rem, 30vw, 11rem);
@@ -2701,7 +2789,7 @@ main {
 
 /* ════════════════════════════════ 13. DRAG ════════════════════════════════
    No drag handler: :active gates the motion; while a token is held, its
-   translate is computed from --live-px/--live-py (pointer-local) and
+   translate is computed from --live-local-pointer-x-ratio/--live-local-pointer-y-ratio (pointer-local) and
    --live-w/--live-h (size), both bound to the board. Release → the :active rule
    drops → it springs home. */
 /* no outer stage card here — the dragboard IS the demo container and spans the
@@ -2755,8 +2843,8 @@ main {
    keeps the token centred on the cursor. transition:none → it tracks instantly. */
 .drag-token:active {
   translate:
-    calc(-50% + (var(--live-px, 0.5) - var(--hx)) * var(--live-w, 0) * 1px)
-    calc(-50% + (var(--live-py, 0.5) - var(--hy)) * var(--live-h, 0) * 1px);
+    calc(-50% + (var(--live-local-pointer-x-ratio, 0.5) - var(--hx)) * var(--live-w, 0) * 1px)
+    calc(-50% + (var(--live-local-pointer-y-ratio, 0.5) - var(--hy)) * var(--live-h, 0) * 1px);
   transition: none;
   cursor: grabbing;
   scale: 1.08;
@@ -3066,7 +3154,7 @@ main {
 
 /* ════════════════════════════ 15. IMG COLOR ══════════════════════════════
    img-color writes the <img>'s dominant colour (a hex) into --live-img on the card;
-   pointer-local writes --live-px/py on the stage. CSS casts a drop shadow in the
+   pointer-local writes --live-local-pointer-x-ratio/y-ratio on the stage. CSS casts a drop shadow in the
    image's colour AWAY from the cursor (offset clamped, growing with distance), so
    the cursor reads as the sun. The stage clips that shadow inside its own box. */
 .stage--sun {
@@ -3080,8 +3168,8 @@ main {
 .sun-card {
   /* cursor offset from the stage centre, clamped to ±0.5 so a far cursor doesn't
      fling the shadow off; the offset grows with distance → longer shadow at edges */
-  --dx: clamp(-0.5, calc(var(--live-px, 0.5) - 0.5), 0.5);
-  --dy: clamp(-0.5, calc(var(--live-py, 0.5) - 0.5), 0.5);
+  --dx: clamp(-0.5, calc(var(--live-local-pointer-x-ratio, 0.5) - 0.5), 0.5);
+  --dy: clamp(-0.5, calc(var(--live-local-pointer-y-ratio, 0.5) - 0.5), 0.5);
   --reach: 7rem;
   position: relative;
   inline-size: min(19rem, 70vw);
@@ -3266,6 +3354,7 @@ main {
   grid-auto-rows: auto;
 }
 .src {
+  position: relative; /* containing block for the stretched docs link */
   grid-row: span 3;
   display: grid;
   grid-template-rows: subgrid;
@@ -3279,12 +3368,27 @@ main {
     border-color 200ms var(--ease-out),
     box-shadow 200ms var(--ease-out);
 }
-.src:hover {
+.src:hover,
+.src:has(.src__link:focus-visible) {
   border-color: color-mix(in oklab, var(--accent) 40%, var(--line));
   box-shadow: 0 14px 30px -24px color-mix(in oklab, var(--accent) 55%, transparent);
 }
-.src:hover .src__key {
+.src:hover .src__key,
+.src:has(.src__link:focus-visible) .src__key {
   color: var(--accent);
+}
+/* whole-card link to the docsite (added in main.ts). A subgrid item can't be
+   wrapped in an <a> without breaking the grid, so this overlay stretches over it. */
+.src__link {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  border-radius: inherit;
+}
+.src__link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -3px;
+  border-radius: inherit;
 }
 /* each card develops in as it scrolls into view — a cascade down the grid */
 @keyframes src-enter {
@@ -3523,5 +3627,91 @@ main {
   }
   .hchip__shear i {
     transition: none;
+  }
+}
+
+/* ═══════════════ Touch fallback: device-tilt drives the pointer ════════════
+   A no-hover device can't move the pointer the demos follow. main.ts offers to
+   drive those vars from the phone's motion via a button INSIDE demo 01, and
+   flags page state with :root[data-tilt] = offer | on | denied. Two jobs here:
+   (1) swap every "move your pointer" prompt to "tilt your device" once it's on,
+   (2) style the in-card enable button + its blocked note. All inert on a mouse
+   (no data-tilt is ever set). */
+
+/* prompt copy swap — the pointer wording shows until tilt is live, then the
+   device wording takes its place. display:contents so each variant's inline
+   <br/> flows in its parent exactly as the original text did. */
+.when-pointer {
+  display: contents;
+}
+.when-tilt {
+  display: none;
+}
+:root[data-tilt='on'] .when-pointer {
+  display: none;
+}
+:root[data-tilt='on'] .when-tilt {
+  display: contents;
+}
+
+/* the enable button, sitting in the card where the effect is — shown only while
+   offering (and again after a denial, for a retry), gone once tilt is on. */
+.tilt-enable {
+  display: none;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: var(--space-2);
+  padding: 0.5rem 0.9rem;
+  border: 1px solid color-mix(in oklab, white 55%, transparent);
+  border-radius: 999px;
+  background: color-mix(in oklab, white 22%, transparent);
+  color: white;
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  transition: scale 160ms var(--ease-out);
+}
+:root[data-tilt='offer'] .tilt-enable {
+  display: inline-flex;
+}
+.tilt-enable:active {
+  scale: 0.96;
+}
+.tilt-enable__icon {
+  width: 1.05rem;
+  height: 1.05rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  animation: tilt-wobble 2.8s var(--ease-out) infinite;
+}
+.tilt-card__note {
+  display: none;
+  margin: var(--space-2) 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  color: oklch(88% 0.04 var(--accent-h));
+}
+:root[data-tilt='denied'] .tilt-card__note {
+  display: block;
+}
+@keyframes tilt-wobble {
+  0%,
+  100% {
+    rotate: -12deg;
+  }
+  50% {
+    rotate: 12deg;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tilt-enable__icon {
+    animation: none;
   }
 }

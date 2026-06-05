@@ -8,6 +8,19 @@ backwards-compatible change (semver's `1.0.0`+ rules kick in at v1).
 Only the published library (`dist/`) is versioned here; the demo and docs site
 are repo-only and not part of the npm package.
 
+## [0.6.0]
+
+### Changed
+- **`pointer-local` plugin — renamed its emitted properties (breaking).**
+  `--live-px` → `--live-local-pointer-x-ratio`, `--live-py` →
+  `--live-local-pointer-y-ratio`, `--live-pointer-inside` →
+  `--live-local-pointer-inside`. The element-scoped pointer now shares the
+  `pointer` namespace with a `local-` qualifier, so the two are distinguishable
+  at a glance, and the `-ratio` suffix keeps units honest against the viewport
+  `pointer` source (`--live-pointer-x` is pixels; `*-ratio` is 0–1). The global
+  `pointer` source's properties are unchanged. Update any CSS reading the old
+  names.
+
 ## [0.5.2]
 
 ### Added

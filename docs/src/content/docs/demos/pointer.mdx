@@ -33,8 +33,8 @@ The `pointer` source writes the cursor's position to `:root`: `--live-pointer-x`
 
 The global source answers "where is the pointer in the _viewport_?" The
 `pointer-local` plugin answers "where is it _within this element_?" It writes
-`--live-px` / `--live-py` (0–1 across the bound element's box) and
-`--live-pointer-inside` (`1` while the pointer is over it) to that element only,
+`--live-local-pointer-x-ratio` / `--live-local-pointer-y-ratio` (0–1 across the bound element's box) and
+`--live-local-pointer-inside` (`1` while the pointer is over it) to that element only,
 so its descendants inherit them and nothing outside does.
 
 <PointerLocalDemo />
@@ -56,8 +56,8 @@ It's a plugin, so register it once **before the DOM is scanned** (auto registers
 .box {
   /* spotlight tracks the pointer within the box, lit only while it's inside */
   background: radial-gradient(
-    7rem 7rem at calc(var(--live-px) * 100%) calc(var(--live-py) * 100%),
-    color-mix(in oklab, var(--accent) calc(var(--live-pointer-inside) * 50%), transparent),
+    7rem 7rem at calc(var(--live-local-pointer-x-ratio) * 100%) calc(var(--live-local-pointer-y-ratio) * 100%),
+    color-mix(in oklab, var(--accent) calc(var(--live-local-pointer-inside) * 50%), transparent),
     transparent 70%
   );
 }

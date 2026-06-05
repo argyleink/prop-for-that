@@ -16,9 +16,17 @@
   <body>
     <!-- Fixed spec readout. Every number here is a CSS counter seeded from a
          --live-* value. JS writes nothing into this DOM. -->
-    <aside class="hud" aria-hidden="true">
-      <p class="hud__row"><span>pointer.x</span><b class="hud-px"></b></p>
-      <p class="hud__row"><span>pointer.y</span><b class="hud-py"></b></p>
+    <aside class="hud">
+      <!-- play/pause the whole library: toggles prop-for-that's shared frame loop
+           via pause()/resume() in main.ts. Paused, every --live-* below holds —
+           including the pointer x/y % in this very readout. -->
+      <button class="hud__toggle" type="button" id="loop-toggle" aria-pressed="false" aria-label="Pause live updates">
+        <svg class="hud__ico hud__ico--pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2.2" y="1.4" width="2.7" height="9.2" rx="0.6"/><rect x="7.1" y="1.4" width="2.7" height="9.2" rx="0.6"/></svg>
+        <svg class="hud__ico hud__ico--play" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.6 1.6 11 6 2.6 10.4Z"/></svg>
+        <span class="hud__label" aria-hidden="true"></span>
+      </button>
+      <p class="hud__row" aria-hidden="true"><span>pointer.x</span><b class="hud-px"></b></p>
+      <p class="hud__row" aria-hidden="true"><span>pointer.y</span><b class="hud-py"></b></p>
     </aside>
 
     <header class="masthead">
@@ -33,14 +41,14 @@
       </div>
 
       <div class="masthead__intro">
-        <p class="eyebrow">prop&#8202;-&#8202;for&#8202;-&#8202;that</p>
+        <p class="eyebrow">prop-for-that</p>
         <h1 class="display">
           <span class="display__line">What&nbsp;JS knows,</span>
           <span class="display__line display__accent">now&nbsp;CSS knows.</span>
         </h1>
         <p class="masthead__sub">
-          Expose runtime state to CSS.
-          <em>Now there&rsquo;s a Prop For That.</em>
+          Runtime state for CSS.<br>
+          <em>Now there's a <u>Prop For That</u>.</em>
         </p>
         <p class="masthead__cta">
           <a class="btn-gh" href="https://github.com/argyleink/prop-for-that">
@@ -51,11 +59,6 @@
             <svg class="btn-doc__mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>
             Read the docs
           </a>
-        </p>
-        <p class="hint" role="note">
-          <span class="hint__dot" aria-hidden="true"></span>
-          every panel below is live &middot; move your pointer, resize, press
-          <kbd>T</kbd>
         </p>
       </div>
 
@@ -107,7 +110,6 @@
         </article>
       </div>
 
-      <p class="scroll-hint" aria-hidden="true">scroll</p>
     </header>
 
     <main>
@@ -116,12 +118,10 @@
         <p class="watermark" aria-hidden="true">00</p>
         <div class="demo-head">
           <p class="index">00 / auto</p>
-          <h2>Zero config: just an attribute</h2>
+          <h2>Quick start: just an attribute</h2>
           <p class="desc">
             <code>import 'prop-for-that/auto'</code> once, then tag any element
-            with <code>data-props-for</code> &mdash; no <code>propsFor</code> call. The
-            box below is bound by its attribute alone; drag its corner and CSS
-            counts the size. Add or remove the attribute live and it keeps up.
+            with <code>data-props-for</code> and list the props you want.
           </p>
         </div>
 
@@ -156,13 +156,10 @@
         <p class="watermark" aria-hidden="true">01</p>
         <div class="demo-head">
           <p class="index">01 / pointer</p>
-          <h2>A panel that tracks your pointer</h2>
+          <h2>Track the pointer</h2>
           <p class="desc">
-            Bind <code>pointer-local</code> to the card and it gets its own
-            <code>--live-px</code>&thinsp;/&thinsp;<code>--live-py</code>
-            (0&ndash;1 across itself). The glow, the 3D tilt, the glare and a
-            masked texture all read them, then rest when you leave. (The
-            viewport-wide version is the backdrop behind this whole page.)
+            Bind <code>pointer-local</code> to an element and it gets its own
+            <code>--live-local-pointer-x-ratio</code>&thinsp;/&thinsp;<code>--live-local-pointer-y-ratio</code> props.
           </p>
         </div>
 
@@ -173,8 +170,17 @@
               <div class="tilt-card__glare" aria-hidden="true"></div>
               <div class="tilt-card__content">
                 <p class="tilt-card__kicker">local</p>
-                <p class="tilt-card__title">move&nbsp;your<br />pointer</p>
+                <p class="tilt-card__title"><span class="when-pointer">move&nbsp;your<br />pointer</span><span class="when-tilt">tilt&nbsp;your<br />device</span></p>
                 <p class="tilt-card__sub">the panel follows, then rests</p>
+                <!-- Touch fallback lives right where the effect does: no pointer to
+                     follow here, so offer to drive it from the phone's motion. main.ts
+                     reveals this button (and swaps every "move your pointer" prompt to
+                     "tilt your device") by setting :root[data-tilt]. Hidden on a mouse. -->
+                <button class="tilt-enable" type="button" id="tilt-enable">
+                  <svg class="tilt-enable__icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M10.5 18.5h3"/></svg>
+                  Enable tilt
+                </button>
+                <p class="tilt-card__note" role="status">Motion blocked &middot; needs a mouse here</p>
               </div>
             </article>
           </div>
@@ -184,8 +190,8 @@
             <pre><code>&lt;<span class="tok-key">div</span> <span class="tok-prop">id</span>=<span class="tok-str">"card"</span> <span class="tok-prop">data-props-for</span>=<span class="tok-str">"pointer-local"</span>&gt;<span class="tok-com">&hellip;</span>&lt;/<span class="tok-key">div</span>&gt;</code></pre>
             <figcaption>CSS</figcaption>
             <pre><code><span class="tok-sel">.tilt-card</span> {
-  <span class="tok-prop">--rx</span>: <span class="tok-fn">calc</span>((<span class="tok-num">.5</span> - <span class="tok-var">var(--live-py)</span>) * <span class="tok-num">16deg</span>);
-  <span class="tok-prop">--ry</span>: <span class="tok-fn">calc</span>((<span class="tok-var">var(--live-px)</span> - <span class="tok-num">.5</span>) * <span class="tok-num">16deg</span>);
+  <span class="tok-prop">--rx</span>: <span class="tok-fn">calc</span>((<span class="tok-num">.5</span> - <span class="tok-var">var(--live-local-pointer-y-ratio)</span>) * <span class="tok-num">16deg</span>);
+  <span class="tok-prop">--ry</span>: <span class="tok-fn">calc</span>((<span class="tok-var">var(--live-local-pointer-x-ratio)</span> - <span class="tok-num">.5</span>) * <span class="tok-num">16deg</span>);
   <span class="tok-prop">transform</span>: <span class="tok-fn">rotateX</span>(<span class="tok-var">var(--rx)</span>) <span class="tok-fn">rotateY</span>(<span class="tok-var">var(--ry)</span>);
 }</code></pre>
           </figure>
@@ -206,41 +212,39 @@
         </div>
 
         <div class="demo-body">
+          <!-- left rail pins while the steps scroll past it on the right: the idea
+               and the CSS are stated ONCE here, so each step stays minimal. -->
+          <aside class="scrolly">
+            <figure class="caption">
+              <figcaption>HTML</figcaption>
+              <pre><code>&lt;<span class="tok-key">article</span> <span class="tok-prop">class</span>=<span class="tok-str">"reveal"</span> <span class="tok-prop">data-props-for</span>=<span class="tok-str">"visibility"</span>&gt;<span class="tok-com">&hellip;</span>&lt;/<span class="tok-key">article</span>&gt;</code></pre>
+              <figcaption>CSS</figcaption>
+              <pre><code><span class="tok-sel">.reveal</span> {
+  <span class="tok-prop">opacity</span>: <span class="tok-fn">calc</span>(<span class="tok-num">.25</span> + <span class="tok-var">var(--const-has-entered)</span> * <span class="tok-num">.75</span>);
+  <span class="tok-prop">translate</span>: <span class="tok-num">0</span> <span class="tok-fn">calc</span>((<span class="tok-num">1</span> - <span class="tok-var">var(--const-has-entered)</span>) * <span class="tok-num">1.5rem</span>);
+  <span class="tok-prop">transition</span>: <span class="tok-num">.5s</span>;
+}</code></pre>
+            </figure>
+            <p class="scrolly__hint" aria-hidden="true">scroll the steps <span>&darr;</span></p>
+          </aside>
+
           <div class="reveals">
             <article class="reveal" data-reveal>
               <div class="reveal__node" aria-hidden="true">i</div>
               <div class="reveal__body">
-                <p class="reveal__t">
-                  One attribute wires every panel:
-                  <code>data-props-for="visibility"</code>.
-                </p>
-                <p class="reveal__state">
-                  <span class="reveal__live">in view</span>
-                  <span class="reveal__seen">entered</span>
-                </p>
+                <p class="reveal__t">Each step develops in as it enters &mdash; lift, unblur, fade &mdash; then holds.</p>
               </div>
             </article>
             <article class="reveal reveal--toggle" data-reveal>
               <div class="reveal__node" aria-hidden="true">ii</div>
               <div class="reveal__body">
-                <p class="reveal__t">
-                  <code>--live-visible</code> flips to 1&#8202;/&#8202;0 only while
-                  this panel is fully in view &mdash; watch this card light while
-                  it&rsquo;s wholly on screen.
-                </p>
-                <p class="reveal__state">
-                  <span class="reveal__live">in view</span>
-                  <span class="reveal__seen">entered</span>
-                </p>
+                <p class="reveal__t"><code>--live-visible</code> lights this card only while it&rsquo;s wholly on screen.</p>
               </div>
             </article>
             <article class="reveal" data-reveal>
               <div class="reveal__node" aria-hidden="true">iii</div>
               <div class="reveal__body">
-                <p class="reveal__t">
-                  <code>--const-has-entered</code> latches once the panel is fully
-                  in view and never resets.
-                </p>
+                <p class="reveal__t">One element, two signals &mdash; live toggles, entered latches.</p>
                 <p class="reveal__state">
                   <span class="reveal__live">in view</span>
                   <span class="reveal__seen">entered</span>
@@ -250,28 +254,10 @@
             <article class="reveal" data-reveal>
               <div class="reveal__node" aria-hidden="true">iv</div>
               <div class="reveal__body">
-                <p class="reveal__t">
-                  Watch the pills: scroll a panel away and <em>in&nbsp;view</em>
-                  goes dark, yet <em>entered</em> stays lit.
-                </p>
-                <p class="reveal__state">
-                  <span class="reveal__live">in view</span>
-                  <span class="reveal__seen">entered</span>
-                </p>
+                <p class="reveal__t">Scroll back up: <em>in&nbsp;view</em> dims, <em>entered</em> stays. No reset.</p>
               </div>
             </article>
           </div>
-
-          <figure class="caption">
-            <figcaption>HTML</figcaption>
-            <pre><code>&lt;<span class="tok-key">article</span> <span class="tok-prop">class</span>=<span class="tok-str">"reveal"</span> <span class="tok-prop">data-props-for</span>=<span class="tok-str">"visibility"</span>&gt;<span class="tok-com">&hellip;</span>&lt;/<span class="tok-key">article</span>&gt;</code></pre>
-            <figcaption>CSS</figcaption>
-            <pre><code><span class="tok-sel">.reveal</span> {
-  <span class="tok-prop">opacity</span>: <span class="tok-fn">calc</span>(<span class="tok-num">.25</span> + <span class="tok-var">var(--const-has-entered)</span> * <span class="tok-num">.75</span>);
-  <span class="tok-prop">translate</span>: <span class="tok-num">0</span> <span class="tok-fn">calc</span>((<span class="tok-num">1</span> - <span class="tok-var">var(--const-has-entered)</span>) * <span class="tok-num">1.5rem</span>);
-  <span class="tok-prop">transition</span>: <span class="tok-num">.5s</span>;
-}</code></pre>
-          </figure>
         </div>
       </section>
 
@@ -495,8 +481,8 @@
             <figcaption>CSS</figcaption>
             <pre><code><span class="tok-sel">.eye</span> {
   <span class="tok-prop">--a</span>: <span class="tok-fn">atan2</span>(
-    <span class="tok-fn">calc</span>(<span class="tok-var">var(--live-py)</span> - <span class="tok-num">.5</span>),
-    <span class="tok-fn">calc</span>(<span class="tok-var">var(--live-px)</span> - <span class="tok-num">.5</span>));
+    <span class="tok-fn">calc</span>(<span class="tok-var">var(--live-local-pointer-y-ratio)</span> - <span class="tok-num">.5</span>),
+    <span class="tok-fn">calc</span>(<span class="tok-var">var(--live-local-pointer-x-ratio)</span> - <span class="tok-num">.5</span>));
 }
 <span class="tok-sel">.eye__pupil</span> {
   <span class="tok-prop">translate</span>:
@@ -799,7 +785,7 @@
           <p class="desc">
             <code>:active</code> is the interaction gate; while you hold a token
             its <code>translate</code> is computed straight from
-            <code>--live-px</code>&thinsp;/&thinsp;<code>--live-py</code> and the
+            <code>--live-local-pointer-x-ratio</code>&thinsp;/&thinsp;<code>--live-local-pointer-y-ratio</code> and the
             board&rsquo;s size. Let go and it springs home &mdash; JS never does
             a drag calculation.
           </p>
@@ -820,8 +806,8 @@
             <figcaption>CSS</figcaption>
             <pre><code><span class="tok-sel">.drag-token:active</span> {
   <span class="tok-prop">translate</span>:
-    <span class="tok-fn">calc</span>((<span class="tok-var">var(--live-px)</span> - <span class="tok-var">var(--hx)</span>) * <span class="tok-var">var(--live-w)</span> * <span class="tok-num">1px</span>)
-    <span class="tok-fn">calc</span>((<span class="tok-var">var(--live-py)</span> - <span class="tok-var">var(--hy)</span>) * <span class="tok-var">var(--live-h)</span> * <span class="tok-num">1px</span>);
+    <span class="tok-fn">calc</span>((<span class="tok-var">var(--live-local-pointer-x-ratio)</span> - <span class="tok-var">var(--hx)</span>) * <span class="tok-var">var(--live-w)</span> * <span class="tok-num">1px</span>)
+    <span class="tok-fn">calc</span>((<span class="tok-var">var(--live-local-pointer-y-ratio)</span> - <span class="tok-var">var(--hy)</span>) * <span class="tok-var">var(--live-h)</span> * <span class="tok-num">1px</span>);
   <span class="tok-prop">transition</span>: <span class="tok-key">none</span>; <span class="tok-com">/* follow while held */</span>
 }</code></pre>
           </figure>
@@ -993,8 +979,8 @@
             <figcaption>CSS</figcaption>
             <pre><code><span class="tok-sel">.sun-card</span> { <span class="tok-com">/* shadow: image colour, cast off the cursor */</span>
   <span class="tok-prop">box-shadow</span>:
-    <span class="tok-fn">calc</span>((<span class="tok-num">.5</span> - <span class="tok-var">var(--live-px)</span>) * <span class="tok-num">8rem</span>)
-    <span class="tok-fn">calc</span>((<span class="tok-num">.5</span> - <span class="tok-var">var(--live-py)</span>) * <span class="tok-num">8rem</span>) <span class="tok-num">3rem</span>
+    <span class="tok-fn">calc</span>((<span class="tok-num">.5</span> - <span class="tok-var">var(--live-local-pointer-x-ratio)</span>) * <span class="tok-num">8rem</span>)
+    <span class="tok-fn">calc</span>((<span class="tok-num">.5</span> - <span class="tok-var">var(--live-local-pointer-y-ratio)</span>) * <span class="tok-num">8rem</span>) <span class="tok-num">3rem</span>
     <span class="tok-fn">oklch</span>(<span class="tok-key">from</span> <span class="tok-var">var(--live-img)</span> <span class="tok-key">l c h</span> / <span class="tok-num">.6</span>);
 }</code></pre>
           </figure>
@@ -1057,7 +1043,6 @@
 
       <!-- ───────────────────────── ★. SOURCE GALLERY ───────────────────────── -->
       <section class="demo gallery" id="gallery">
-        <p class="watermark" aria-hidden="true">&starf;</p>
         <div class="demo-head">
           <p class="index">ref / sources</p>
           <h2>Every source, at a glance</h2>
@@ -1185,9 +1170,9 @@
           <article class="src">
             <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 8.5l4 8 1.3-3.3 3.2-1.2z"/></svg></span><code class="src__key">pointer-local</code><span class="src__scope src__scope--el">element</span></header>
             <dl class="src__vars">
-              <div class="src__var src__var--scoped"><dt>--live-px</dt><dd></dd></div>
-              <div class="src__var src__var--scoped"><dt>--live-py</dt><dd></dd></div>
-              <div class="src__var src__var--scoped"><dt>--live-pointer-inside</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-local-pointer-x-ratio</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-local-pointer-y-ratio</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--live-local-pointer-inside</dt><dd></dd></div>
             </dl>
             <p class="src__desc">Cursor position within the element.</p>
           </article>

@@ -121,7 +121,7 @@ Import name is camelCase; the key for `propsFor`/`data-props-for` is the dashed 
 | `motion` | `motion` | global | `--live-accel-x`, `--live-accel-y`, `--live-accel-z` (m/s²) |
 | `geo` | `geo` | global | `--live-geo-lat`, `--live-geo-lng`, `--live-geo-accuracy` (m) |
 | `cpuPressure` | `cpu-pressure` | global | `--live-cpu-pressure` (Compute Pressure tier: nominal=0, fair=1, serious=2, critical=3) |
-| `pointerLocal` | `pointer-local` | element | `--live-px`, `--live-py` (0–1 within the element), `--live-pointer-inside` (1/0) |
+| `pointerLocal` | `pointer-local` | element | `--live-local-pointer-x-ratio`, `--live-local-pointer-y-ratio` (0–1 within the element), `--live-local-pointer-inside` (1/0) |
 | `media` | `media` | element | `--live-current-time`, `--live-duration`, `--live-progress` (0–1), `--live-paused` (1/0), `--live-volume` (0–1) |
 | `field` | `field` | element | `--live-length`, `--live-empty` (1/0), `--live-valid` (1/0); per-reason validity flags (each 1/0) `--live-value-missing`, `--live-type-mismatch`, `--live-pattern-mismatch`, `--live-too-long`, `--live-too-short`, `--live-range-underflow`, `--live-range-overflow`, `--live-step-mismatch`, `--live-bad-input`, `--live-custom-error`; and with `maxlength`: `--live-remaining`, `--live-fill-pct` (0–1) |
 | `select` | `select` | element | `--live-index` (selectedIndex, -1 if none), `--live-option-count`, `--live-index-pct` (0–1), `--live-value-num` (numeric value only), `--live-selected-count`, `--live-selected-pct` (0–1, counts a `<select multiple>` CSS can't tally). Bind the `<select>` or a container. |
@@ -193,5 +193,8 @@ Discrete reaction with a style query:
 
 ## Links
 
-- Considered/deferred sources and voting: docs `Under consideration` page
-- Repository: https://github.com/argyleink/prop-for-that
+- [Documentation](https://prop-for-that.netlify.app/docsite/): full guides, concepts, and API.
+- [Plugin & source reference](https://prop-for-that.netlify.app/docsite/reference/plugins/): every source, key, and property.
+- [Live demos](https://prop-for-that.netlify.app/): interactive examples of each source.
+- [Under consideration](https://prop-for-that.netlify.app/docsite/considered/): deferred/proposed sources and voting.
+- [Repository](https://github.com/argyleink/prop-for-that): source, issues, changelog, contributing.
