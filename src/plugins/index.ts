@@ -3,6 +3,9 @@ import { register } from '../index'
 
 import { scrollVelocity } from './scroll-velocity'
 import { online } from './online'
+import { pageFocused } from './page-focused'
+import { pageVisible } from './page-visible'
+import { navType } from './nav-type'
 import { network } from './network'
 import { battery } from './battery'
 import { clock } from './clock'
@@ -26,6 +29,9 @@ import { videoColor } from './video-color'
 export {
   scrollVelocity,
   online,
+  pageFocused,
+  pageVisible,
+  navType,
   network,
   battery,
   clock,
@@ -51,6 +57,9 @@ export {
 export const allPlugins: Source[] = [
   scrollVelocity,
   online,
+  pageFocused,
+  pageVisible,
+  navType,
   network,
   battery,
   clock,

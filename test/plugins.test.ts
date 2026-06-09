@@ -7,6 +7,9 @@ import { select } from '../src/plugins/select'
 import { colorInput } from '../src/plugins/color-input'
 import { palette, toHex } from '../src/plugins/_color'
 import { scrollVelocity } from '../src/plugins/scroll-velocity'
+import { pageFocused } from '../src/plugins/page-focused'
+import { pageVisible } from '../src/plugins/page-visible'
+import { navType } from '../src/plugins/nav-type'
 import { cpuPressure } from '../src/plugins/cpu-pressure'
 import { img } from '../src/plugins/img'
 import { videoColor } from '../src/plugins/video-color'
@@ -33,6 +36,76 @@ describe('network netTypeToNumber', () => {
     expect(netTypeToNumber('4g')).toBe(4)
     expect(netTypeToNumber('5g')).toBe(0)
     expect(netTypeToNumber(undefined)).toBe(0)
+  })
+})
+
+describe('page-focused', () => {
+  it('seeds from hasFocus, toggles on focus/blur, and stops after dispose', () => {
+    const spy = vi.spyOn(document, 'hasFocus').mockReturnValue(true)
+    const { ctx, values } = makeRecorder(document.documentElement)
+
+    const dispose = pageFocused.start(ctx)
+    expect(values['page-focused']).toBe(1) // seeded focused
+
+    spy.mockReturnValue(false)
+    window.dispatchEvent(new Event('blur'))
+    expect(values['page-focused']).toBe(0)
+
+    spy.mockReturnValue(true)
+    window.dispatchEvent(new Event('focus'))
+    expect(values['page-focused']).toBe(1)
+
+    dispose()
+    spy.mockReturnValue(false)
+    window.dispatchEvent(new Event('blur'))
+    expect(values['page-focused']).toBe(1) // listeners removed, value unchanged
+
+    spy.mockRestore()
+  })
+})
+
+describe('page-visible', () => {
+  it('seeds from visibilityState, toggles on visibilitychange, stops after dispose', () => {
+    const spy = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible')
+    const { ctx, values } = makeRecorder(document.documentElement)
+
+    const dispose = pageVisible.start(ctx)
+    expect(values['page-visible']).toBe(1) // seeded visible
+
+    spy.mockReturnValue('hidden')
+    document.dispatchEvent(new Event('visibilitychange'))
+    expect(values['page-visible']).toBe(0)
+
+    spy.mockReturnValue('visible')
+    document.dispatchEvent(new Event('visibilitychange'))
+    expect(values['page-visible']).toBe(1)
+
+    dispose()
+    spy.mockReturnValue('hidden')
+    document.dispatchEvent(new Event('visibilitychange'))
+    expect(values['page-visible']).toBe(1) // listener removed, value unchanged
+
+    spy.mockRestore()
+  })
+})
+
+describe('nav-type', () => {
+  it('writes the navigation type once, falling back to navigate', () => {
+    const spy = vi
+      .spyOn(performance, 'getEntriesByType')
+      .mockReturnValue([{ type: 'reload' }] as unknown as PerformanceEntryList)
+
+    const a = makeRecorder(document.documentElement)
+    navType.start(a.ctx)
+    expect(a.values['nav-type']).toBe('reload')
+
+    // no Navigation Timing entry → falls back to 'navigate'
+    spy.mockReturnValue([] as unknown as PerformanceEntryList)
+    const b = makeRecorder(document.documentElement)
+    navType.start(b.ctx)
+    expect(b.values['nav-type']).toBe('navigate')
+
+    spy.mockRestore()
   })
 })
 

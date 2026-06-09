@@ -44,6 +44,9 @@ Register, then attach with `propsFor([...])`; they write to `:root`.
 | --- | --- | --- |
 | `scrollVelocity` | `scroll-velocity` | `--live-scroll-velocity` (signed px/frame, decays to 0), `--live-scroll-direction` (`1` / `-1` / `0`) |
 | `online` | `online` | `--live-online` (`1` / `0`) |
+| `pageFocused` | `page-focused` | `--live-page-focused` (`1` / `0`) — the tab is frontmost *and* its window is focused; goes `0` when the user switches to another tab, window, or app. Seeded from `document.hasFocus()`, driven by window `focus`/`blur`. |
+| `pageVisible` | `page-visible` | `--live-page-visible` (`1` / `0`) — the tab is in the foreground vs hidden (backgrounded, minimized, switched away). Distinct from `page-focused`: a visible tab can still be unfocused. Use it to pause video/polling/expensive effects when truly hidden. Seeded from `document.visibilityState`, driven by `visibilitychange`. |
+| `navType` | `nav-type` | `--const-nav-type` — how the user arrived, written **once** as a string: `navigate`, `reload`, `back_forward` (history traversal / bfcache), or `prerender`, from `performance.getEntriesByType('navigation')[0].type`. Pairs with style queries — `@container style(--const-nav-type: reload) { … }`. Rides the writer, so it lands the frame after bind; read the same value in a `<head>` script if you need it before first paint. |
 | `network` | `network` | `--live-net-downlink`, `--live-net-rtt`, `--live-net-save-data` (`1` / `0`), `--live-net-type` (`slow-2g`=1 … `4g`=4, else 0) |
 | `battery` | `battery` | `--live-battery-level` (0–1), `--live-battery-charging` (`1` / `0`) |
 | `clock` | `clock` | `--live-now` (epoch seconds), `--live-hours`, `--live-minutes`, `--live-seconds` |

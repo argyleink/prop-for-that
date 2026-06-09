@@ -113,6 +113,9 @@ Import name is camelCase; the key for `propsFor`/`data-props-for` is the dashed 
 | --- | --- | --- | --- |
 | `scrollVelocity` | `scroll-velocity` | global | `--live-scroll-velocity` (signed px/frame), `--live-scroll-direction` (1/-1/0) |
 | `online` | `online` | global | `--live-online` (1/0) |
+| `pageFocused` | `page-focused` | global | `--live-page-focused` (1/0 — tab frontmost and window focused; `0` when switched away) |
+| `pageVisible` | `page-visible` | global | `--live-page-visible` (1/0 — tab foreground vs hidden/backgrounded; `document.visibilityState`. A visible tab can still be unfocused) |
+| `navType` | `nav-type` | global | `--const-nav-type` (write-once string — how the user arrived: `navigate` / `reload` / `back_forward` / `prerender`, from `performance.getEntriesByType('navigation')[0].type`. Pairs with `@container style(--const-nav-type: reload)`) |
 | `network` | `network` | global | `--live-net-downlink`, `--live-net-rtt`, `--live-net-save-data` (1/0), `--live-net-type` (slow-2g=1…4g=4, else 0) |
 | `battery` | `battery` | global | `--live-battery-level` (0–1), `--live-battery-charging` (1/0) |
 | `clock` | `clock` | global | `--live-now` (epoch seconds), `--live-hours`, `--live-minutes`, `--live-seconds` |

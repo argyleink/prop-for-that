@@ -52,7 +52,7 @@ Bind any element with `data-props-for="key …"` and read its `--live-*` propert
 
 **Core** (always on): viewport, pointer, element size, visibility, and `<input type="range">` values.
 
-**Plugins** (opt-in): battery, network, FPS, clock, scroll velocity, device orientation / motion, geolocation, CPU pressure, media playback, form & field state, select & color-picker values, and dominant + accent colors extracted from images and video — 20+ in all.
+**Plugins** (opt-in): battery, network, online status, page focus & visibility, navigation type, FPS, clock, scroll velocity, device orientation / motion, geolocation, CPU pressure, media playback, form & field state, select & color-picker values, and dominant + accent colors extracted from images and video — 20+ in all.
 
 → Every source, every property, and live demos are in the **[docs](https://prop-for-that.netlify.app/docsite/reference/plugins/)**.
 

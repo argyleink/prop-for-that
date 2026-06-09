@@ -8,6 +8,41 @@ backwards-compatible change (semver's `1.0.0`+ rules kick in at v1).
 Only the published library (`dist/`) is versioned here; the demo and docs site
 are repo-only and not part of the npm package.
 
+## [0.6.4]
+
+### Added
+- **`nav-type` plugin** — `--const-nav-type`: how the user arrived at the page,
+  written once as a string (`navigate` / `reload` / `back_forward` / `prerender`)
+  from `performance.getEntriesByType('navigation')[0].type`. Pairs with style
+  queries — `@container style(--const-nav-type: reload) { … }`. Global scope,
+  `const` cadence; typed mode registers it as a `<custom-ident>`. Import as
+  `navType` from `prop-for-that/plugins`. (Rides the batched writer, so it lands
+  the frame after bind — read the same value in a `<head>` script if you need it
+  before first paint.)
+
+## [0.6.3]
+
+### Added
+- **`page-visible` plugin** — `--live-page-visible` (1/0): whether the tab is in
+  the foreground vs hidden (backgrounded, minimized, switched away). The companion
+  to `page-focused` — a *visible* tab can still be *unfocused* — for pausing video,
+  polling, or expensive effects when the page is truly hidden. Global scope, seeded
+  from `document.visibilityState` and driven by `visibilitychange`. Import as
+  `pageVisible` from `prop-for-that/plugins`.
+- Internal: `onDocument` — a shared, ref-counted passive `document`-listener helper
+  (the document-target twin of `onWindow`), so sources can subscribe to
+  `document`-only events (`visibilitychange`, Page Lifecycle `freeze`/`resume`)
+  without a raw `addEventListener`.
+
+## [0.6.2]
+
+### Added
+- **`page-focused` plugin** — `--live-page-focused` (1/0): whether the document
+  has focus (tab frontmost *and* window focused). Goes `0` when the user switches
+  to another tab, window, or app, and `1` on return. Global scope, seeded from
+  `document.hasFocus()` and driven by window `focus`/`blur`. Import as
+  `pageFocused` from `prop-for-that/plugins`.
+
 ## [0.6.1]
 
 ### Added
