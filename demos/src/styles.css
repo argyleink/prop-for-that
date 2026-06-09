@@ -3525,6 +3525,26 @@ main {
 .src__var--scoped dd::after {
   content: '\2014';
 }
+/* nav-type is a string const — the numeric counter can't render it, so map its
+   custom-ident to a readable label via style queries (default: navigate). */
+.src__var--navtype dd::after {
+  content: 'navigate';
+}
+@container style(--const-nav-type: reload) {
+  .src__var--navtype dd::after {
+    content: 'reload';
+  }
+}
+@container style(--const-nav-type: back_forward) {
+  .src__var--navtype dd::after {
+    content: 'back / fwd';
+  }
+}
+@container style(--const-nav-type: prerender) {
+  .src__var--navtype dd::after {
+    content: 'prerender';
+  }
+}
 .src__dash {
   color: var(--ink-faint);
 }

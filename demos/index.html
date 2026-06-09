@@ -1098,6 +1098,14 @@
             <p class="src__desc">Network reachability (0&thinsp;/&thinsp;1).</p>
           </article>
           <article class="src">
+            <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 8V5a1 1 0 0 1 1-1h3M20 8V5a1 1 0 0 0-1-1h-3M4 16v3a1 1 0 0 0 1 1h3M20 16v3a1 1 0 0 0-1 1h-3"/><circle cx="12" cy="12" r="2.4"/></svg></span><code class="src__key">page</code><span class="src__scope">global</span></header>
+            <dl class="src__vars">
+              <div class="src__var" style="--val: var(--live-page-focused, 0)"><dt>--live-page-focused</dt><dd></dd></div>
+              <div class="src__var" style="--val: var(--live-page-visible, 0)"><dt>--live-page-visible</dt><dd></dd></div>
+            </dl>
+            <p class="src__desc">Page state: window focused &amp; tab visible (0&thinsp;/&thinsp;1).</p>
+          </article>
+          <article class="src">
             <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 20v-3M9.3 20v-7M14.6 20V9M20 20V5"/></svg></span><code class="src__key">network</code><span class="src__scope">global</span><span class="src__tag">Chromium</span></header>
             <dl class="src__vars">
               <div class="src__var" style="--val: var(--live-net-type, 0)"><dt>--live-net-type</dt><dd></dd></div>
@@ -1165,6 +1173,24 @@
               <div class="src__var" style="--val: calc(var(--live-geo-accuracy, 0))"><dt>--live-geo-accuracy</dt><dd></dd></div>
             </dl>
             <p class="src__desc">Geolocation, watched live.</p>
+          </article>
+          <article class="src">
+            <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v2.2M12 18.8V21M5.2 5.2l1.6 1.6M17.2 17.2l1.6 1.6M3 12h2.2M18.8 12H21M5.2 18.8l1.6-1.6M17.2 6.8l1.6-1.6"/></svg></span><code class="src__key">head</code><span class="src__scope">startup</span></header>
+            <dl class="src__vars">
+              <div class="src__var" style="--val: var(--const-dpr, 0)"><dt>--const-dpr</dt><dd></dd></div>
+              <div class="src__var" style="--val: var(--const-cores, 0)"><dt>--const-cores</dt><dd></dd></div>
+              <div class="src__var" style="--val: var(--const-mem, 0); --unit: ' GiB'"><dt>--const-mem</dt><dd></dd></div>
+              <div class="src__var" style="--val: var(--const-scrollbar-w, 0); --unit: 'px'"><dt>--const-scrollbar-w</dt><dd></dd></div>
+              <div class="src__var" style="--val: var(--const-scrollbar-thin-w, 0); --unit: 'px'"><dt>--const-scrollbar-thin-w</dt><dd></dd></div>
+            </dl>
+            <p class="src__desc">Write-once, FOUC-safe constants set in <code>&lt;head&gt;</code> before first paint.</p>
+          </article>
+          <article class="src">
+            <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M14 3h5a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1h-5"/><path d="M10 8l4 4-4 4M14 12H3"/></svg></span><code class="src__key">nav-type</code><span class="src__scope">global</span></header>
+            <dl class="src__vars">
+              <div class="src__var src__var--navtype"><dt>--const-nav-type</dt><dd></dd></div>
+            </dl>
+            <p class="src__desc">How you reached this page, set once: navigate / reload / back / prerender.</p>
           </article>
 
           <article class="src">

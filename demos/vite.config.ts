@@ -7,6 +7,7 @@ export default defineConfig({
     alias: [
       { find: 'prop-for-that/plugins', replacement: resolve(__dirname, '../src/plugins/index.ts') },
       { find: 'prop-for-that/auto', replacement: resolve(__dirname, '../src/auto.ts') },
+      { find: 'prop-for-that/head', replacement: resolve(__dirname, '../src/head.ts') },
       { find: 'prop-for-that', replacement: resolve(__dirname, '../src/index.ts') },
     ],
   },

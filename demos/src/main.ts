@@ -20,7 +20,13 @@ import {
   orientation,
   motion,
   cpuPressure,
+  pageFocused,
+  pageVisible,
+  navType,
 } from 'prop-for-that/plugins'
+// FOUC-safe device constants on :root: --const-dpr / cores / mem / scrollbar-w(-thin).
+// Side-effect import — writes once, synchronously. Surfaced in the gallery's head card.
+import 'prop-for-that/head'
 
 // Register every --live-* as a typed @property so values are interpolatable
 // (the media ring transitions because of this). A registered property always
@@ -65,6 +71,9 @@ registerPlugins(
   orientation,
   motion,
   cpuPressure,
+  pageFocused,
+  pageVisible,
+  navType,
 )
 
 // ── The entire reactive wiring. JS exposes state; CSS does all the reacting.
@@ -76,6 +85,8 @@ propsFor([
   'clock', // --live-hours / minutes / seconds / now
   'fps', // --live-fps
   'online', // --live-online (0/1)
+  'page-focused', // --live-page-focused (1/0 — tab frontmost & window focused)
+  'page-visible', // --live-page-visible (1/0 — tab not hidden, document.visibilityState)
   'network', // --live-net-type / downlink / rtt / save-data
   'battery', // --live-battery-level / charging
   'scroll-velocity', // --live-scroll-velocity / direction
@@ -83,6 +94,7 @@ propsFor([
   'orientation', // --live-orient-alpha / beta / gamma (mobile)
   'motion', // --live-accel-x / y / z (mobile)
   'cpu-pressure', // --live-cpu-pressure (0 nominal → 3 critical, Chromium)
+  'nav-type', // --const-nav-type (navigate / reload / back_forward / prerender, write-once)
 ])
 
 // Capability flags (one-shot, NOT reactive): the Battery + Network Information

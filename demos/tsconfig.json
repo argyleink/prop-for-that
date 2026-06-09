@@ -15,7 +15,8 @@
     "paths": {
       "prop-for-that": ["../src/index.ts"],
       "prop-for-that/plugins": ["../src/plugins/index.ts"],
-      "prop-for-that/auto": ["../src/auto.ts"]
+      "prop-for-that/auto": ["../src/auto.ts"],
+      "prop-for-that/head": ["../src/head.ts"]
     }
   },
   "include": ["src", "vite.config.ts"]
