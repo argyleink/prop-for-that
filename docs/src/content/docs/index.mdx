@@ -20,15 +20,13 @@ hero:
 
 import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
-## Write it in JS, react to it in CSS
+## Tag it in HTML, react to it in CSS
 
-```js
-import { register, propsFor } from 'prop-for-that'
-import { pointer } from 'prop-for-that/plugins'
+```html
+<script type="module">import 'prop-for-that/auto'</script>
 
-register(pointer)            // pointer is an opt-in plugin
-propsFor(['pointer'])        // --live-pointer-x-ratio … on :root
-propsFor(card, ['size'])     // <div id="card"> → --live-w, --live-h, --live-aspect
+<html data-props-for="pointer">              <!-- cursor → :root -->
+<div id="card" data-props-for="size">…</div>  <!-- size → the card -->
 ```
 
 ```css
@@ -40,7 +38,7 @@ propsFor(card, ['size'])     // <div id="card"> → --live-w, --live-h, --live-a
 }
 ```
 
-Any element with an `id` is already a global in JS, so `propsFor(card, …)` needs no query selector.
+One module import and a `data-props-for` attribute — that's it. Plugins like `pointer` load on demand. Prefer programmatic control and teardown? There's an [imperative API](/reference/api/) too.
 
 <CardGrid stagger>
   <Card title="Zero-config auto mode" icon="rocket">
