@@ -57,11 +57,8 @@ Reading pixels from a cross-origin image taints the canvas and throws. For image
 ## The wiring
 
 ```html
-<script type="module">
-  import 'prop-for-that/auto'
-  import { registerPlugins, imgColor } from 'prop-for-that/plugins'
-  registerPlugins(imgColor)
-</script>
+<script type="module">import 'prop-for-that/auto'</script>
+<!-- the img-color plugin loads itself the first time the attribute is seen -->
 
 <!-- bind the figure so the caption (a sibling of the img) inherits the color -->
 <figure data-props-for="img-color">

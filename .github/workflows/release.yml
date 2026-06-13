@@ -5,19 +5,19 @@ name: Release
 # on npm. So the normal flow is: bump package.json + add a CHANGELOG section,
 # commit, push to main — and routine commits (no version change) are a clean no-op.
 # No need to tag by hand; this creates the tag (and respects one you already made).
-# Manual-only for now — run from the Actions tab once the repo is public (npm
-# provenance requires a public source repo). To resume auto-publishing on a
-# library version bump, uncomment the `push` trigger below.
+# Runs automatically on a push to main (the repo is public, so npm provenance
+# works), and manually from the Actions tab. Path-filtered to library files, so
+# docs/ and demos/ commits never trigger a release.
 on:
   workflow_dispatch: # "Run workflow" button in the Actions tab
-  # push:
-  #   branches: [main]
-  #   # Only the library itself can produce a release — never docs/ or demos/.
-  #   paths:
-  #     - 'src/**'
-  #     - 'tsup.config.ts'
-  #     - 'tsconfig.json'
-  #     - 'package.json'
+  push:
+    branches: [main]
+    # Only the library itself can produce a release — never docs/ or demos/.
+    paths:
+      - 'src/**'
+      - 'tsup.config.ts'
+      - 'tsconfig.json'
+      - 'package.json'
 
 permissions:
   contents: write # push the tag + create the GitHub Release

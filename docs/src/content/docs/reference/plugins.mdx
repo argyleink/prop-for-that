@@ -3,7 +3,11 @@ title: Plugins
 description: Opt-in sources for exotic or expensive APIs, imported from prop-for-that/plugins.
 ---
 
-Plugins cover state beyond the five core sources: sensors, network, battery, media, and more. They live in one tree-shakeable entry, `prop-for-that/plugins`, and you **register** only the ones you use, so nothing you don't import reaches your bundle.
+Plugins cover state beyond the four core sources: pointer position, sensors, network, battery, media, and more. They live in one tree-shakeable entry, `prop-for-that/plugins`, and you **register** only the ones you use, so nothing you don't import reaches your bundle.
+
+:::note[Under `auto`, you don't register anything]
+This page covers the **imperative** path. With [auto mode](/start/getting-started/#1-auto-zero-config), any plugin a `data-props-for` attribute names is **loaded and registered on demand** — skip straight to the attribute.
+:::
 
 ## Using a plugin
 
@@ -42,6 +46,7 @@ Register, then attach with `propsFor([...])`; they write to `:root`.
 
 | Import | Key | Properties |
 | --- | --- | --- |
+| `pointer` | `pointer` | `--live-pointer-x`, `--live-pointer-y` (px), `--live-pointer-x-ratio`, `--live-pointer-y-ratio` (0–1 across the viewport). High-frequency (a write per `pointermove`), so it's an opt-in plugin rather than a core source. |
 | `scrollVelocity` | `scroll-velocity` | `--live-scroll-velocity` (signed px/frame, decays to 0), `--live-scroll-direction` (`1` / `-1` / `0`) |
 | `online` | `online` | `--live-online` (`1` / `0`) |
 | `pageFocused` | `page-focused` | `--live-page-focused` (`1` / `0`) — the tab is frontmost *and* its window is focused; goes `0` when the user switches to another tab, window, or app. Seeded from `document.hasFocus()`, driven by window `focus`/`blur`. |
@@ -59,17 +64,17 @@ Register, then attach with `propsFor([...])`; they write to `:root`.
 
 ## Element plugins
 
-Register, then attach with `propsFor(el, [...])`; they write to the bound element. In [auto mode](/start/getting-started/#1-auto-zero-config) a registered element plugin also binds straight from a `data-props-for` attribute — just register it before the DOM is scanned:
+Register, then attach with `propsFor(el, [...])`; they write to the bound element. In [auto mode](/start/getting-started/#1-auto-zero-config) you don't register at all — a `data-props-for` attribute loads the plugin on demand:
 
 ```html
-<script type="module">
-  import 'prop-for-that/auto'
-  import { registerPlugins, field } from 'prop-for-that/plugins'
-  registerPlugins(field)   // register before auto scans the DOM
-</script>
+<script type="module" src="https://unpkg.com/prop-for-that/dist/auto.js"></script>
 
-<input data-props-for="field">
+<input data-props-for="field">   <!-- the field plugin loads itself the first time it's seen -->
 ```
+
+:::tip[Off-screen elements pause]
+An element plugin runs only while its element is in the viewport. Scrolled out of view, its work stops and its last values freeze in place; scrolling back resumes it. So binding `pointer-local`, `video-color`, etc. to many elements costs nothing for the ones nobody can see.
+:::
 
 | Import | Key | Properties |
 | --- | --- | --- |

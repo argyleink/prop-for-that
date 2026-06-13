@@ -23,8 +23,10 @@ import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
 ## Write it in JS, react to it in CSS
 
 ```js
-import { propsFor } from 'prop-for-that'
+import { register, propsFor } from 'prop-for-that'
+import { pointer } from 'prop-for-that/plugins'
 
+register(pointer)            // pointer is an opt-in plugin
 propsFor(['pointer'])        // --live-pointer-x-ratio … on :root
 propsFor(card, ['size'])     // <div id="card"> → --live-w, --live-h, --live-aspect
 ```
@@ -47,8 +49,8 @@ Any element with an `id` is already a global in JS, so `propsFor(card, …)` nee
   <Card title="Batched & diffed" icon="approve-check">
     One `setProperty` flush per animation frame, and only when a value actually changed. A hundred `pointermove` events in a frame collapse to one write.
   </Card>
-  <Card title="Five core sources" icon="list-format">
-    `viewport`, `pointer`, `size`, `visibility`, and `range` ship in the main bundle. 14+ exotic sources are opt-in, tree-shakeable plugins.
+  <Card title="Four core sources" icon="list-format">
+    `viewport`, `size`, `visibility`, and `range` ship in the main bundle. 20+ more — `pointer` included — are opt-in, tree-shakeable plugins, loaded on demand under `auto`.
   </Card>
   <Card title="One loop, one observer" icon="analytics">
     A single shared rAF, one `ResizeObserver`, one `IntersectionObserver`, and ref-counted passive listeners drive the whole page — bind a thousand elements, pay for one of each.

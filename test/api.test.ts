@@ -365,6 +365,60 @@ describe('propsFor: edge cases', () => {
   })
 })
 
+describe('propsFor: viewport gating (element sources)', () => {
+  // jsdom has no IntersectionObserver, so the binding layer's gate is normally
+  // inert here (sources run ungated). Stub a controllable one to exercise it.
+  let ioCb: ((entries: Partial<IntersectionObserverEntry>[]) => void) | null = null
+  beforeEach(() => {
+    ioCb = null
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        constructor(cb: (entries: Partial<IntersectionObserverEntry>[]) => void) {
+          ioCb = cb
+        }
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      },
+    )
+  })
+  afterEach(() => vi.unstubAllGlobals())
+
+  const cross = (target: Element, isIntersecting: boolean) =>
+    ioCb!([{ target, isIntersecting, intersectionRatio: isIntersecting ? 1 : 0 }])
+
+  it('runs only while intersecting, freezes its value off screen, restarts on re-entry', () => {
+    const el = document.createElement('div')
+    document.body.append(el)
+    const { source, spy } = makeFakeSource('gated') // element-scoped; start writes x=1, disposer = spy
+    register(source)
+
+    const dispose = propsFor(el, ['gated'])
+    flushFrames()
+    expect(el.style.getPropertyValue('--live-x')).toBe('') // not started: no intersection yet
+
+    cross(el, true) // enters viewport → start + seed
+    flushFrames()
+    expect(el.style.getPropertyValue('--live-x')).toBe('1')
+
+    cross(el, false) // leaves → work torn down, value left frozen (not removed)
+    expect(spy).toHaveBeenCalledTimes(1)
+    expect(el.style.getPropertyValue('--live-x')).toBe('1')
+
+    cross(el, true) // re-enters → start runs again (re-seeds)
+    flushFrames()
+    expect(el.style.getPropertyValue('--live-x')).toBe('1')
+
+    dispose()
+    expect(spy).toHaveBeenCalledTimes(2) // the restarted work is disposed too
+    expect(el.style.getPropertyValue('--live-x')).toBe('') // property removed on unbind
+
+    unregister('gated')
+    el.remove()
+  })
+})
+
 describe('configure', () => {
   it('overrides the live prefix used by writes', () => {
     configure({ livePrefix: '--x-' })

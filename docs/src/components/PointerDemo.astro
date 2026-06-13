@@ -61,6 +61,8 @@
 </style>
 
 <script>
-  import { propsFor } from 'prop-for-that'
+  import { register, propsFor } from 'prop-for-that'
+  import { pointer } from 'prop-for-that/plugins'
+  register(pointer)
   propsFor(['pointer'])
 </script>

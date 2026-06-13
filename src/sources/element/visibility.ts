@@ -20,6 +20,9 @@ import { observeIntersection } from '../../core/observers'
 export const visibility: Source = {
   key: 'visibility',
   scope: 'element',
+  // Never viewport-gated: this source exists to *report* visibility, so it must
+  // keep observing the element even while it's off screen.
+  gate: false,
   start(ctx) {
     let entered = false
     ctx.write('visible', 0)

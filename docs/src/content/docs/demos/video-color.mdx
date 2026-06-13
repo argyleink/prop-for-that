@@ -48,11 +48,8 @@ Reading pixels from a cross-origin video taints the canvas and throws. For video
 ## The wiring
 
 ```html
-<script type="module">
-  import 'prop-for-that/auto'
-  import { registerPlugins, videoColor } from 'prop-for-that/plugins'
-  registerPlugins(videoColor)
-</script>
+<script type="module">import 'prop-for-that/auto'</script>
+<!-- the video-color plugin loads itself the first time the attribute is seen -->
 
 <!-- bind the figure so the caption (a sibling of the video) inherits the color -->
 <figure data-props-for="video-color">

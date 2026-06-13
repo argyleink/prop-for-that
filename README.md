@@ -43,27 +43,29 @@ Bind any element with `data-props-for="key …"` and read its `--live-*` propert
 ## Why
 
 - **CSS does the work.** No per-element event handlers or render loops — bind once, compose in stylesheets.
-- **Fast by design.** One `requestAnimationFrame` flush per frame, write-on-change diffing, and a single shared `ResizeObserver` / `IntersectionObserver` for the whole page.
-- **Ship only what you use.** Five core sources are built in; everything else is an opt-in, tree-shakeable plugin.
+- **Fast by design.** One `requestAnimationFrame` flush per frame — idle when nothing changes, frozen while the tab is hidden — plus write-on-change diffing and a single shared `ResizeObserver` / `IntersectionObserver` for the whole page. Element sources pause while their element is off screen.
+- **Ship only what you use.** Four lightweight core sources are built in; everything else is an opt-in, tree-shakeable plugin — and under `auto` each plugin loads on demand, the moment a `data-props-for` attribute asks for it.
 - **Plays with the platform.** Opt into typed [`@property`](https://prop-for-that.netlify.app/docsite/concepts/typed-properties/) values for interpolation, or FOUC-safe constants written before first paint.
 - **Tiny and dependency-free**, in every bundle format.
 
 ## What it can read
 
-**Core** (always on): viewport, pointer, element size, visibility, and `<input type="range">` values.
+**Core** (built in): viewport, element size, visibility, and `<input type="range">` values.
 
-**Plugins** (opt-in): battery, network, online status, page focus & visibility, navigation type, FPS, clock, scroll velocity, device orientation / motion, geolocation, CPU pressure, media playback, form & field state, select & color-picker values, and dominant + accent colors extracted from images and video — 20+ in all.
+**Plugins** (opt-in): pointer position, battery, network, online status, page focus & visibility, navigation type, FPS, clock, scroll velocity, device orientation / motion, geolocation, CPU pressure, media playback, form & field state, select & color-picker values, and dominant + accent colors extracted from images and video — 20+ in all.
 
 → Every source, every property, and live demos are in the **[docs](https://prop-for-that.netlify.app/docsite/reference/plugins/)**.
 
-## Three entry points
+## Entry points
 
 | Import | What it does |
 | --- | --- |
-| `prop-for-that/auto` | Zero-config: attaches global state and binds every `data-props-for` element, kept in sync with the DOM. |
+| `prop-for-that/auto` | Zero-config & declarative: binds every `data-props-for` element — globals included, via `<html data-props-for="…">` — loading plugin sources on demand, kept in sync with the DOM. Use as `<script type="module">`. |
 | `prop-for-that` | Imperative API — `propsFor()`, `register()`, `configure()` — for explicit control and teardown. |
 | `prop-for-that/head` | Synchronous, FOUC-safe constants (scrollbar width, DPR, core count, device memory) before first paint. |
 | `prop-for-that/plugins` | The opt-in plugin catalog. |
+
+> `auto` sees the **light DOM only** (not shadow roots — bind those with `propsFor(el, …)`), and lazy-loads plugin chunks, so from a CDN use one that serves the `dist` files verbatim (unpkg / jsDelivr), not a rewriting CDN.
 
 Full API and concepts: **[prop-for-that.netlify.app/docsite](https://prop-for-that.netlify.app/docsite/)**.
 

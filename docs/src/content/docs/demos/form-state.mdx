@@ -30,11 +30,8 @@ Written on the bound element on the [`live`](/concepts/naming-and-cadence/) cade
 ## Bind it to the form
 
 ```html
-<script type="module">
-  import 'prop-for-that/auto'
-  import { registerPlugins, formState } from 'prop-for-that/plugins'
-  registerPlugins(formState)
-</script>
+<script type="module">import 'prop-for-that/auto'</script>
+<!-- the form-state plugin loads itself the first time the attribute is seen -->
 
 <form data-props-for="form-state">
   <input name="name" required>

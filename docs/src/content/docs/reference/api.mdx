@@ -1,12 +1,12 @@
 ---
 title: API
-description: configure, register, unregister, propsFor, unbind, reset, pause, and resume.
+description: configure, register, unregister, isRegistered, propsFor, unbind, reset, pause, and resume.
 ---
 
 All functions are exported from `prop-for-that`.
 
 ```ts
-import { configure, register, unregister, propsFor, unbind, reset, pause, resume } from 'prop-for-that'
+import { configure, register, unregister, isRegistered, propsFor, unbind, reset, pause, resume } from 'prop-for-that'
 ```
 
 :::tip[Prefer attributes?]
@@ -57,6 +57,8 @@ function register(source: Source): void
 interface Source {
   key: SourceKey          // unique identifier used in propsFor/data-props-for
   scope: 'global' | 'element'
+  gate?: boolean          // element sources are viewport-gated by default; set false to opt out (visibility does)
+  props?: Record<string, PropSpec>  // optional @property typings per local name, applied when typed
   start(ctx: SourceContext): Disposer
 }
 
@@ -99,6 +101,16 @@ unregister('scroll-velocity')
 
 ---
 
+## `isRegistered(key)`
+
+Whether a source key is currently registered — either a core source or one added via `register()`. Handy for guarding a `register()` call or for tooling. (The `auto` entry uses it to decide whether a `data-props-for` key needs its plugin chunk loaded.)
+
+```ts
+function isRegistered(key: SourceKey): boolean
+```
+
+---
+
 ## `propsFor(...)`
 
 The single entry point for attaching sources. It's **global** (writes to the configured root, `:root` by default) unless the first argument is a `Node`, a `NodeList`, or an array of elements, in which case the sources attach to that element (or to each element). Returns a disposer that tears down exactly what that call started and removes the custom properties it wrote.
@@ -111,6 +123,10 @@ function propsFor(target: Element | NodeList | Element[], keys: string[]): Dispo
 **Global** (writes to `:root`):
 
 ```js
+import { register, propsFor } from 'prop-for-that'
+import { pointer } from 'prop-for-that/plugins'
+
+register(pointer) // pointer is an opt-in plugin; viewport is core
 const dispose = propsFor(['viewport', 'pointer'])
 
 // later, stop both sources and remove the properties they wrote
@@ -183,7 +199,9 @@ reset()
 
 ## `pause()` / `resume()`
 
-Freeze and unfreeze the shared frame loop. While paused, no source samples and no writes flush, so every live value holds its current state — useful for inspecting them in DevTools without the per-frame churn, or for halting work in a backgrounded tab. Bindings stay attached; `resume()` picks sampling back up and flushes anything queued meanwhile. Both are idempotent.
+Freeze and unfreeze the shared frame loop. While paused, no source samples and no writes flush, so every live value holds its current state — useful for inspecting them in DevTools without the per-frame churn. Bindings stay attached; `resume()` picks sampling back up and flushes anything queued meanwhile. Both are idempotent.
+
+Backgrounded tabs are paused automatically (the loop freezes on `document.hidden`), so you don't need to wire that up yourself — reach for `pause()`/`resume()` for your own freeze-on-demand cases.
 
 ```ts
 function pause(): void
@@ -195,7 +213,10 @@ function resume(): void
 ```js
 import { pause, resume } from 'prop-for-that'
 
-document.addEventListener('visibilitychange', () => {
-  document.hidden ? pause() : resume()
+// a "freeze" toggle — handy for inspecting live values in DevTools
+let frozen = false
+freezeButton.addEventListener('click', () => {
+  frozen = !frozen
+  frozen ? pause() : resume()
 })
 ```

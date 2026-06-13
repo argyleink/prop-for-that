@@ -78,8 +78,12 @@ To **add a source**: create the file, follow the existing pattern (use the share
 `observeResize`/`observeIntersection`/`onWindow`/`onFrame` helpers — never `new
 ResizeObserver` or a raw `addEventListener` directly), seed initial values in `start`,
 round numbers via `src/core/num.ts`. Register it in `src/sources/index.ts` (core) or
-`src/plugins/index.ts` (plugin, also export it and add to `allPlugins`). Add it to
-the README tables.
+`src/plugins/index.ts` (plugin, also export it and add to `allPlugins`). For a plugin,
+also add its key → `() => import('./x')` thunk to `src/plugins/loaders.ts` so `auto`
+can lazy-load it (a drift test in `test/plugins.test.ts` guards this). Add it to the
+README tables. **Element sources are viewport-gated**: `start` re-runs on every viewport
+re-entry, so keep it cheap + idempotent and seed current values each time; if it must do
+heavy work, memoize it or set `gate: false` and pause internally (as `visibility` does).
 
 ### Entry points (`exports` in package.json)
 
@@ -88,10 +92,12 @@ the README tables.
   `target → key → binding` map. `propsFor(keys)` is global (writes to `config.root`);
   `propsFor(target, keys)` is element-scoped. Every call returns a disposer that removes
   **exactly** what it started, including the written properties.
-- **`./auto` (`src/auto.ts`)** — zero-config side-effect entry. Attaches `DEFAULT_GLOBALS`
-  (`viewport pointer`) and binds `[data-props-for="key1 key2"]` elements, kept in sync with the
-  DOM via a single `MutationObserver`. Tracks per-element keys so it only touches the delta
-  and never clobbers imperatively-added bindings.
+- **`./auto` (`src/auto.ts`)** — zero-config, declarative side-effect entry. Attaches
+  **nothing** by default; binds `[data-props-for="key1 key2"]` elements (globals declared on
+  `<html data-props-for="…">`), kept in sync with the DOM via a single `MutationObserver`.
+  Plugin sources are **lazy-loaded on demand** (dynamic `import()` of each plugin's chunk via
+  `loaders.ts`) the first time a key needs one — so load `auto` as a module script. Tracks
+  per-element keys so it only touches the delta and never clobbers imperatively-added bindings.
 - **`./head` (`src/head.ts`)** — synchronous, FOUC-safe constants for inline use in
   `<head>`. Writes `--const-scrollbar-w`, `--const-scrollbar-thin-w`, `--const-dpr`, `--const-cores`, `--const-mem` immediately,
   **bypassing the rAF writer on purpose** (these affect first paint).

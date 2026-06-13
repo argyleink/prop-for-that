@@ -8,10 +8,10 @@ description: The batched rAF writer, diffing, shared observers, and passive list
 ```
               sources                       core
 ┌───────────────────────────┐   write()   ┌──────────────────┐
-│ global:  viewport,         │ ─────────► │  Writer (rAF)    │
-│          pointer           │            │  • coalesce      │  setProperty
-│ element: size, visibility, │            │  • diff vs last  │ ───────────► :root / el
-│          range             │            │  • 1 flush/frame │
+│ core global: viewport     │ ─────────► │  Writer (rAF)    │
+│ core element: size,       │            │  • coalesce      │  setProperty
+│   visibility, range       │            │  • diff vs last  │ ───────────► :root / el
+│ + opt-in plugins (lazy)   │            │  • 1 flush/frame │
 └───────────────────────────┘            └──────────────────┘
       ▲ shared observers
       │ 1× ResizeObserver, 1× IntersectionObserver, shared passive window listeners
@@ -33,6 +33,18 @@ This means no matter how many events fire in a frame (mousemove, scroll, resize,
 
 For the document root, that write lands in a single adopted, constructable stylesheet rule (`:root {}`) rather than the `<html>` element's inline `style`. Mutating inline `style` every frame makes the DevTools Styles panel — and the Elements tree — thrash so hard they're unusable; routing the churn into one rule keeps the inspected root calm. Inheritance is identical (the rule targets `:root`), so `var()` / `calc()` resolve exactly the same; element-scoped writes still use inline `style`. Where constructable stylesheets aren't available (older engines, SSR), it falls back to inline.
 
+## Idling the frame loop
+
+The loop is guarded to run only when it has something to do. With nothing pending and no continuous sampler registered, no `requestAnimationFrame` is scheduled at all — a write schedules exactly one flush frame and then the loop goes quiet again. Event-driven core sources (resize, input, intersection) never hold a frame open; only continuous samplers like `fps` and `scroll-velocity` keep one alive, and `scroll-velocity` stops itself once scrolling settles. The loop also **freezes automatically while the tab is hidden** (`document.hidden`), so a backgrounded tab does no sampling or flushing.
+
+This matters because a persistent rAF loop is not free — it keeps the main thread waking each frame and shows up in other libraries' performance profiles. prop-for-that avoids scheduling one unless a value is actually changing.
+
+## Off-screen gating
+
+Element-scoped sources run **only while their element is in the viewport**. The binding layer watches each gated element through the shared `IntersectionObserver`; when the element scrolls out of view it tears down the source's work (listeners, observers, timers) and leaves its last-written values frozen in place, then re-runs the source — re-seeding current values — when it scrolls back. So binding `pointer-local`, `video-color`, or any element plugin across a long list costs nothing for the rows nobody can see.
+
+Global sources and `:root` bindings are never gated (the document root is always "visible"), and a source can opt out with `gate: false` — which `visibility` does, since its whole job is to *report* visibility and it must keep observing off screen.
+
 ## Pausing and capping the rate
 
 `pause()` freezes the loop — no sampling, no flushing — so live values hold steady; `resume()` restarts it and flushes anything queued meanwhile. Both are idempotent and leave bindings attached. To trade smoothness for fewer writes, `configure({ liveHz: 30 })` caps how often the loop samples and flushes, which cuts style recalc and further calms DevTools (it throttles per-frame samplers like `fps` too).
@@ -49,7 +61,7 @@ Reads happen in event or observer callbacks; writes happen in the rAF flush. Thi
 
 ## Shared observers
 
-Having N elements with `size` or `visibility` bindings does **not** create N `ResizeObserver` or `IntersectionObserver` instances. The library maintains exactly one of each for the whole page, dispatching results to per-element callbacks via a `WeakMap`. Adding more bound elements adds zero new observers.
+Having N elements with `size` or `visibility` bindings does **not** create N `ResizeObserver` or `IntersectionObserver` instances. The library maintains exactly one of each for the whole page, dispatching results to per-element callbacks via a `WeakMap`. Adding more bound elements adds zero new observers. A single element can have several subscribers to one observer (for instance the off-screen gate and the `visibility` source both watch the intersection), so the latest entry is cached and replayed to a subscriber that joins after the browser's one-time initial delivery.
 
 ## Passive listeners
 
@@ -63,4 +75,4 @@ Every `propsFor()` call returns a disposer. Calling it:
 - Removes the source's entry from the element's binding map.
 - If no sources remain for that element, removes the element from the bindings map.
 
-The `auto` entry wraps all of this in a single `MutationObserver` over the document. Elements with `data-props-for` added later are bound; removed elements are `unbind`-ed and their written properties cleaned up; and changing an element's `data-props-for` value re-syncs only the keys that were added or removed. It tracks the keys it bound per element, so it touches just the delta and never clobbers bindings you made through the imperative API.
+The `auto` entry wraps all of this in a single `MutationObserver` over the document. Elements with `data-props-for` added later are bound; removed elements are `unbind`-ed and their written properties cleaned up; and changing an element's `data-props-for` value re-syncs only the keys that were added or removed. It tracks the keys it bound per element, so it touches just the delta and never clobbers bindings you made through the imperative API. Plugin sources are **loaded on demand** — the first time a key needs one, `auto` dynamically imports just that plugin's chunk, registers it, and then attaches the binding (so the initial payload is only the core runtime plus the plugins your markup actually uses).

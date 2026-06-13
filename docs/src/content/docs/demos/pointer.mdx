@@ -12,10 +12,11 @@ The `pointer` source writes the cursor's position to `:root`: `--live-pointer-x`
 
 ## The wiring
 
-`pointer` is one of auto's default global sources, so the import is the whole setup — then CSS does the rest:
+`pointer` is an opt-in plugin. Under `auto`, declare it on the root `<html>` and it's loaded on demand the first time the key is seen — then CSS does the rest:
 
 ```html
 <script type="module">import 'prop-for-that/auto'</script>
+<html data-props-for="pointer">   <!-- global → :root; the pointer plugin loads on demand -->
 ```
 
 ```css
@@ -39,15 +40,10 @@ so its descendants inherit them and nothing outside does.
 
 <PointerLocalDemo />
 
-It's a plugin, so register it once **before the DOM is scanned** (auto registers only the core sources); after that the element opts in with `data-props-for`:
+It's a plugin too, so under `auto` there's nothing to register — the element opts in with `data-props-for` and the plugin loads itself the first time the key is seen:
 
 ```html
-<script type="module">
-  import 'prop-for-that/auto'
-  import { register } from 'prop-for-that'
-  import { pointerLocal } from 'prop-for-that/plugins'
-  register(pointerLocal)
-</script>
+<script type="module">import 'prop-for-that/auto'</script>
 
 <div data-props-for="pointer-local">…</div>
 ```

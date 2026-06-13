@@ -47,11 +47,8 @@ The demo above does **both at once** over the same markup: `field-state` is boun
 ### Per-field
 
 ```html
-<script type="module">
-  import 'prop-for-that/auto'
-  import { registerPlugins, fieldState } from 'prop-for-that/plugins'
-  registerPlugins(fieldState)   // register before auto scans the DOM
-</script>
+<script type="module">import 'prop-for-that/auto'</script>
+<!-- the field-state plugin loads itself the first time the attribute is seen -->
 
 <!-- bind the wrapper so the label can style from the field's state -->
 <label data-props-for="field-state">

@@ -62,6 +62,26 @@ export interface Source {
   scope: Scope
   /** Optional `@property` typings per local name, applied when `typed` is on. */
   props?: Record<string, PropSpec>
-  /** Attach listeners/observers, seed initial values, return a disposer. */
+  /**
+   * Viewport-visibility gating for element-scoped sources. When a binding's
+   * target is outside the viewport the binding layer stops the source's work
+   * (listeners/observers/timers) and freezes its last-written values, resuming
+   * on re-entry — so nothing is computed for elements the user can't see.
+   *
+   * Defaults to `true` for `scope: 'element'`. Set `false` to opt out — used by
+   * `visibility`, which must keep observing to *report* visibility. Global
+   * sources (and bindings on `:root`) are never gated.
+   */
+  gate?: boolean
+  /**
+   * Attach listeners/observers, seed initial values, return a disposer.
+   *
+   * For gated `element` sources this is **re-invoked on every viewport re-entry**
+   * (and the disposer on every exit), so it must be cheap and idempotent, and it
+   * must seed current values every time — a source that only attaches listeners
+   * without seeding will show stale (frozen) values after each off-screen→on-screen
+   * cycle. If `start` does expensive work (canvas sampling, decoding, large
+   * allocation), memoize it or set `gate: false` and pause internally.
+   */
   start(ctx: SourceContext): Disposer
 }

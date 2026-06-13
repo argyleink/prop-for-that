@@ -30,15 +30,15 @@ input[type="range"] {
 }
 ```
 
-Enable the sources declaratively: import the auto entry and tag elements with `data-props-for`. `pointer` is a default global, so it's already on; elements opt in by attribute:
+Enable the sources declaratively: import the auto entry and tag elements with `data-props-for`. Globals go on the root `<html>`; elements opt in by attribute. Plugin sources (like `pointer`) load on demand the first time they're named — no extra setup:
 
 ```html
 <script type="module">import 'prop-for-that/auto'</script>
 
+<html data-props-for="pointer">   <!-- global → :root; loads the pointer plugin on demand -->
+
 <input type="range" data-props-for="range">
 <div class="reveal" data-props-for="visibility">…</div>
-<!-- pointer is a default global — the .card just reads --live-pointer-*-ratio -->
-
 ```
 
 ## What makes it different

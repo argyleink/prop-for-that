@@ -1,6 +1,7 @@
 import { propsFor, configure, register, unbind, pause, resume, type Source } from 'prop-for-that'
 import {
   registerPlugins,
+  pointer,
   pointerLocal,
   field,
   fieldState,
@@ -48,10 +49,11 @@ configure({
 })
 
 // Make every plugin source used below resolvable by key via propsFor.
-// (size, visibility, range, pointer are core and already registered.)
+// (size, visibility, range are core and already registered; pointer is a plugin now.)
 // geo is intentionally omitted: watchPosition would fire a permission prompt on
 // load. It still appears in the gallery, tagged "permission", reading a default.
 registerPlugins(
+  pointer,
   pointerLocal,
   field,
   fieldState,
@@ -252,9 +254,10 @@ const player = document.getElementById('player')
 if (player) propsFor(player, ['media', 'video-color'])
 
 // ── Demo 0 (auto): the zero-config entry. `import 'prop-for-that/auto'` attaches
-// the default globals AND binds any [data-props-for] element — so the box below gets
-// `size` with no imperative call at all. Imported dynamically so it runs after
-// configure() above (its globals get the same typed @property treatment).
+// NOTHING by default — it binds any [data-props-for] element and lazy-loads plugins
+// on demand, so the box below gets `size` (a core source) with no imperative call.
+// This demo's globals are bound imperatively above (propsFor([...])), not by auto.
+// Imported dynamically so it runs after configure() above (typed @property treatment).
 import('prop-for-that/auto')
 
 // ── Hero panels: bind pointer-local to EACH chip so every panel gets its own

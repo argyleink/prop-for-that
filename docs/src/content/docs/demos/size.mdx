@@ -11,10 +11,11 @@ Two dimension sources. `viewport` (global) writes `--live-vw` / `--live-vh` on r
 
 ## The wiring
 
-`viewport` is on by default in auto mode; the element opts into `size` with a `data-props-for` attribute — no JavaScript past the import:
+Declare the `viewport` global on the root `<html>` (a core source, bound immediately); the element opts into `size` with a `data-props-for` attribute — no JavaScript past the import:
 
 ```html
 <script type="module">import 'prop-for-that/auto'</script>
+<html data-props-for="viewport">
 
 <div data-props-for="size">…</div>
 ```

@@ -11,6 +11,7 @@ import { battery } from './battery'
 import { clock } from './clock'
 import { fps } from './fps'
 import { visualViewport } from './visual-viewport'
+import { pointer } from './pointer'
 import { pointerLocal } from './pointer-local'
 import { media } from './media'
 import { field } from './field'
@@ -37,6 +38,7 @@ export {
   clock,
   fps,
   visualViewport,
+  pointer,
   pointerLocal,
   media,
   field,
@@ -65,6 +67,7 @@ export const allPlugins: Source[] = [
   clock,
   fps,
   visualViewport,
+  pointer,
   pointerLocal,
   media,
   field,

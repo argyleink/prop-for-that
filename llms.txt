@@ -13,7 +13,7 @@ when a value actually changed. Zero runtime dependencies, tree-shakeable, TypeSc
 ## Entry points
 
 - `prop-for-that`: the core API (`configure`, `register`, `unregister`, `propsFor`, `unbind`, `reset`).
-- `prop-for-that/auto`: side-effecting. On load it attaches the default globals (`viewport`, `pointer`) to `:root`, scans the DOM for `[data-props-for="key1 key2"]` and binds those sources, and watches the DOM with a `MutationObserver`. If the root `<html>` has the boolean attribute `data-props-typed`, it calls `configure({ typed: true })` first (markup equivalent; read once on load; global, no per-key subset).
+- `prop-for-that/auto`: side-effecting and fully declarative. Attaches **nothing** by default — it scans the DOM for `[data-props-for="key1 key2"]` and binds exactly those sources (globals included, declared on `<html data-props-for="viewport pointer">` → writes to `:root`), watching the DOM with a `MutationObserver`. Plugin sources are **loaded on demand**: the first time a key needs one, its chunk is dynamically imported and registered, then the binding attaches (no `registerPlugins()`, no separate plugins import). Because it lazy-loads via dynamic `import()`, use it as a module — `<script type="module" src=".../auto.js">` (a classic CDN drop-in `auto.global.js` no longer exists). If the root `<html>` has the boolean attribute `data-props-typed`, it calls `configure({ typed: true })` first (markup equivalent; read once on load; global, no per-key subset). Two limits: it only sees the **light DOM** (a `MutationObserver` doesn't cross shadow roots, so `data-props-for` inside a web component's shadow root is never auto-bound — bind those imperatively with `propsFor(el, [...])`); and on-demand plugin chunks resolve only on CDNs that serve the `dist` tree verbatim (unpkg / jsDelivr file paths), not rewriting/bundling CDNs (esm.sh, `?module`, jsDelivr `+esm`).
 - `prop-for-that/head`: side-effecting. Synchronously writes FOUC-safe constants before first paint. Inline it in `<head>`.
 - `prop-for-that/plugins`: opt-in plugin sources, plus `registerPlugins` and `allPlugins`.
 
@@ -36,11 +36,12 @@ npm i prop-for-that
 ## API
 
 ```ts
-import { configure, register, unregister, propsFor, unbind, reset, pause, resume } from 'prop-for-that'
+import { configure, register, unregister, isRegistered, propsFor, unbind, reset, pause, resume } from 'prop-for-that'
 
 configure(opts: Partial<Config>): void   // call once, before any propsFor()
 register(source: Source): void           // add a custom/plugin source by key
 unregister(key: SourceKey): void         // remove a source from the registry
+isRegistered(key: SourceKey): boolean    // whether a source key is currently registered
 propsFor(keys: string[]): Disposer       // global: attach sources to config.root (:root)
 propsFor(target: Element | NodeList | Element[], keys: string[]): Disposer  // per element(s)
 unbind(target: HTMLElement, keys?: string[]): void    // detach some/all
@@ -59,6 +60,7 @@ interface Config { livePrefix: string; constPrefix: string; root: HTMLElement; t
 interface Source {
   key: SourceKey
   scope: 'global' | 'element'
+  gate?: boolean   // element sources are viewport-gated by default; set false to opt out
   start(ctx: SourceContext): Disposer
 }
 interface SourceContext {
@@ -90,7 +92,6 @@ prefix; constants use `--const-`. Values are unitless numbers unless noted.
 | key | scope | properties |
 | --- | --- | --- |
 | `viewport` | global | `--live-vw`, `--live-vh` |
-| `pointer` | global | `--live-pointer-x`, `--live-pointer-y`, `--live-pointer-x-ratio` (0–1), `--live-pointer-y-ratio` (0–1) |
 | `size` | element | `--live-w`, `--live-h`, `--live-aspect` (w/h) |
 | `visibility` | element | `--live-visible` (1/0, whole element in viewport), `--const-has-entered` (1/0, latches once entirely in viewport, never resets) |
 | `range` | element | `--live-value`, `--live-value-pct` (0–1). Bind the `<input>` or a container holding one. |
@@ -111,6 +112,7 @@ Import name is camelCase; the key for `propsFor`/`data-props-for` is the dashed 
 
 | import | key | scope | properties |
 | --- | --- | --- | --- |
+| `pointer` | `pointer` | global | `--live-pointer-x`, `--live-pointer-y`, `--live-pointer-x-ratio` (0–1), `--live-pointer-y-ratio` (0–1). High-frequency (writes per `pointermove`), so opt-in rather than core. |
 | `scrollVelocity` | `scroll-velocity` | global | `--live-scroll-velocity` (signed px/frame), `--live-scroll-direction` (1/-1/0) |
 | `online` | `online` | global | `--live-online` (1/0) |
 | `pageFocused` | `page-focused` | global | `--live-page-focused` (1/0 — tab frontmost and window focused; `0` when switched away) |
@@ -150,17 +152,18 @@ Imperative:
 
 ```js
 import { propsFor } from 'prop-for-that'
-propsFor(['pointer'])                 // writes pointer vars to :root
+propsFor(['viewport'])                // core global → :root
 propsFor(el, ['size', 'visibility'])  // writes element vars to el
 ```
 
-A plugin:
+A plugin (pointer is one now — register before use; `auto` does this for you):
 
 ```js
 import { register, propsFor } from 'prop-for-that'
-import { battery } from 'prop-for-that/plugins'
-register(battery)
-propsFor(['battery'])
+import { pointer, battery } from 'prop-for-that/plugins'
+register(pointer)
+propsFor(['pointer'])                  // writes pointer vars to :root
+register(battery); propsFor(['battery'])
 ```
 
 Container-bound range (so siblings can read the value):
@@ -193,7 +196,8 @@ Discrete reaction with a style query:
 - **Typed properties are opt-in.** `configure({ typed: true })` (before attaching) registers each written `--live-*` with `@property` so it interpolates (consumers add `transition`/`@keyframes`) and resolves to `0` before a value arrives. With the `auto` entry, `<html data-props-typed>` is the markup equivalent (boolean, read once on load; typing is global per `@property` name, so no per-key subset). It is a one-way door (no unregister), uses `inherits: true`, is feature-detected, and skips names already registered. Sources can declare per-property `props: { name: { syntax, initial, inherits } }` (default `<number>` / `0` / inherited); consumers can set initials with `configure({ typed: true, defaults: { 'pointer-x-ratio': 0.5 } })` (keyed by local name).
 - **Permission-gated plugins** (`orientation`, `motion`, `geo`) and unsupported APIs feature-detect and no-op; registering them is always safe. On iOS some need a user-gesture permission grant before values arrive. `cpuPressure` is Chromium-only and needs a secure context + the `compute-pressure` Permissions Policy; it seeds `--live-cpu-pressure: 0` where supported, writes nothing where not.
 - **Global writes land in an adopted stylesheet, not `<html>` inline style.** Root `--live-*` go into one constructable, adopted `:root {}` rule (element-scoped writes stay inline; the `head` entry still writes `--const-*` inline for first paint). Keeps the DevTools Styles panel usable under per-frame churn; `var()`/`calc()` consumption is identical (still inherits). Reading `documentElement.style` directly won't show them — read computed style. Falls back to inline where constructable stylesheets are unsupported.
-- **Freeze or throttle the loop.** `pause()` / `resume()` stop and restart sampling+flushing (values hold steady; bindings stay attached). `configure({ liveHz: 30 })` caps the rate to reduce mutations/recalc, throttling samplers (`fps`, `scroll-velocity`) too.
+- **Element sources pause off screen.** Under both the imperative API and `auto`, an `element`-scoped source runs only while its element intersects the viewport (via the shared `IntersectionObserver`); off screen its work (listeners/observers/timers) is torn down and its last-written values freeze in place, resuming + re-seeding on re-entry. `global` sources and `:root` bindings are never gated. Opt a source out with `gate: false` (as `visibility` does, since it must keep observing to *report* visibility).
+- **Freeze or throttle the loop.** The whole loop also freezes automatically while the tab is hidden (`document.hidden`). `pause()` / `resume()` stop and restart sampling+flushing (values hold steady; bindings stay attached). `configure({ liveHz: 30 })` caps the rate to reduce mutations/recalc, throttling samplers (`fps`, `scroll-velocity`) too.
 
 ## Links
 

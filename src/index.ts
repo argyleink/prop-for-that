@@ -2,6 +2,7 @@ import { config } from './core/config'
 import { writer } from './core/writer'
 import { styleFor } from './core/root-style'
 import { pause, resume } from './core/frame'
+import { observeIntersection } from './core/observers'
 import { registerTyped } from './core/property'
 import { coreSources } from './sources'
 import type {
@@ -15,7 +16,7 @@ import type {
 
 export type { Cadence, Config, Disposer, PropSpec, Source, SourceContext }
 
-type CoreKey = 'viewport' | 'pointer' | 'size' | 'visibility' | 'range'
+type CoreKey = 'viewport' | 'size' | 'visibility' | 'range'
 /** Built-in keys autocomplete; any registered/plugin key (a string) is allowed. */
 export type SourceKey = CoreKey | (string & {})
 
@@ -40,6 +41,11 @@ export function unregister(key: string): void {
   delete registry[key]
 }
 
+/** Whether a source key is currently registered (core or added via `register`). */
+export function isRegistered(key: string): boolean {
+  return key in registry
+}
+
 /** Override prefixes or the global root target. Call before attaching sources. */
 export function configure(opts: Partial<Config>): void {
   Object.assign(config, opts)
@@ -59,6 +65,49 @@ function makeContext(
       if (config.typed) registerTyped(prop, localName, props)
       writer.set(target, prop, String(value))
     },
+  }
+}
+
+/**
+ * Start a source, viewport-gated when it's element-scoped. While the target is
+ * outside the viewport the source's work (listeners/observers/timers) is torn
+ * down and its last-written values are left frozen in place — so nothing is
+ * computed for elements the user can't see. Re-entry re-runs `start`, which
+ * re-seeds (the diffing writer skips unchanged values).
+ *
+ * Gating needs IntersectionObserver; without it (SSR/jsdom) the source just runs
+ * ungated. Global sources, bindings on `:root`, and `gate: false` sources (e.g.
+ * `visibility`, which must keep observing to *report* visibility) are never gated.
+ */
+function attach(source: Source, ctx: SourceContext, target: HTMLElement): Disposer {
+  const gated =
+    source.scope === 'element' &&
+    source.gate !== false &&
+    target !== config.root &&
+    typeof IntersectionObserver !== 'undefined'
+
+  if (!gated) return source.start(ctx)
+
+  let work: Disposer | null = null
+  const startWork = () => {
+    if (work) return
+    try {
+      work = source.start(ctx)
+    } catch (err) {
+      console.error(`[prop-for-that] source "${source.key}" failed to start`, err)
+    }
+  }
+  const stopWork = () => {
+    work?.()
+    work = null
+  }
+  const offGate = observeIntersection(target, (entry) => {
+    if (entry.isIntersecting) startWork()
+    else stopWork()
+  })
+  return () => {
+    offGate()
+    stopWork()
   }
 }
 
@@ -89,7 +138,7 @@ function startOn(target: HTMLElement, keys: string[]): Disposer {
     const written = new Set<string>()
     let dispose: Disposer
     try {
-      dispose = source.start(makeContext(target, written, source.props))
+      dispose = attach(source, makeContext(target, written, source.props), target)
     } catch (err) {
       console.error(`[prop-for-that] source "${key}" failed to start`, err)
       continue

@@ -13,14 +13,21 @@ npm i prop-for-that
 
 ### 1. Auto (zero-config)
 
-Import `prop-for-that/auto` and it wires everything for you:
+Import `prop-for-that/auto` and it wires everything for you — declaratively, with nothing attached unless the DOM asks for it:
 
-- Attaches the default global sources (`viewport`, `pointer`) to `:root`.
-- Scans the DOM for `[data-props-for]` attributes and binds the named sources to those elements.
+- Scans the DOM for `[data-props-for]` attributes and binds the named sources to those elements. Globals are declared too — put them on the root `<html>` and they write to `:root`.
+- **Loads plugin sources on demand.** The first time a `data-props-for` key needs a plugin, its chunk is dynamically imported and registered, then the binding attaches — no `registerPlugins()`, no separate plugins import.
 - Keeps everything in sync with a single `MutationObserver`: elements added later are bound, removed elements are torn down and their properties cleaned up, and editing an element's `data-props-for` value re-syncs just the keys that changed — so you can add or drop a source at runtime by changing the attribute alone.
 
+Because plugins lazy-load via dynamic `import()`, load `auto` as a **module** script (the bare `<script src>` drop-in is gone):
+
 ```html
+<!-- from a CDN that serves the dist tree verbatim (unpkg / jsDelivr file paths) -->
+<script type="module" src="https://unpkg.com/prop-for-that/dist/auto.js"></script>
+<!-- or, with a bundler -->
 <script type="module">import 'prop-for-that/auto'</script>
+
+<html data-props-for="viewport pointer">   <!-- globals → :root -->
 
 <input type="range" min="0" max="100" data-props-for="range">
 <section data-props-for="size visibility">…</section>
@@ -36,6 +43,11 @@ section {
   transition: opacity 0.4s;
 }
 ```
+
+:::caution[Two limits of the auto path]
+- **Shadow DOM is invisible.** The `MutationObserver` doesn't cross shadow boundaries, so `data-props-for` inside a web component's shadow root is never auto-bound. Bind those imperatively: `propsFor(shadowEl, ['…'])`.
+- **CDN must serve raw files.** On-demand plugin loading uses dynamic `import()` of code-split chunks that ship next to `auto.js`, so use a CDN that serves the `dist` tree verbatim (unpkg, jsDelivr file paths). Bundling/rewriting CDNs (esm.sh, `?module`, jsDelivr `+esm`) can rewrite the entry and break lazy plugin loading.
+:::
 
 :::tip[One element, many sources]
 `data-props-for` takes **one or more source keys, separated by spaces**. `data-props-for="size visibility"` binds *both* `size` and `visibility` to that element, and each writes its own `--live-*` / `--const-*` properties side by side:
@@ -70,8 +82,8 @@ Import individual functions for explicit control over which sources are active a
 ```js
 import { propsFor, configure } from 'prop-for-that'
 
-// write viewport + pointer to :root
-propsFor(['viewport', 'pointer'])
+// write viewport to :root (pointer is now an opt-in plugin — see Plugins)
+propsFor(['viewport'])
 
 // write the range source to a specific element; returns a disposer.
 // an element's id is a ready-made global in JS — no query selector needed.

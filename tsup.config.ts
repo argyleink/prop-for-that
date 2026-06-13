@@ -9,6 +9,9 @@ const shared = {
 
 export default defineConfig([
   // Package builds consumed by bundlers / Node: ESM + CJS + type declarations.
+  // `splitting` (esm only) gives each plugin its own chunk, so `auto`'s on-demand
+  // `import()` fetches just the plugin a page asks for. CJS can't split, so its
+  // `auto.cjs` bundles the plugins inline — fine, the JIT story is the browser/ESM one.
   {
     ...shared,
     entry: {
@@ -18,6 +21,7 @@ export default defineConfig([
       plugins: 'src/plugins/index.ts',
     },
     format: ['esm', 'cjs'],
+    splitting: true,
     dts: true,
     clean: true, // first pass only; later passes add to dist/ without wiping it
   },
@@ -32,12 +36,14 @@ export default defineConfig([
     outExtension: () => ({ js: '.global.js' }),
   },
 
-  // Drop-in <script> builds: side-effecting, expose no global.
-  //   <script src=".../dist/auto.global.js"></script>  binds [data-props-for]
+  // Drop-in <script> build: side-effecting, exposes no global.
   //   <script src=".../dist/head.global.js"></script>  FOUC-safe --const-*
+  // (No classic `auto.global.js`: `auto` lazy-loads plugin chunks via dynamic
+  // import, which only resolves correctly from `<script type="module">` —
+  // use `<script type="module" src=".../auto.js">`.)
   {
     ...shared,
-    entry: { auto: 'src/auto.ts', head: 'src/head.ts' },
+    entry: { head: 'src/head.ts' },
     format: ['iife'],
     outExtension: () => ({ js: '.global.js' }),
   },

@@ -8,6 +8,59 @@ backwards-compatible change (semver's `1.0.0`+ rules kick in at v1).
 Only the published library (`dist/`) is versioned here; the demo and docs site
 are repo-only and not part of the npm package.
 
+## [0.7.0]
+
+Breaking release (0.x minor): leaner defaults, viewport-aware sources, and a
+truly zero-config `auto`. Migration notes are under each item.
+
+### Changed
+- **`auto` is now fully declarative and attaches nothing by default.** It no
+  longer auto-attaches `viewport`/`pointer` to `:root`. Declare every source —
+  globals included — with `data-props-for`, e.g. `<html data-props-for="viewport
+  pointer">`. **Migration:** add the globals you relied on to the root `<html>`.
+- **`auto` loads plugins on demand.** The first time a `data-props-for` key needs
+  a plugin, its chunk is dynamically imported and registered, then the binding
+  attaches — no more `registerPlugins()` / `prop-for-that/plugins` import when
+  using `auto`. Because it lazy-loads via dynamic `import()`, load `auto` as a
+  **module**: `<script type="module" src=".../auto.js">`. The classic
+  `auto.global.js` drop-in is removed (it can't resolve lazy chunks from a CDN).
+  **Migration:** switch the `auto` script tag to `type="module"` and drop any
+  `registerPlugins()` calls that existed only to feed `auto`.
+- **Element sources are viewport-gated.** An `element`-scoped source now runs only
+  while its element is in the viewport (via the shared `IntersectionObserver`);
+  off screen its work is torn down and its last values freeze in place, resuming +
+  re-seeding on re-entry. Global sources and `:root` bindings are never gated; a
+  source can opt out with `gate: false`. No API change for consumers.
+- **The frame loop freezes while the tab is hidden** (`document.hidden`) and stays
+  fully idle when nothing is changing — fewer stray `requestAnimationFrame`s on
+  pages that aren't actively updating.
+- Shared `ResizeObserver`/`IntersectionObserver` now support multiple subscribers
+  per element (with last-entry replay to late subscribers), so an element can be
+  watched by both a source and the gate at once.
+- `auto` no longer caches a *failed* plugin load permanently — a transient failure
+  (offline, blocked, flaky CDN) is dropped so a later request for the same key retries.
+- `img-color` memoizes its extracted palette per rendered source, so the viewport
+  gate re-running `start()` on scroll-in reuses the result instead of re-sampling the
+  canvas when the image hasn't changed.
+- Documented the auto path's two limits (light-DOM only / no shadow roots; needs a
+  CDN that serves the `dist` tree verbatim) and the gate contract for source authors
+  (`start()` is re-invoked on every viewport re-entry, so keep it cheap + idempotent).
+
+### Added
+- **`gate?: boolean` on `Source`** — opt an element source out of viewport gating
+  (defaults on for `scope: 'element'`). `visibility` sets it `false`.
+- **`isRegistered(key)`** exported from `prop-for-that` — whether a source key is
+  currently registered.
+
+### Removed
+- **`pointer` is no longer a core source** — it writes on every `pointermove`, so
+  it's now an opt-in plugin alongside `pointer-local`. **Migration:** under `auto`
+  it just works (loaded on demand). Imperatively, `register` it first:
+  `import { pointer } from 'prop-for-that/plugins'; register(pointer);
+  propsFor(['pointer'])`.
+- **`dist/auto.global.js`** (the classic, non-module `auto` drop-in) — see the
+  `auto` note above.
+
 ## [0.6.4]
 
 ### Added

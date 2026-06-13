@@ -66,6 +66,27 @@ describe('frame: pause / resume', () => {
   })
 })
 
+describe('frame: pause while the tab is hidden', () => {
+  it('freezes flushing when the document becomes hidden and resumes on return', () => {
+    const flush = vi.fn()
+    setFlush(flush)
+    const hidden = vi.spyOn(document, 'hidden', 'get')
+
+    hidden.mockReturnValue(true)
+    document.dispatchEvent(new Event('visibilitychange'))
+    requestTick() // ignored: schedule() no-ops while paused
+    tick()
+    expect(flush).toHaveBeenCalledTimes(0)
+
+    hidden.mockReturnValue(false)
+    document.dispatchEvent(new Event('visibilitychange')) // resume → schedules a frame
+    tick()
+    expect(flush).toHaveBeenCalledTimes(1)
+
+    hidden.mockRestore()
+  })
+})
+
 describe('frame: liveHz cadence cap', () => {
   it('coalesces ticks that land within the interval into one flush', () => {
     const flush = vi.fn()

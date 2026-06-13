@@ -13,6 +13,9 @@ import { navType } from '../src/plugins/nav-type'
 import { cpuPressure } from '../src/plugins/cpu-pressure'
 import { img } from '../src/plugins/img'
 import { videoColor } from '../src/plugins/video-color'
+import { pointer } from '../src/plugins/pointer'
+import { allPlugins } from '../src/plugins'
+import { loaders } from '../src/plugins/loaders'
 import type { SourceContext } from '../src/core/types'
 
 /** Collects the latest value written per local name, ignoring cadence prefix. */
@@ -27,6 +30,27 @@ function makeRecorder(target: HTMLElement) {
   }
   return { ctx, values }
 }
+
+describe('plugin registry & lazy loaders', () => {
+  it('ships pointer as an opt-in plugin (no longer a core source)', () => {
+    expect(pointer.key).toBe('pointer')
+    expect(pointer.scope).toBe('global')
+    expect(allPlugins.some((p) => p.key === 'pointer')).toBe(true)
+  })
+
+  it('has a lazy loader for every plugin', () => {
+    for (const p of allPlugins) {
+      expect(typeof loaders[p.key], `missing loader for "${p.key}"`).toBe('function')
+    }
+  })
+
+  it('has no loader key that is not a real plugin', () => {
+    const keys = new Set(allPlugins.map((p) => p.key))
+    for (const key of Object.keys(loaders)) {
+      expect(keys.has(key), `stale loader "${key}"`).toBe(true)
+    }
+  })
+})
 
 describe('network netTypeToNumber', () => {
   it('maps effectiveType strings to numbers', () => {

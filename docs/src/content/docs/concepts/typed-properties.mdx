@@ -8,9 +8,11 @@ By default, prop-for-that writes plain custom properties. They work everywhere, 
 Opt in, and the library registers each `--live-*` it writes with [`@property`](https://developer.mozilla.org/en-US/docs/Web/CSS/@property) (via `CSS.registerProperty`):
 
 ```js
-import { configure, propsFor } from 'prop-for-that'
+import { configure, register, propsFor } from 'prop-for-that'
+import { pointer } from 'prop-for-that/plugins'
 
 configure({ typed: true }) // before attaching any sources
+register(pointer)          // pointer is an opt-in plugin
 propsFor(['pointer'])
 ```
 

@@ -72,18 +72,33 @@ export const imgColor: Source = {
     if (!img) return () => {}
     let disposed = false
 
+    // Cache the last-written swatches keyed by the rendered source, so a re-run of
+    // start() (the viewport gate re-runs it on every re-entry) re-emits the cached
+    // values instead of re-sampling the canvas when the image hasn't changed.
+    let memoKey = ''
+    let memo: Record<string, string | number> | null = null
+
+    const emit = (vals: Record<string, string | number>) => {
+      for (const name in vals) ctx.write(name, vals[name]!)
+    }
+
     const compute = async () => {
       if (!img.complete || img.naturalWidth === 0) return // not loaded yet, or broken
+      if (memo && memoKey === img.currentSrc) return emit(memo) // unchanged → reuse
       const data = await samplePixels(img).catch(() => null)
       if (disposed || !data) return
       const pal = palette(data)
       if (!pal) return
-      ctx.write('img', toHex(pal.dominant)) // dominant keeps the bare name
-      ctx.write('img-accent', toHex(pal.accent))
-      ctx.write('img-dark', toHex(pal.dark))
-      ctx.write('img-light', toHex(pal.light))
-      ctx.write('img-avg', toHex(pal.average))
-      ctx.write('img-temp', round4(pal.temp))
+      memoKey = img.currentSrc
+      memo = {
+        img: toHex(pal.dominant), // dominant keeps the bare name
+        'img-accent': toHex(pal.accent),
+        'img-dark': toHex(pal.dark),
+        'img-light': toHex(pal.light),
+        'img-avg': toHex(pal.average),
+        'img-temp': round4(pal.temp),
+      }
+      emit(memo)
     }
     compute() // seed from an already-loaded/cached image
     img.addEventListener('load', compute, { passive: true })

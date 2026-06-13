@@ -80,3 +80,15 @@ export function resume(): void {
   paused = false
   schedule()
 }
+
+// A backgrounded tab can't show anything, so there's nothing to keep sampling or
+// flushing for: freeze the whole loop while hidden and pick up again on return.
+// (rAF is already throttled to a halt when hidden; this also stops the one-shot
+// flush from firing the instant focus returns, and silences timer-driven work
+// that wants a frame.) SSR/test-guarded.
+if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) pause()
+    else resume()
+  })
+}
