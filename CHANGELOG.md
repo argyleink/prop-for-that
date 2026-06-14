@@ -8,6 +8,20 @@ backwards-compatible change (semver's `1.0.0`+ rules kick in at v1).
 Only the published library (`dist/`) is versioned here; the demo and docs site
 are repo-only and not part of the npm package.
 
+## [0.7.2]
+
+### Fixed
+- **`fps` source no longer writes `--live-fps` every frame.** The exponential
+  moving average is still sampled per frame, but the value is now written at most
+  every 250 ms (≤4 Hz). Writing per frame coupled the readout to the frame rate:
+  each write invalidates `--live-fps` for the whole tree, and on a large reactive
+  DOM that restyle is heavy enough to lower the frame rate, which changes the
+  rounded value, which writes again — a feedback loop that spiralled FPS downward
+  and accumulated restyle/GC work in Firefox until the tab hung and crashed (no
+  user interaction required). The throttled write breaks the loop; an fps readout
+  doesn't need to update faster than a few hertz anyway. Values are unchanged
+  (rounded EMA), only the write cadence is bounded.
+
 ## [0.7.1]
 
 ### Fixed
