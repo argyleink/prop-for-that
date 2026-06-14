@@ -8,6 +8,16 @@ backwards-compatible change (semver's `1.0.0`+ rules kick in at v1).
 Only the published library (`dist/`) is versioned here; the demo and docs site
 are repo-only and not part of the npm package.
 
+## [0.7.1]
+
+### Fixed
+- **`visibility` now tolerates near-1 intersection ratios.** The shared
+  `IntersectionObserver` requests callbacks just below full containment, and the
+  `visibility` source confirms full visibility from the entry geometry instead of
+  requiring an exact `intersectionRatio === 1`. This fixes scroll-triggered
+  reveal examples that could get stuck on Firefox mobile when the browser reports
+  a ratio fractionally below 1.
+
 ## [0.7.0]
 
 Breaking release (0.x minor): leaner defaults, viewport-aware sources, and a

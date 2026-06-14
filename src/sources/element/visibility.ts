@@ -1,6 +1,21 @@
 import type { Source } from '../../core/types'
 import { observeIntersection } from '../../core/observers'
 
+const FULLY_VISIBLE_EPSILON = 1
+
+function fullyVisible(entry: IntersectionObserverEntry): boolean {
+  const root = entry.rootBounds
+  if (!root) return entry.intersectionRatio >= 1
+
+  const rect = entry.boundingClientRect
+  return (
+    rect.top >= root.top - FULLY_VISIBLE_EPSILON &&
+    rect.right <= root.right + FULLY_VISIBLE_EPSILON &&
+    rect.bottom <= root.bottom + FULLY_VISIBLE_EPSILON &&
+    rect.left >= root.left - FULLY_VISIBLE_EPSILON
+  )
+}
+
 /**
  * Binary, scroll-TRIGGERED full-element visibility:
  * - `--live-visible` (1/0) — whether the element is *entirely* within the viewport
@@ -28,7 +43,7 @@ export const visibility: Source = {
     ctx.write('visible', 0)
     ctx.write('has-entered', 0, 'const') // seeded so var() resolves; latches to 1 once
     return observeIntersection(ctx.target, (entry) => {
-      const fully = entry.intersectionRatio >= 1
+      const fully = fullyVisible(entry)
       ctx.write('visible', fully ? 1 : 0)
       if (fully && !entered) {
         entered = true
