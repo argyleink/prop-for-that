@@ -18,6 +18,12 @@ are repo-only and not part of the npm package.
   inherited custom properties had been written since the last frame — which at
   trackpad rates (120 Hz+) with `typed: true` active would cause a progressive
   CPU spike and eventual tab crash on Firefox for macOS desktop.
+- **`visibility` now tolerates near-1 intersection ratios.** The shared
+  `IntersectionObserver` requests callbacks just below full containment, and the
+  `visibility` source confirms full visibility from the entry geometry instead of
+  requiring an exact `intersectionRatio === 1`. This fixes scroll-triggered
+  reveal examples that could get stuck on Firefox mobile when the browser reports
+  a ratio fractionally below 1.
 
 ## [0.7.0]
 
