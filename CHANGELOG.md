@@ -8,6 +8,17 @@ backwards-compatible change (semver's `1.0.0`+ rules kick in at v1).
 Only the published library (`dist/`) is versioned here; the demo and docs site
 are repo-only and not part of the npm package.
 
+## [0.7.1]
+
+### Fixed
+- **`pointer-local` no longer reads `getBoundingClientRect()` on every
+  `pointermove` event.** The rect is now cached and refreshed only on `scroll`,
+  `resize`, and ResizeObserver callbacks. The previous per-move read forced
+  Firefox to flush its full style cascade on every pointer event whenever
+  inherited custom properties had been written since the last frame — which at
+  trackpad rates (120 Hz+) with `typed: true` active would cause a progressive
+  CPU spike and eventual tab crash on Firefox for macOS desktop.
+
 ## [0.7.0]
 
 Breaking release (0.x minor): leaner defaults, viewport-aware sources, and a

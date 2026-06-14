@@ -14,6 +14,7 @@ import { cpuPressure } from '../src/plugins/cpu-pressure'
 import { img } from '../src/plugins/img'
 import { videoColor } from '../src/plugins/video-color'
 import { pointer } from '../src/plugins/pointer'
+import { pointerLocal } from '../src/plugins/pointer-local'
 import { allPlugins } from '../src/plugins'
 import { loaders } from '../src/plugins/loaders'
 import type { SourceContext } from '../src/core/types'
@@ -850,6 +851,80 @@ describe('cpu-pressure', () => {
 
     dispose()
     expect(disconnect).toHaveBeenCalled()
+  })
+})
+
+describe('pointer-local', () => {
+  // pointer-local calls observeResize, which needs ResizeObserver. jsdom doesn't
+  // provide one, so stub a minimal no-op so the source initialises cleanly.
+  beforeEach(() => {
+    vi.stubGlobal('ResizeObserver', class {
+      observe() {}
+      unobserve() {}
+    })
+  })
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('does not call getBoundingClientRect() on pointermove — uses a cached rect', () => {
+    const el = document.createElement('div')
+    document.body.append(el)
+
+    const mockRect = (top: number) =>
+      ({ left: 0, top, width: 200, height: 100, right: 200, bottom: top + 100, x: 0, y: top, toJSON: () => {} }) as DOMRect
+    const getRect = vi.spyOn(el, 'getBoundingClientRect').mockReturnValue(mockRect(0))
+
+    const { ctx, values } = makeRecorder(el)
+    const dispose = pointerLocal.start(ctx)
+
+    // rect is read once at start()
+    expect(getRect).toHaveBeenCalledTimes(1)
+
+    // several consecutive moves must NOT re-read the rect
+    window.dispatchEvent(Object.assign(new Event('pointermove'), { clientX: 100, clientY: 50 }))
+    window.dispatchEvent(Object.assign(new Event('pointermove'), { clientX: 0, clientY: 0 }))
+    window.dispatchEvent(Object.assign(new Event('pointermove'), { clientX: 200, clientY: 100 }))
+    expect(getRect).toHaveBeenCalledTimes(1)
+
+    // last move: pointer at corner (200, 100) on a 200×100 rect at top=0
+    expect(values['local-pointer-x-ratio']).toBe(1)
+    expect(values['local-pointer-y-ratio']).toBe(1)
+    expect(values['local-pointer-inside']).toBe(1)
+
+    // scroll updates the cached rect
+    getRect.mockReturnValue(mockRect(200))
+    window.dispatchEvent(new Event('scroll'))
+    expect(getRect).toHaveBeenCalledTimes(2)
+
+    // same absolute coords now map to new relative position
+    window.dispatchEvent(Object.assign(new Event('pointermove'), { clientX: 200, clientY: 300 }))
+    expect(values['local-pointer-y-ratio']).toBe(1) // (300−200)/100 = 1
+
+    // window resize also refreshes the rect
+    window.dispatchEvent(new Event('resize'))
+    expect(getRect).toHaveBeenCalledTimes(3)
+
+    dispose()
+    el.remove()
+  })
+
+  it('stops writing after dispose (move, scroll, and resize all silenced)', () => {
+    const el = document.createElement('div')
+    document.body.append(el)
+    vi.spyOn(el, 'getBoundingClientRect').mockReturnValue(
+      { left: 0, top: 0, width: 100, height: 100, right: 100, bottom: 100, x: 0, y: 0, toJSON: () => {} } as DOMRect,
+    )
+
+    const { ctx, values } = makeRecorder(el)
+    const dispose = pointerLocal.start(ctx)
+    window.dispatchEvent(Object.assign(new Event('pointermove'), { clientX: 50, clientY: 50 }))
+    expect(values['local-pointer-x-ratio']).toBe(0.5)
+
+    dispose()
+
+    window.dispatchEvent(Object.assign(new Event('pointermove'), { clientX: 10, clientY: 10 }))
+    expect(values['local-pointer-x-ratio']).toBe(0.5) // listener removed, no update
+
+    el.remove()
   })
 })
 
