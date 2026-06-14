@@ -50,14 +50,16 @@ export function observeResize(el: Element, cb: RoCb): Disposer {
 let io: IntersectionObserver | undefined
 const ioCallbacks = new WeakMap<Element, Set<IoCb>>()
 const ioLast = new WeakMap<Element, IntersectionObserverEntry>()
+const ioThresholds = [0, 0.98, 0.99, 0.995, 0.999, 1]
 
 export function observeIntersection(el: Element, cb: IoCb): Disposer {
   if (!io) {
-    // Thresholds [0, 1]: notify when the target starts/stops overlapping the
-    // viewport at all (ratio crosses 0) and when it becomes/stops being fully
-    // contained (ratio crosses 1). `visibility` uses the full-containment edge;
-    // the binding-layer gate uses the any-pixel edge (`isIntersecting`).
-    // Continuous ratios in between are native `view()` territory.
+    // Thresholds hug both edges: notify when the target starts/stops overlapping
+    // the viewport at all (ratio crosses 0), and again as it gets *very* close to
+    // full containment. Some mobile engines can stall just shy of ratio 1 due to
+    // viewport chrome / subpixel rounding, so `visibility` gets a near-1 callback
+    // and decides "fully visible" from geometry instead of exact ratio alone. The
+    // binding-layer gate still only cares about the any-pixel edge (`isIntersecting`).
     io = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
@@ -66,7 +68,7 @@ export function observeIntersection(el: Element, cb: IoCb): Disposer {
           if (cbs) for (const fn of [...cbs]) fn(entry)
         }
       },
-      { threshold: [0, 1] },
+      { threshold: ioThresholds },
     )
   }
   let cbs = ioCallbacks.get(el)

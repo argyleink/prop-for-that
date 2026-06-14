@@ -15,7 +15,9 @@ let roInstances: FakeRO[]
 class FakeIO {
   observe = vi.fn()
   unobserve = vi.fn()
-  constructor(private cb: (entries: IoEntry[]) => void) {
+  options?: IntersectionObserverInit
+  constructor(private cb: (entries: IoEntry[]) => void, options?: IntersectionObserverInit) {
+    this.options = options
     ioInstances.push(this)
   }
   emit(entries: IoEntry[]) {
@@ -62,6 +64,12 @@ describe('observeIntersection', () => {
     ioInstances[0]!.emit([io(el, true)])
     expect(a).toHaveBeenCalledTimes(1)
     expect(b).toHaveBeenCalledTimes(1)
+  })
+
+  it('uses near-full thresholds so visibility sources get a callback just before ratio 1', async () => {
+    const { observeIntersection } = await import('../src/core/observers')
+    observeIntersection(document.createElement('div'), vi.fn())
+    expect(ioInstances[0]!.options?.threshold).toEqual([0, 0.98, 0.99, 0.995, 0.999, 1])
   })
 
   it('replays the latest entry to a late subscriber', async () => {
