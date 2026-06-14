@@ -857,15 +857,34 @@ describe('cpu-pressure', () => {
 describe('pointer-local', () => {
   // pointer-local calls observeResize, which needs ResizeObserver. jsdom doesn't
   // provide one, so stub a minimal no-op so the source initialises cleanly.
+  // It also schedules rect updates via requestAnimationFrame, so stub that too.
+  let scheduled: FrameRequestCallback[]
+
   beforeEach(() => {
     vi.stubGlobal('ResizeObserver', class {
       observe() {}
       unobserve() {}
     })
+    scheduled = []
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+      scheduled.push(cb)
+      return scheduled.length
+    })
+    vi.stubGlobal('cancelAnimationFrame', (id: number) => {
+      // replace with a no-op so the slot stays in the array (ids are 1-based)
+      if (id > 0 && id <= scheduled.length) scheduled[id - 1] = () => {}
+    })
   })
   afterEach(() => vi.unstubAllGlobals())
 
-  it('does not call getBoundingClientRect() on pointermove — uses a cached rect', () => {
+  /** Flush all currently-queued rAF callbacks. */
+  const tick = () => {
+    const cbs = [...scheduled]
+    scheduled = []
+    for (const cb of cbs) cb(0)
+  }
+
+  it('caches rect at start; refreshes via rAF on scroll/resize, never on pointermove', () => {
     const el = document.createElement('div')
     document.body.append(el)
 
@@ -876,32 +895,44 @@ describe('pointer-local', () => {
     const { ctx, values } = makeRecorder(el)
     const dispose = pointerLocal.start(ctx)
 
-    // rect is read once at start()
+    // rect is read once synchronously at start()
     expect(getRect).toHaveBeenCalledTimes(1)
 
-    // several consecutive moves must NOT re-read the rect
+    // consecutive pointermove events must NOT re-read the rect
     window.dispatchEvent(Object.assign(new Event('pointermove'), { clientX: 100, clientY: 50 }))
     window.dispatchEvent(Object.assign(new Event('pointermove'), { clientX: 0, clientY: 0 }))
     window.dispatchEvent(Object.assign(new Event('pointermove'), { clientX: 200, clientY: 100 }))
-    expect(getRect).toHaveBeenCalledTimes(1)
+    expect(getRect).toHaveBeenCalledTimes(1) // still 1 — no layout read inside event handler
 
-    // last move: pointer at corner (200, 100) on a 200×100 rect at top=0
+    // last move: pointer at corner (200,100) on a 200×100 rect at top=0
     expect(values['local-pointer-x-ratio']).toBe(1)
     expect(values['local-pointer-y-ratio']).toBe(1)
     expect(values['local-pointer-inside']).toBe(1)
 
-    // scroll updates the cached rect
+    // scroll schedules a rAF — does NOT re-read immediately (key crash fix)
     getRect.mockReturnValue(mockRect(200))
     window.dispatchEvent(new Event('scroll'))
+    expect(getRect).toHaveBeenCalledTimes(1) // no immediate read
+    expect(scheduled.length).toBe(1)         // one rAF pending
+
+    // multiple scroll events between frames collapse into a single rAF
+    window.dispatchEvent(new Event('scroll'))
+    window.dispatchEvent(new Event('scroll'))
+    expect(scheduled.length).toBe(1) // still just one pending rAF
+
+    // rAF tick: rect updated once
+    tick()
     expect(getRect).toHaveBeenCalledTimes(2)
 
     // same absolute coords now map to new relative position
     window.dispatchEvent(Object.assign(new Event('pointermove'), { clientX: 200, clientY: 300 }))
     expect(values['local-pointer-y-ratio']).toBe(1) // (300−200)/100 = 1
 
-    // window resize also refreshes the rect
+    // resize also schedules a single rAF
     window.dispatchEvent(new Event('resize'))
-    expect(getRect).toHaveBeenCalledTimes(3)
+    expect(getRect).toHaveBeenCalledTimes(2) // no immediate read
+    tick()
+    expect(getRect).toHaveBeenCalledTimes(3) // updated after rAF
 
     dispose()
     el.remove()

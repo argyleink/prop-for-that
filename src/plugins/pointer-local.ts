@@ -8,12 +8,17 @@ import { round4 } from '../core/num'
  * element's box), `--live-local-pointer-inside` (0/1).
  *
  * Shares the page's single `pointermove` listener. The element's bounding rect
- * is cached and refreshed on scroll, resize, and element-resize events rather
- * than re-read on every pointer event. Re-reading the rect on every move forces
- * a style flush in Firefox when inherited custom properties were written since
- * the last frame, causing the renderer to re-resolve the full cascade for the
- * entire document on every pointer event — which compounds at trackpad rates
- * and can crash the tab.
+ * is cached at `start()` and refreshed lazily via `requestAnimationFrame` —
+ * never synchronously inside any event handler.
+ *
+ * Why: on macOS trackpads both `pointermove` and `scroll` fire at 120 Hz+.
+ * With `typed: true` the rAF flush writes `--live-*` properties registered as
+ * `@property inherits: true`, marking the full document cascade dirty. Calling
+ * `getBoundingClientRect()` while the cascade is dirty forces Firefox to
+ * synchronously re-resolve inherited custom properties across all DOM elements.
+ * At 120 Hz this saturates the CPU and crashes the renderer process. Deferring
+ * the read to a rAF callback limits cascade resolution to at most once per
+ * rendered frame, which Firefox handles without issue.
  */
 export const pointerLocal: Source = {
   key: 'pointer-local',
@@ -21,8 +26,21 @@ export const pointerLocal: Source = {
   start(ctx) {
     const el = ctx.target
     let rect = el.getBoundingClientRect()
-    const updateRect = () => {
-      rect = el.getBoundingClientRect()
+    let rafId = 0
+
+    // Schedule a one-shot rAF to refresh the cached rect. Multiple scroll or
+    // resize events between frames collapse into a single read.
+    const scheduleRectUpdate = () => {
+      if (rafId) return
+      if (typeof requestAnimationFrame !== 'function') {
+        // SSR / environments without rAF: update synchronously
+        rect = el.getBoundingClientRect()
+        return
+      }
+      rafId = requestAnimationFrame(() => {
+        rect = el.getBoundingClientRect()
+        rafId = 0
+      })
     }
 
     const onMove = (e: Event) => {
@@ -36,11 +54,12 @@ export const pointerLocal: Source = {
     }
 
     const offMove = onWindow('pointermove', onMove)
-    const offScroll = onWindow('scroll', updateRect)
-    const offResize = onWindow('resize', updateRect)
-    const offRO = observeResize(el, updateRect)
+    const offScroll = onWindow('scroll', scheduleRectUpdate)
+    const offResize = onWindow('resize', scheduleRectUpdate)
+    const offRO = observeResize(el, scheduleRectUpdate)
 
     return () => {
+      if (rafId && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(rafId)
       offMove()
       offScroll()
       offResize()
