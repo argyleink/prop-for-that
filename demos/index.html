@@ -1148,6 +1148,19 @@
             <p class="src__desc">Pinch-zoom and on-screen keyboard.</p>
           </article>
           <article class="src">
+            <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2.5" y="6.5" width="19" height="11" rx="2"/><path d="M6 10.5h0M10 10.5h0M14 10.5h0M18 10.5h0M8 14h8"/></svg></span><code class="src__key">keyboard</code><span class="src__scope">global</span></header>
+            <dl class="src__vars">
+              <div class="src__var" style="--val: var(--live-keyboard-open, 0)"><dt>--live-keyboard-open</dt><dd></dd></div>
+              <div class="src__var" style="--val: var(--live-keyboard-height, 0); --unit: 'px'"><dt>--live-keyboard-height</dt><dd></dd></div>
+              <div class="src__var" style="--val: var(--live-keyboard-width, 0); --unit: 'px'"><dt>--live-keyboard-width</dt><dd></dd></div>
+              <div class="src__var" style="--val: var(--live-keyboard-x, 0); --unit: 'px'"><dt>--live-keyboard-x</dt><dd></dd></div>
+              <div class="src__var" style="--val: var(--live-keyboard-y, 0); --unit: 'px'"><dt>--live-keyboard-y</dt><dd></dd></div>
+              <div class="src__var" style="--val: var(--live-keyboard-right, 0); --unit: 'px'"><dt>--live-keyboard-right</dt><dd></dd></div>
+              <div class="src__var" style="--val: var(--live-keyboard-bottom, 0); --unit: 'px'"><dt>--live-keyboard-bottom</dt><dd></dd></div>
+            </dl>
+            <p class="src__desc">On-screen keyboard size &amp; box (<code>0</code> when hidden); VirtualKeyboard API, <code>visualViewport</code> on iOS.</p>
+          </article>
+          <article class="src">
             <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M10.5 18.5h3"/></svg></span><code class="src__key">orientation</code><span class="src__scope">global</span><span class="src__tag">permission</span></header>
             <dl class="src__vars">
               <div class="src__var" style="--val: calc(var(--live-orient-alpha, 0)); --unit: '&deg;'"><dt>--live-orient-alpha</dt><dd></dd></div>
@@ -1191,6 +1204,15 @@
               <div class="src__var src__var--navtype"><dt>--const-nav-type</dt><dd></dd></div>
             </dl>
             <p class="src__desc">How you reached this page, set once: navigate / reload / back / prerender.</p>
+          </article>
+          <article class="src">
+            <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 3h7l11 11-7 7L3 10z"/><circle cx="7.5" cy="7.5" r="1.4"/></svg></span><code class="src__key">meta</code><span class="src__scope">global</span></header>
+            <dl class="src__vars">
+              <div class="src__var src__var--scoped"><dt>--const-meta-theme-color</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--const-meta-og-image</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--const-meta-color-scheme</dt><dd></dd></div>
+            </dl>
+            <p class="src__desc">One <code>--const-meta-&lt;name&gt;</code> per <code>&lt;meta&gt;</code> tag &mdash; the exact names depend on the page.</p>
           </article>
 
           <article class="src">

@@ -118,11 +118,13 @@ Import name is camelCase; the key for `propsFor`/`data-props-for` is the dashed 
 | `pageFocused` | `page-focused` | global | `--live-page-focused` (1/0 — tab frontmost and window focused; `0` when switched away) |
 | `pageVisible` | `page-visible` | global | `--live-page-visible` (1/0 — tab foreground vs hidden/backgrounded; `document.visibilityState`. A visible tab can still be unfocused) |
 | `navType` | `nav-type` | global | `--const-nav-type` (write-once string — how the user arrived: `navigate` / `reload` / `back_forward` / `prerender`, from `performance.getEntriesByType('navigation')[0].type`. Pairs with `@container style(--const-nav-type: reload)`) |
+| `meta` | `meta` | global | every `<meta name\|property + content>` as a write-once `--const-meta-<slug>` (slug = lowercased name, non-alphanumerics → `-`): e.g. `--const-meta-theme-color`, `--const-meta-og-image`, `--const-meta-color-scheme`. First match wins; a `media`-conditional meta is skipped when it doesn't match, so the active `theme-color` variant lands. Read once at bind (const) |
 | `network` | `network` | global | `--live-net-downlink`, `--live-net-rtt`, `--live-net-save-data` (1/0), `--live-net-type` (slow-2g=1…4g=4, else 0) |
 | `battery` | `battery` | global | `--live-battery-level` (0–1), `--live-battery-charging` (1/0) |
 | `clock` | `clock` | global | `--live-now` (epoch seconds), `--live-hours`, `--live-minutes`, `--live-seconds` |
 | `fps` | `fps` | global | `--live-fps` |
 | `visualViewport` | `visual-viewport` | global | `--live-vvp-scale`, `--live-vvp-offset-top`, `--live-vvp-height` |
+| `keyboard` | `keyboard` | global | soft-keyboard geometry: `--live-keyboard-open` (1/0), `--live-keyboard-height`, `--live-keyboard-width`, `--live-keyboard-x`/`-y`/`-right`/`-bottom` (px, client coords). Uses the VirtualKeyboard API (sets `navigator.virtualKeyboard.overlaysContent = true` while bound, reverts on dispose) on Chromium/Android; falls back to inferring height from `visualViewport` shrink on iOS (approximate — pinch-zoom can read as a keyboard). Seeds zeros where unsupported |
 | `orientation` | `orientation` | global | `--live-orient-alpha`, `--live-orient-beta`, `--live-orient-gamma` (deg) |
 | `motion` | `motion` | global | `--live-accel-x`, `--live-accel-y`, `--live-accel-z` (m/s²) |
 | `geo` | `geo` | global | `--live-geo-lat`, `--live-geo-lng`, `--live-geo-accuracy` (m) |

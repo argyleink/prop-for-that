@@ -1,6 +1,6 @@
 {
   "name": "prop-for-that",
-  "version": "0.7.3",
+  "version": "0.7.4",
   "description": "Expose what JavaScript knows but CSS can't see, as batched, diffed CSS custom properties.",
   "type": "module",
   "license": "MIT",

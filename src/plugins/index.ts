@@ -6,11 +6,13 @@ import { online } from './online'
 import { pageFocused } from './page-focused'
 import { pageVisible } from './page-visible'
 import { navType } from './nav-type'
+import { meta } from './meta'
 import { network } from './network'
 import { battery } from './battery'
 import { clock } from './clock'
 import { fps } from './fps'
 import { visualViewport } from './visual-viewport'
+import { keyboard } from './keyboard'
 import { pointer } from './pointer'
 import { pointerLocal } from './pointer-local'
 import { media } from './media'
@@ -33,11 +35,13 @@ export {
   pageFocused,
   pageVisible,
   navType,
+  meta,
   network,
   battery,
   clock,
   fps,
   visualViewport,
+  keyboard,
   pointer,
   pointerLocal,
   media,
@@ -62,11 +66,13 @@ export const allPlugins: Source[] = [
   pageFocused,
   pageVisible,
   navType,
+  meta,
   network,
   battery,
   clock,
   fps,
   visualViewport,
+  keyboard,
   pointer,
   pointerLocal,
   media,

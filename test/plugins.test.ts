@@ -10,6 +10,8 @@ import { scrollVelocity } from '../src/plugins/scroll-velocity'
 import { pageFocused } from '../src/plugins/page-focused'
 import { pageVisible } from '../src/plugins/page-visible'
 import { navType } from '../src/plugins/nav-type'
+import { meta } from '../src/plugins/meta'
+import { keyboard } from '../src/plugins/keyboard'
 import { cpuPressure } from '../src/plugins/cpu-pressure'
 import { img } from '../src/plugins/img'
 import { videoColor } from '../src/plugins/video-color'
@@ -938,5 +940,116 @@ describe('scroll-velocity', () => {
     expect(scheduled.length).toBe(0) // sampler stopped itself
 
     dispose()
+  })
+})
+
+describe('meta', () => {
+  const added: HTMLMetaElement[] = []
+  const addMeta = (attrs: Record<string, string>) => {
+    const m = document.createElement('meta')
+    for (const [k, v] of Object.entries(attrs)) m.setAttribute(k, v)
+    document.head.appendChild(m)
+    added.push(m)
+  }
+  afterEach(() => {
+    for (const m of added) m.remove()
+    added.length = 0
+  })
+
+  it('exposes name/property meta content as --const-meta-<slug>', () => {
+    addMeta({ name: 'theme-color', content: '#bada55' })
+    addMeta({ property: 'og:image', content: '/cover.jpg' })
+    addMeta({ name: 'description', content: 'hello world' })
+
+    const { ctx, values } = makeRecorder(document.documentElement)
+    meta.start(ctx)
+
+    expect(values['meta-theme-color']).toBe('#bada55')
+    expect(values['meta-og-image']).toBe('/cover.jpg') // og:image → colon becomes a dash
+    expect(values['meta-description']).toBe('hello world')
+  })
+
+  it('takes the first match for a repeated name and skips empty content', () => {
+    addMeta({ name: 'author', content: 'jane' })
+    addMeta({ name: 'author', content: 'joe' }) // duplicate → ignored (first wins)
+    addMeta({ name: 'keywords', content: '' }) // empty → not written
+
+    const { ctx, values } = makeRecorder(document.documentElement)
+    meta.start(ctx)
+
+    expect(values['meta-author']).toBe('jane')
+    expect('meta-keywords' in values).toBe(false)
+  })
+})
+
+describe('keyboard', () => {
+  afterEach(() => {
+    delete (navigator as { virtualKeyboard?: unknown }).virtualKeyboard
+    delete (window as { visualViewport?: unknown }).visualViewport
+  })
+
+  it('auto-enables overlaysContent, maps boundingRect to props, reverts on dispose', () => {
+    const listeners: Array<() => void> = []
+    const vk = {
+      overlaysContent: false,
+      boundingRect: { x: 0, y: 700, width: 400, height: 300 } as DOMRectReadOnly,
+      addEventListener: (_t: string, cb: () => void) => listeners.push(cb),
+      removeEventListener: (_t: string, cb: () => void) => {
+        const i = listeners.indexOf(cb)
+        if (i >= 0) listeners.splice(i, 1)
+      },
+    }
+    Object.defineProperty(navigator, 'virtualKeyboard', { value: vk, configurable: true })
+
+    const { ctx, values } = makeRecorder(document.documentElement)
+    const dispose = keyboard.start(ctx)
+
+    expect(vk.overlaysContent).toBe(true) // required for the API to report geometry
+    expect(values['keyboard-open']).toBe(1)
+    expect(values['keyboard-height']).toBe(300)
+    expect(values['keyboard-width']).toBe(400)
+    expect(values['keyboard-y']).toBe(700)
+    expect(values['keyboard-bottom']).toBe(1000)
+    expect(values['keyboard-right']).toBe(400)
+
+    // keyboard hides → all-zero boundingRect → open flips to 0
+    vk.boundingRect = { x: 0, y: 0, width: 0, height: 0 } as DOMRectReadOnly
+    for (const cb of listeners) cb()
+    expect(values['keyboard-open']).toBe(0)
+    expect(values['keyboard-height']).toBe(0)
+
+    dispose()
+    expect(vk.overlaysContent).toBe(false) // restored to its prior value
+    expect(listeners.length).toBe(0) // geometrychange listener removed
+  })
+
+  it('seeds zeros when no soft-keyboard API is available', () => {
+    const { ctx, values } = makeRecorder(document.documentElement)
+    keyboard.start(ctx)
+
+    expect(values['keyboard-open']).toBe(0)
+    expect(values['keyboard-height']).toBe(0)
+    expect(values['keyboard-width']).toBe(0)
+  })
+
+  it('infers height from visualViewport shrink when only that API exists', () => {
+    // no VirtualKeyboard API → fall back to the visual viewport. A shrunk
+    // visual viewport (innerHeight − vvp.height − offsetTop) reads as a keyboard.
+    const vvp = {
+      height: window.innerHeight - 300,
+      width: 400,
+      offsetTop: 0,
+      addEventListener() {},
+      removeEventListener() {},
+    }
+    Object.defineProperty(window, 'visualViewport', { value: vvp, configurable: true })
+
+    const { ctx, values } = makeRecorder(document.documentElement)
+    keyboard.start(ctx)
+
+    expect(values['keyboard-open']).toBe(1)
+    expect(values['keyboard-height']).toBe(300)
+    expect(values['keyboard-width']).toBe(400)
+    expect(values['keyboard-bottom']).toBe(window.innerHeight)
   })
 })

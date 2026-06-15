@@ -8,6 +8,34 @@ backwards-compatible change (semver's `1.0.0`+ rules kick in at v1).
 Only the published library (`dist/`) is versioned here; the demo and docs site
 are repo-only and not part of the npm package.
 
+## [0.7.4]
+
+### Added
+- **`keyboard` plugin** (global) — exposes the soft (on-screen) keyboard's
+  geometry on `:root`: `--live-keyboard-open` (`1`/`0`), `--live-keyboard-height`,
+  `--live-keyboard-width`, and `--live-keyboard-x` / `-y` / `-right` / `-bottom`
+  (px, client coordinates), so layout can reflow around the keyboard with pure
+  CSS — `padding-block-end: calc(var(--live-keyboard-height) * 1px)`. Reads exact
+  geometry from the VirtualKeyboard API on Chromium/Android (it sets
+  `navigator.virtualKeyboard.overlaysContent = true` while bound — so the
+  keyboard overlays content instead of resizing the viewport — and restores it on
+  dispose), and falls back to inferring the height from `visualViewport` shrink on
+  iOS/Safari (approximate: a pinch-zoom can read as a keyboard). Seeds zeros where
+  neither API is available. (#6)
+- **`meta` plugin** (global) — writes every `<meta name|property + content>` on
+  the page as a write-once `--const-meta-<slug>` (the slug lowercases the name and
+  collapses runs of non-alphanumerics to a single dash): `--const-meta-theme-color`,
+  `--const-meta-og-image`, `--const-meta-color-scheme`, etc. — so CSS can read page
+  metadata directly (`background: var(--const-meta-theme-color)`,
+  `background-image: url(var(--const-meta-og-image))`). First match wins per name,
+  and a `media`-conditional meta is skipped when its query doesn't currently match,
+  so the active `theme-color` variant is the one written. Read once at bind on the
+  `const` cadence, so meta tags swapped in by a framework *after* bind aren't
+  tracked. (#7)
+
+Both are tree-shakeable opt-in plugins — import from `prop-for-that/plugins`, or
+let `auto` load them on demand via `data-props-for`.
+
 ## [0.7.3]
 
 ### Changed
