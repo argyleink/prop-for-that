@@ -41,9 +41,12 @@ This matters because a persistent rAF loop is not free — it keeps the main thr
 
 ## Off-screen gating
 
-Element-scoped sources run **only while their element is in the viewport**. The binding layer watches each gated element through the shared `IntersectionObserver`; when the element scrolls out of view it tears down the source's work (listeners, observers, timers) and leaves its last-written values frozen in place, then re-runs the source — re-seeding current values — when it scrolls back. So binding `pointer-local`, `video-color`, or any element plugin across a long list costs nothing for the rows nobody can see.
+**Continuously-sampling** element sources run **only while their element is in the viewport**. The binding layer watches each gated element through the shared `IntersectionObserver`; when the element scrolls out of view it tears down the source's work (listeners, observers, timers) and leaves its last-written values frozen in place, then re-runs the source — re-seeding current values — when it scrolls back. So binding `size`, `pointer-local`, `video-color`, or `img-color` across a long list costs nothing for the rows nobody can see.
 
-Global sources and `:root` bindings are never gated (the document root is always "visible"), and a source can opt out with `gate: false` — which `visibility` does, since its whole job is to *report* visibility and it must keep observing off screen.
+Global sources and `:root` bindings are never gated (the document root is always "visible"), and a source can opt out with `gate: false`. Two kinds do:
+
+- **`visibility`**, since its whole job is to *report* visibility — it must keep observing off screen.
+- **Event-driven sources** (`range`, `field`, `field-state`, `form-state`, `select`, `color-input`, `img`). They only write in response to user interaction or a `load`, which can't happen while the element is off screen, so gating them would add an `IntersectionObserver` subscription that saves nothing. Running ungated they seed their values once at bind time (so a `var()` resolves immediately, even before the element scrolls in) and never tear down. (`field-state` in particular *must* run ungated — it latches edit history, which a gate's tear-down/re-seed cycle would silently reset.)
 
 ## Pausing and capping the rate
 

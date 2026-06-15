@@ -19,6 +19,9 @@ export const colorInput: Source = {
   key: 'color-input',
   scope: 'element',
   props: { color: colorProp },
+  // Event-driven (`input`/`change`): no continuous work, so skip the viewport
+  // gate and its IntersectionObserver subscription.
+  gate: false,
   start(ctx) {
     const el = resolveTarget<HTMLInputElement>(ctx.target, 'input[type="color"]')
     if (!el) return () => {}

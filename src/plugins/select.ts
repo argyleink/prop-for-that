@@ -31,6 +31,9 @@ import { round4 } from '../core/num'
 export const select: Source = {
   key: 'select',
   scope: 'element',
+  // Event-driven (`input`/`change`): nothing to pause off screen, so skip the
+  // viewport gate and its IntersectionObserver subscription.
+  gate: false,
   start(ctx) {
     const el = resolveTarget<HTMLSelectElement>(ctx.target, 'select')
     if (!el) return () => {}

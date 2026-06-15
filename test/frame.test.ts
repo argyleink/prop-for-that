@@ -105,6 +105,28 @@ describe('frame: liveHz cadence cap', () => {
 
     tick(20) // 40ms total ≥ 33ms → flushes the coalesced write
     expect(flush).toHaveBeenCalledTimes(2)
+    expect(scheduled.length).toBe(0) // owed flush served, nothing sampling → idle
+  })
+
+  it('stops scheduling once a throttled flush is served (no idle spin)', () => {
+    const flush = vi.fn()
+    setFlush(flush)
+    config.liveHz = 30
+
+    requestTick()
+    tick(1000) // long gap → flushes, sets the reference time
+    expect(flush).toHaveBeenCalledTimes(1)
+    expect(scheduled.length).toBe(0) // nothing owed, nothing sampling → idle
+
+    // A throttled tick keeps exactly one frame alive *because a flush is owed*,
+    // until the window elapses; then it flushes once and idles. The reschedule
+    // is gated on owed work, so it never spins extra frames afterward.
+    requestTick()
+    tick(10) // < 33ms → throttled, reschedules (owes a flush)
+    expect(scheduled.length).toBe(1)
+    tick(30) // window elapsed → flush, clear the owed tick
+    expect(flush).toHaveBeenCalledTimes(2)
+    expect(scheduled.length).toBe(0) // served, no sampler → idle, no spin
   })
 
   it('does not throttle when liveHz is unset', () => {

@@ -1,4 +1,5 @@
 import type { Source } from '../core/types'
+import { onWindow } from '../core/window-events'
 import { round4 } from '../core/num'
 
 /**
@@ -12,13 +13,13 @@ export const motion: Source = {
   start(ctx) {
     if (typeof DeviceMotionEvent === 'undefined') return () => {}
 
-    const onMotion = (e: DeviceMotionEvent) => {
-      const a = e.accelerationIncludingGravity
+    const onMotion = (e: Event) => {
+      const a = (e as DeviceMotionEvent).accelerationIncludingGravity
       ctx.write('accel-x', round4(a?.x ?? 0))
       ctx.write('accel-y', round4(a?.y ?? 0))
       ctx.write('accel-z', round4(a?.z ?? 0))
     }
-    window.addEventListener('devicemotion', onMotion, { passive: true })
-    return () => window.removeEventListener('devicemotion', onMotion)
+    // one shared window `devicemotion` listener for the page
+    return onWindow('devicemotion', onMotion)
   },
 }

@@ -8,6 +8,51 @@ backwards-compatible change (semver's `1.0.0`+ rules kick in at v1).
 Only the published library (`dist/`) is versioned here; the demo and docs site
 are repo-only and not part of the npm package.
 
+## [0.7.3]
+
+### Changed
+- **Event-driven element sources no longer use the off-screen viewport gate.**
+  `range`, `field`, `field-state`, `form-state`, `select`, `color-input`, and
+  `img` now run ungated (`gate: false`). They only write in response to user
+  interaction or an image `load` — neither of which can happen while the element
+  is off screen — so gating them only added an `IntersectionObserver`
+  subscription plus a tear-down / re-seed cycle on every scroll in and out, for
+  no benefit. Ungated, they seed their values once at bind time (so a `var()`
+  resolves immediately, even for an element below the fold) and never tear down.
+  Continuously-sampling element sources (`size`, `pointer-local`, `media`,
+  `img-color`, `video-color`) stay gated, where pausing off screen is a real
+  saving. Additive: off-screen elements that previously had no props until they
+  scrolled in now carry their seeded values from the start.
+
+### Fixed
+- **`field-state` no longer loses its latched interaction history when its
+  element scrolls off screen and back.** Because it was viewport-gated,
+  scrolling the field out of view tore the source down and scrolling back
+  re-ran it — re-snapshotting each field's "initial" value from the *current*
+  (already-edited) value and clearing the dirty / touched / changed latches, so
+  a field would report pristine again. Now that it runs ungated (above), the
+  snapshot and latches are taken once and persist for the binding's life.
+- **The shared frame loop no longer keeps `requestAnimationFrame` scheduled when
+  no flush is owed.** Under a `liveHz` cadence cap a throttled frame rescheduled
+  unconditionally; it now reschedules only while a continuous sampler is
+  registered or a flush is still pending, so a one-shot write can't leave rAF
+  spinning after its work is done. Any running rAF can demote compositor-driven
+  CSS animations, so the loop is kept as quiet as possible — it idles the moment
+  nothing needs it (regression test added).
+- **`writer.forget()` no longer leaves an empty entry that makes a queued frame
+  flush nothing.** When a source's disposal raced a same-frame write, the
+  emptied target lingered in the pending map past the `flush` fast-path's size
+  check; it is now removed so the frame is a true no-op.
+
+### Performance
+- Removed a per-frame array allocation from the loop's sampler dispatch
+  (`[...frameFns]` → direct `Set` iteration). Samplers only ever remove
+  themselves, which `Set` iteration handles safely, so the defensive copy was
+  unnecessary on the one path that runs every frame.
+- `motion` and `orientation` now attach through the shared, ref-counted
+  `onWindow` helper instead of raw `window.addEventListener`, matching every
+  other window-driven source — one real listener per event type for the page.
+
 ## [0.7.2]
 
 ### Fixed

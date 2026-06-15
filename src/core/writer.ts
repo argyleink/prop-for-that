@@ -30,7 +30,14 @@ export class Writer {
   /** Drop cached/queued state for a property (used when a source is disposed). */
   forget(target: HTMLElement, prop: string): void {
     this.last.get(target)?.delete(prop)
-    this.pending.get(target)?.delete(prop)
+    const pending = this.pending.get(target)
+    if (pending) {
+      pending.delete(prop)
+      // Don't leave an empty inner map behind: it would make a queued frame flush
+      // nothing (the `pending.size === 0` early-out below would miss it) when a
+      // disposal races a same-frame write.
+      if (pending.size === 0) this.pending.delete(target)
+    }
   }
 
   /** Apply all queued writes. Runs once per frame via the shared loop. */

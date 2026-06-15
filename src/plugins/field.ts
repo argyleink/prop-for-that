@@ -43,6 +43,9 @@ const VALIDITY: [keyof ValidityState, string][] = [
 export const field: Source = {
   key: 'field',
   scope: 'element',
+  // Event-driven (`input`/`change`): no continuous work to pause off screen, so
+  // skip the viewport gate and its IntersectionObserver subscription.
+  gate: false,
   start(ctx) {
     const el = resolveTarget<FieldElement>(ctx.target, 'input, textarea, select')
     if (!el) return () => {}

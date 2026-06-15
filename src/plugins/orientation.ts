@@ -1,4 +1,5 @@
 import type { Source } from '../core/types'
+import { onWindow } from '../core/window-events'
 import { round4 } from '../core/num'
 
 /**
@@ -12,12 +13,13 @@ export const orientation: Source = {
   start(ctx) {
     if (typeof DeviceOrientationEvent === 'undefined') return () => {}
 
-    const onOrient = (e: DeviceOrientationEvent) => {
-      ctx.write('orient-alpha', round4(e.alpha ?? 0))
-      ctx.write('orient-beta', round4(e.beta ?? 0))
-      ctx.write('orient-gamma', round4(e.gamma ?? 0))
+    const onOrient = (e: Event) => {
+      const ev = e as DeviceOrientationEvent
+      ctx.write('orient-alpha', round4(ev.alpha ?? 0))
+      ctx.write('orient-beta', round4(ev.beta ?? 0))
+      ctx.write('orient-gamma', round4(ev.gamma ?? 0))
     }
-    window.addEventListener('deviceorientation', onOrient, { passive: true })
-    return () => window.removeEventListener('deviceorientation', onOrient)
+    // one shared window `deviceorientation` listener for the page
+    return onWindow('deviceorientation', onOrient)
   },
 }

@@ -18,6 +18,10 @@ let id = 0
 let running = false
 let paused = false
 let lastFrame = 0
+// A flush has been requested (via `requestTick`) but not yet served. Cleared the
+// moment a flush runs. Lets the cadence cap below keep a frame alive only while
+// one is actually owed, instead of spinning rAF for nothing.
+let pendingTick = false
 
 const hasRaf = (): boolean => typeof requestAnimationFrame === 'function'
 
@@ -29,12 +33,19 @@ function run(now: number): void {
   // (SSR/test), where `now` is meaningless and writes must flush synchronously.
   const hz = config.liveHz
   if (hasRaf() && hz && hz > 0 && now - lastFrame < 1000 / hz) {
-    id = requestAnimationFrame(run)
+    // Too soon under the cadence cap. Only keep a frame alive if there's still a
+    // reason to — a continuous sampler, or a flush we still owe — so a throttled
+    // one-shot tick can't keep rAF spinning after its work is already done.
+    if (frameFns.size || pendingTick) id = requestAnimationFrame(run)
     return
   }
   lastFrame = now
   running = true
-  if (frameFns.size) for (const fn of [...frameFns]) fn(now)
+  // Samplers run first; any writes they queue are served by the flush below, so
+  // clear the owed-flush flag here (a sampler's own `requestTick` is no-op'd by
+  // `running`, and its writes are about to flush regardless).
+  if (frameFns.size) for (const fn of frameFns) fn(now)
+  pendingTick = false
   flushFn?.()
   running = false
   // keep looping only while continuous samplers are registered
@@ -49,6 +60,7 @@ function schedule(): void {
 
 /** Ensure a frame runs soon. Used by the Writer to flush queued writes. */
 export function requestTick(): void {
+  pendingTick = true
   schedule()
 }
 

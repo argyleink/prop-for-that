@@ -22,6 +22,9 @@ import { fieldsOf } from './_fields'
 export const formState: Source = {
   key: 'form-state',
   scope: 'element',
+  // Event-driven (`input`/`change`/`reset`): gating would only re-run the
+  // `fieldsOf` query on every viewport re-entry for no benefit. Run ungated.
+  gate: false,
   start(ctx) {
     const fields = fieldsOf(ctx.target)
     if (!fields.length) return () => {}

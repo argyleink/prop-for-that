@@ -13,6 +13,12 @@ import { resolveTarget } from '../core/find'
 export const img: Source = {
   key: 'img',
   scope: 'element',
+  // Event-driven (`load`/`error`), and its props (natural size, loaded/broken)
+  // are most useful *before* the element scrolls into view — reserving
+  // aspect-ratio, showing a skeleton. Gating would withhold them until the image
+  // is on screen, defeating the point, so run ungated (unlike the heavy
+  // `img-color`, which stays gated to defer its canvas decode).
+  gate: false,
   start(ctx) {
     const el = resolveTarget<HTMLImageElement>(ctx.target, 'img')
     if (!el) return () => {}

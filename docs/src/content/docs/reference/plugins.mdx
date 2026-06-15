@@ -73,7 +73,7 @@ Register, then attach with `propsFor(el, [...])`; they write to the bound elemen
 ```
 
 :::tip[Off-screen elements pause]
-An element plugin runs only while its element is in the viewport. Scrolled out of view, its work stops and its last values freeze in place; scrolling back resumes it. So binding `pointer-local`, `video-color`, etc. to many elements costs nothing for the ones nobody can see.
+A **continuously-sampling** element plugin (`size`, `pointer-local`, `media`, `img-color`, `video-color`) runs only while its element is in the viewport. Scrolled out of view, its work stops and its last values freeze in place; scrolling back resumes it. So binding them to many elements costs nothing for the ones nobody can see. **Event-driven** plugins (`field`, `field-state`, `form-state`, `select`, `color-input`, `img`, and the core `range`) run ungated — they only write on interaction or `load`, which can't happen off screen, so they seed once and skip the gate entirely.
 :::
 
 | Import | Key | Properties |

@@ -12,6 +12,10 @@ import { round4 } from '../../core/num'
 export const range: Source = {
   key: 'range',
   scope: 'element',
+  // Event-driven (writes only on `input`), so viewport-gating it would add an
+  // IntersectionObserver subscription that buys nothing — a value can't change
+  // while the control is off screen. Run ungated: attach once, seed once.
+  gate: false,
   start(ctx) {
     const input = resolveTarget<HTMLInputElement>(
       ctx.target,

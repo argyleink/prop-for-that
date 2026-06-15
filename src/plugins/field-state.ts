@@ -49,6 +49,12 @@ const resetValueOf = (el: FieldElement): string => {
 export const fieldState: Source = {
   key: 'field-state',
   scope: 'element',
+  // Event-driven, and it holds latched interaction history (dirty/touched/
+  // changed) plus the per-field `initial` snapshot. Gating would tear `start`
+  // down off screen and re-run it on re-entry, re-snapshotting `initial` from
+  // the *current* (already-edited) values and wiping the latches — so a field
+  // scrolled away and back would silently report pristine again. Run ungated.
+  gate: false,
   start(ctx) {
     const fields = fieldsOf(ctx.target)
     if (!fields.length) return () => {}

@@ -43,7 +43,7 @@ Bind any element with `data-props-for="key …"` and read its `--live-*` propert
 ## Why
 
 - **CSS does the work.** No per-element event handlers or render loops — bind once, compose in stylesheets.
-- **Fast by design.** One `requestAnimationFrame` flush per frame — idle when nothing changes, frozen while the tab is hidden — plus write-on-change diffing and a single shared `ResizeObserver` / `IntersectionObserver` for the whole page. Element sources pause while their element is off screen.
+- **Fast by design.** One `requestAnimationFrame` flush per frame — idle when nothing changes, frozen while the tab is hidden — plus write-on-change diffing and a single shared `ResizeObserver` / `IntersectionObserver` for the whole page. Continuously-sampling element sources pause while their element is off screen; event-driven ones (form fields, ranges, selects) run ungated.
 - **Ship only what you use.** Four lightweight core sources are built in; everything else is an opt-in, tree-shakeable plugin — and under `auto` each plugin loads on demand, the moment a `data-props-for` attribute asks for it.
 - **Plays with the platform.** Opt into typed [`@property`](https://prop-for-that.netlify.app/docsite/concepts/typed-properties/) values for interpolation, or FOUC-safe constants written before first paint.
 - **Tiny and dependency-free**, in every bundle format.
