@@ -2532,7 +2532,7 @@ main {
   padding: clamp(var(--space-4), 6vw, 4rem);
 }
 .sizer {
-  --landscape: clamp(0, calc((var(--live-aspect, 1) - 1) * 100), 1);
+  --landscape: clamp(0, round(up, calc(var(--live-aspect, 1) - 1), 1), 1);
   position: relative;
   inline-size: 16rem;
   block-size: 11rem;

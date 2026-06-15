@@ -673,7 +673,7 @@
             <pre><code>&lt;<span class="tok-key">div</span> <span class="tok-prop">id</span>=<span class="tok-str">"sizer"</span> <span class="tok-prop">data-props-for</span>=<span class="tok-str">"size"</span> <span class="tok-prop">style</span>=<span class="tok-str">"resize: both; overflow: auto"</span>&gt;&lt;/<span class="tok-key">div</span>&gt;</code></pre>
             <figcaption>CSS</figcaption>
             <pre><code><span class="tok-sel">.sizer</span> {
-  <span class="tok-prop">--landscape</span>: <span class="tok-fn">clamp</span>(<span class="tok-num">0</span>, <span class="tok-fn">calc</span>((<span class="tok-var">var(--live-aspect)</span> - <span class="tok-num">1</span>) * <span class="tok-num">100</span>), <span class="tok-num">1</span>);
+  <span class="tok-prop">--landscape</span>: <span class="tok-fn">clamp</span>(<span class="tok-num">0</span>, <span class="tok-fn">round</span>(up, <span class="tok-fn">calc</span>(<span class="tok-var">var(--live-aspect)</span> - <span class="tok-num">1</span>), <span class="tok-num">1</span>), <span class="tok-num">1</span>);
 }
 <span class="tok-sel">.sizer__land</span> { <span class="tok-prop">opacity</span>: <span class="tok-var">var(--landscape)</span>; }
 <span class="tok-sel">.sizer__por</span> { <span class="tok-prop">opacity</span>: <span class="tok-fn">calc</span>(<span class="tok-num">1</span> - <span class="tok-var">var(--landscape)</span>); }</code></pre>
