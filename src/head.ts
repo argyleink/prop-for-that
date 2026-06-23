@@ -19,7 +19,12 @@ function writeConstants(): void {
     'position:absolute;top:-9999px;width:100px;height:100px;overflow:scroll;visibility:hidden'
   const host = document.body ?? root
   host.appendChild(probe)
-  set('scrollbar-w', probe.offsetWidth - probe.clientWidth)
+  const scrollbarW = probe.offsetWidth - probe.clientWidth
+  set('scrollbar-w', scrollbarW)
+  // User's scrollbar preference, read off the same probe: overlay scrollbars
+  // reserve no layout space, so a zero width means they float over content and
+  // appear on interaction. 1 → overlay, 0 → classic/inline (always shown).
+  set('scrollbar-overlay', scrollbarW === 0 ? 1 : 0)
   probe.style.scrollbarWidth = 'thin'
   set('scrollbar-thin-w', probe.offsetWidth - probe.clientWidth)
   probe.remove()
