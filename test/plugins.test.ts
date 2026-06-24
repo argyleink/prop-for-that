@@ -1053,3 +1053,77 @@ describe('keyboard', () => {
     expect(values['keyboard-bottom']).toBe(window.innerHeight)
   })
 })
+
+describe('truncated', () => {
+  // jsdom has no ResizeObserver and no layout. Stub a controllable observer and
+  // pin the scroll/client size getters the source reads; resetModules per test
+  // gives observeResize a fresh singleton, so roInstances[0] is this test's.
+  let roInstances: FakeRO[]
+  class FakeRO {
+    observe = vi.fn()
+    unobserve = vi.fn()
+    constructor(private cb: (entries: { target: Element }[]) => void) {
+      roInstances.push(this)
+    }
+    emit(target: Element) {
+      this.cb([{ target }])
+    }
+  }
+  beforeEach(() => {
+    roInstances = []
+    vi.resetModules()
+    vi.stubGlobal('ResizeObserver', FakeRO)
+  })
+  afterEach(() => vi.unstubAllGlobals())
+
+  /** Pin the layout-size getters jsdom always reports as 0. */
+  const sized = (el: HTMLElement, scrollW: number, clientW: number, scrollH = 0, clientH = 0) => {
+    Object.defineProperty(el, 'scrollWidth', { value: scrollW, configurable: true })
+    Object.defineProperty(el, 'clientWidth', { value: clientW, configurable: true })
+    Object.defineProperty(el, 'scrollHeight', { value: scrollH, configurable: true })
+    Object.defineProperty(el, 'clientHeight', { value: clientH, configurable: true })
+  }
+
+  it('seeds clear when text fits, then flags inline clip when the box narrows', async () => {
+    const { truncated } = await import('../src/plugins/truncated')
+    const el = document.createElement('div')
+    sized(el, 100, 100) // content fits the box
+    document.body.append(el)
+    const { ctx, values } = makeRecorder(el)
+
+    const dispose = truncated.start(ctx)
+    expect(values.truncated).toBe(0) // seeded on frame one
+    expect(values['truncated-x']).toBe(0)
+    expect(values['truncated-y']).toBe(0)
+
+    // the box narrows under the text → ellipsis territory; the observer re-measures
+    sized(el, 240, 100)
+    roInstances[0]!.emit(el)
+    expect(values['truncated-x']).toBe(1)
+    expect(values['truncated-y']).toBe(0)
+    expect(values.truncated).toBe(1)
+
+    dispose()
+    el.remove()
+  })
+
+  it('flags block clip (line-clamp) independently, and stops after dispose', async () => {
+    const { truncated } = await import('../src/plugins/truncated')
+    const el = document.createElement('div')
+    sized(el, 100, 100, 300, 100) // overflows on the block axis only
+    document.body.append(el)
+    const { ctx, values } = makeRecorder(el)
+
+    const dispose = truncated.start(ctx)
+    expect(values['truncated-x']).toBe(0)
+    expect(values['truncated-y']).toBe(1)
+    expect(values.truncated).toBe(1)
+
+    dispose()
+    sized(el, 100, 100, 100, 100) // would clear --live-truncated if still observing
+    roInstances[0]!.emit(el)
+    expect(values.truncated).toBe(1) // observer removed: no further writes
+
+    el.remove()
+  })
+})
