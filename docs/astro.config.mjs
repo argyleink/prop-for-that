@@ -93,6 +93,7 @@ export default defineConfig({
 						{ label: 'Form state', slug: 'demos/form-state' },
 						{ label: 'Image color', slug: 'demos/img-color' },
 						{ label: 'Video color', slug: 'demos/video-color' },
+						{ label: 'Truncated', slug: 'demos/truncated' },
 					],
 				},
 				{

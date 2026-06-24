@@ -1,0 +1,31 @@
+---
+title: Truncated
+description: Live demo of the truncated source, reporting when an element's text is clipped by ellipsis or line-clamp.
+---
+
+import TruncatedDemo from '../../../components/TruncatedDemo.astro';
+
+CSS can clip text, but it can't tell you that it did. `truncated` (element) reports `--live-truncated-x` when a line is cut by `text-overflow: ellipsis` and `--live-truncated-y` when a block overruns its height — both `1` / `0`, recomputed via one shared `ResizeObserver`. Drag a box until the text fits and its flag flips off.
+
+<TruncatedDemo />
+
+## The wiring
+
+Bind the element whose overflow you care about; the flags land on it and inherit to its descendants, so a sibling label, an `::after`, or a child control can read them:
+
+```html
+<script type="module">import 'prop-for-that/auto'</script>
+
+<p data-props-for="truncated"
+   style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis">…</p>
+```
+
+```css
+/* reveal a "show more" control only while the text is actually cut off */
+.more { opacity: var(--live-truncated, 0); }
+
+/* or, as a discrete state, switch a whole rule */
+@container style(--live-truncated: 1) {
+  .more { opacity: 1; }
+}
+```
