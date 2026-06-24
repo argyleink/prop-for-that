@@ -62,7 +62,7 @@ Bind any element with `data-props-for="key …"` and read its `--live-*` propert
 | --- | --- |
 | `prop-for-that/auto` | Zero-config & declarative: binds every `data-props-for` element — globals included, via `<html data-props-for="…">` — loading plugin sources on demand, kept in sync with the DOM. Use as `<script type="module">`. |
 | `prop-for-that` | Imperative API — `propsFor()`, `register()`, `configure()` — for explicit control and teardown. |
-| `prop-for-that/head` | Synchronous, FOUC-safe constants (scrollbar width, DPR, core count, device memory) before first paint. |
+| `prop-for-that/head` | Synchronous, FOUC-safe constants (scrollbar width & overlay preference, DPR, core count, device memory) before first paint. |
 | `prop-for-that/plugins` | The opt-in plugin catalog. |
 
 > `auto` sees the **light DOM only** (not shadow roots — bind those with `propsFor(el, …)`), and lazy-loads plugin chunks, so from a CDN use one that serves the `dist` files verbatim (unpkg / jsDelivr), not a rewriting CDN.

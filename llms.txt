@@ -102,6 +102,7 @@ prefix; constants use `--const-`. Values are unitless numbers unless noted.
 | --- | --- |
 | `--const-scrollbar-w` | scrollbar width in px |
 | `--const-scrollbar-thin-w` | scrollbar width in px with `scrollbar-width: thin` (= `--const-scrollbar-w` where unsupported) |
+| `--const-scrollbar-overlay` | user's scrollbar preference: `1` = overlay (floats over content, appears on interaction, `--const-scrollbar-w` is `0`), `0` = classic/inline (always shown, reserves width) |
 | `--const-dpr` | `devicePixelRatio` |
 | `--const-cores` | `navigator.hardwareConcurrency` |
 | `--const-mem` | `navigator.deviceMemory` in GiB (Chromium-only, coarse; `0` elsewhere) |

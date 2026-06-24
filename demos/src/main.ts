@@ -25,7 +25,7 @@ import {
   pageVisible,
   navType,
 } from 'prop-for-that/plugins'
-// FOUC-safe device constants on :root: --const-dpr / cores / mem / scrollbar-w(-thin).
+// FOUC-safe device constants on :root: --const-dpr / cores / mem / scrollbar-w(-thin) / scrollbar-overlay.
 // Side-effect import — writes once, synchronously. Surfaced in the gallery's head card.
 import 'prop-for-that/head'
 

@@ -8,6 +8,16 @@ backwards-compatible change (semver's `1.0.0`+ rules kick in at v1).
 Only the published library (`dist/`) is versioned here; the demo and docs site
 are repo-only and not part of the npm package.
 
+## [0.7.5]
+
+### Added
+- **`head`: `--const-scrollbar-overlay`** — the user's scrollbar preference,
+  derived from the scrollbar-width probe already taken in `<head>`: `1` when
+  scrollbars overlay content (reserve no layout space, appear on interaction),
+  `0` when they're classic/inline (always shown, take up width). Lets CSS reserve
+  a gutter only when it's actually needed —
+  `padding-inline-end: calc((1 - var(--const-scrollbar-overlay)) * 12px)`. (#8)
+
 ## [0.7.4]
 
 ### Added
