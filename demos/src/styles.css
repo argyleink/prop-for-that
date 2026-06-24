@@ -3332,6 +3332,120 @@ main {
   --sw: var(--live-video-accent, var(--live-video, #3c4678));
 }
 
+/* ════════════════════════════ 17. TRUNCATED ════════════════════════════
+   `truncated` writes --live-truncated-x / -y on each resizable clipper
+   (scrollWidth>clientWidth / scrollHeight>clientHeight, via the shared
+   ResizeObserver). Every reveal below reads those inherited flags with var():
+   an edge fade, a "more" pill, and an accent border — all on ONLY while text
+   is actually cut off. Drag a handle to fit the text and they switch back off. */
+.stage--trunc {
+  min-height: 22rem;
+  gap: var(--space-4);
+  grid-auto-flow: row;
+  align-items: start;
+  padding: clamp(var(--space-3), 5vw, var(--space-4));
+}
+@media (min-width: 46rem) {
+  .stage--trunc {
+    grid-auto-flow: column;
+    justify-content: center;
+  }
+}
+.trunc {
+  display: grid;
+  gap: var(--space-1);
+  inline-size: min(21rem, 100%);
+}
+.trunc__kicker {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.trunc__clip {
+  --on: 0; /* set per-axis from the matching --live-truncated-* flag */
+  position: relative;
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--step-0);
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid;
+  /* the box itself reads its OWN written flag: border warms to the accent */
+  border-color: color-mix(in oklab, var(--accent) calc(var(--on) * 100%), var(--line-strong));
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: border-color 160ms var(--ease-out);
+}
+/* the cut-edge fade — a descendant, so it reads the inherited flag */
+.trunc__clip::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  opacity: var(--on);
+  transition: opacity 160ms var(--ease-out);
+}
+.trunc__clip--x {
+  --on: var(--live-truncated-x, 0);
+  inline-size: 12rem;
+  min-inline-size: 5rem;
+  max-inline-size: 100%;
+  min-block-size: 4.4rem; /* room for the line on top + the pill beneath it */
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  resize: horizontal;
+}
+.trunc__clip--x::after {
+  inset-block: 0;
+  inset-inline-end: 0;
+  inline-size: 4rem;
+  background: linear-gradient(to right, transparent, var(--surface) 72%);
+}
+.trunc__clip--y {
+  --on: var(--live-truncated-y, 0);
+  inline-size: 100%;
+  block-size: 4.75rem;
+  min-block-size: 2.75rem;
+  font-size: var(--step--1);
+  font-weight: 500;
+  line-height: 1.5;
+  resize: vertical;
+}
+.trunc__clip--y p {
+  margin: 0;
+}
+.trunc__clip--y::after {
+  inset-inline: 0;
+  inset-block-end: 0;
+  block-size: 2.4rem;
+  background: linear-gradient(to bottom, transparent, var(--surface) 82%);
+}
+/* the "more" pill: a descendant too, fading in only while clipped */
+.trunc__more {
+  position: absolute;
+  inset-inline-end: 0.55rem;
+  inset-block-end: 0.5rem;
+  padding: 0.18rem 0.6rem;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--paper);
+  color: contrast-color(var(--accent)); /* auto-legible on the accent, where supported */
+  background: var(--accent);
+  border-radius: 999px;
+  opacity: var(--on);
+  /* lift in with the fade — moot while invisible, seen during the transition */
+  translate: 0 calc((1 - var(--on)) * 0.35rem);
+  transition:
+    opacity 160ms var(--ease-out),
+    translate 160ms var(--ease-out);
+}
+
 /* ════════════════════════════ ★. SOURCE GALLERY ═══════════════════════════
    A spec-sheet of every source and the --live-* props it writes. Cards earn
    their place here: this is reference data, one record per source. */

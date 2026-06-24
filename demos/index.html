@@ -1041,6 +1041,55 @@
         </div>
       </section>
 
+      <!-- ──────────────────────── 17. TRUNCATED ──────────────────────── -->
+      <section class="demo" id="truncated">
+        <p class="watermark" aria-hidden="true">17</p>
+        <div class="demo-head">
+          <p class="index">17 / truncated</p>
+          <h2>Know when the ellipsis is showing</h2>
+          <p class="desc">
+            CSS can clip text, but it can&rsquo;t tell you that it did.
+            <code>truncated</code> reports <code>--live-truncated-x</code> when a line
+            is cut by <code>text-overflow: ellipsis</code> and
+            <code>--live-truncated-y</code> when a block overruns its height &mdash;
+            so a &ldquo;more&rdquo; affordance shows up <em>only</em> while text is
+            actually hidden. Drag a handle to fit the text and watch it vanish.
+          </p>
+        </div>
+
+        <div class="demo-body">
+          <div class="stage stage--trunc">
+            <!-- inline (x): resize the clipper narrower and text-overflow clips it.
+                 truncated writes --live-truncated-x HERE; the fade + pill read it. -->
+            <article class="trunc">
+              <p class="trunc__kicker" aria-hidden="true">inline &middot; drag&nbsp;&harr;</p>
+              <p class="trunc__clip trunc__clip--x" id="trunc-x">Pack my box with five dozen liquid-juice jugs<span class="trunc__more" aria-hidden="true">show&nbsp;all</span></p>
+            </article>
+
+            <!-- block (y): resize the clipper shorter and the paragraph overruns it.
+                 truncated writes --live-truncated-y HERE; the bottom fade + pill read it. -->
+            <article class="trunc">
+              <p class="trunc__kicker" aria-hidden="true">block &middot; drag&nbsp;&varr;</p>
+              <div class="trunc__clip trunc__clip--y" id="trunc-y"><p>The brief said &ldquo;just clip it,&rdquo; and CSS did &mdash; quietly hiding the rest of this paragraph below the fold, with no way for a stylesheet to know it ever happened. That blind spot is the exact gap this little source fills.</p><span class="trunc__more" aria-hidden="true">&hellip;&nbsp;read&nbsp;on</span></div>
+            </article>
+          </div>
+
+          <figure class="caption">
+            <figcaption>HTML</figcaption>
+            <pre><code>&lt;<span class="tok-key">p</span> <span class="tok-prop">data-props-for</span>=<span class="tok-str">"truncated"</span>
+   <span class="tok-prop">style</span>=<span class="tok-str">"overflow: hidden; white-space: nowrap; text-overflow: ellipsis"</span>&gt;<span class="tok-com">&hellip;</span>&lt;/<span class="tok-key">p</span>&gt;</code></pre>
+            <figcaption>CSS &mdash; the fade fills in only while clipped</figcaption>
+            <pre><code><span class="tok-sel">.clip::after</span> { <span class="tok-com">/* edge fade, on when the line is cut */</span>
+  <span class="tok-prop">opacity</span>: <span class="tok-var">var(--live-truncated-x)</span>;
+}</code></pre>
+            <figcaption>Discrete state: reveal the control, a whole rule</figcaption>
+            <pre><code><span class="tok-key">@container</span> <span class="tok-fn">style</span>(<span class="tok-var">--live-truncated</span>: <span class="tok-num">1</span>) {
+  <span class="tok-sel">.more</span> { <span class="tok-prop">opacity</span>: <span class="tok-num">1</span>; } <span class="tok-com">/* "show all" appears */</span>
+}</code></pre>
+          </figure>
+        </div>
+      </section>
+
       <!-- ───────────────────────── ★. SOURCE GALLERY ───────────────────────── -->
       <section class="demo gallery" id="gallery">
         <div class="demo-head">

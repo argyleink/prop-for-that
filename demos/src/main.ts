@@ -24,6 +24,7 @@ import {
   pageFocused,
   pageVisible,
   navType,
+  truncated,
 } from 'prop-for-that/plugins'
 // FOUC-safe device constants on :root: --const-dpr / cores / mem / scrollbar-w(-thin) / scrollbar-overlay.
 // Side-effect import — writes once, synchronously. Surfaced in the gallery's head card.
@@ -76,6 +77,7 @@ registerPlugins(
   pageFocused,
   pageVisible,
   navType,
+  truncated,
 )
 
 // ── The entire reactive wiring. JS exposes state; CSS does all the reacting.
@@ -239,6 +241,16 @@ if (clockFace) propsFor(clockFace, ['pointer-local'])
 // resizable card (ResizeObserver). CSS restyles continuously from those.
 const sizer = document.getElementById('sizer')
 if (sizer) propsFor(sizer, ['size'])
+
+// ── Demo 17: bind truncated to each resizable clipper. It writes --live-truncated
+// / --live-truncated-x / --live-truncated-y on the clipper (scrollWidth>clientWidth
+// and scrollHeight>clientHeight, recomputed via the shared ResizeObserver), and the
+// fade + "more" pill inside read the inherited flag — so they show only while text
+// is clipped. Drag a handle to fit the text and the flag flips back off.
+for (const id of ['trunc-x', 'trunc-y']) {
+  const clip = document.getElementById(id)
+  if (clip) propsFor(clip, ['truncated'])
+}
 
 // ── Demo 13 (drag): bind pointer-local AND size to the board. CSS gates on
 // :active and computes each token's translate from --live-local-pointer-x-ratio / --live-local-pointer-y-ratio and the
