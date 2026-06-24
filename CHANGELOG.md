@@ -8,6 +8,16 @@ backwards-compatible change (semver's `1.0.0`+ rules kick in at v1).
 Only the published library (`dist/`) is versioned here; the demo and docs site
 are repo-only and not part of the npm package.
 
+## [0.7.6]
+
+### Fixed
+- **`head` scrollbar probe** — `--const-scrollbar-w` and `--const-scrollbar-thin-w`
+  could report the *same* value on classic (non-overlay) scrollbar systems when a
+  page styled non-root scrollers thinner (e.g. `:where(:not(:root)){scrollbar-width:thin}`).
+  The probe never pinned `scrollbar-width` for the classic read, so that page rule
+  bled in and made the "classic" measurement actually thin. The probe now sets
+  `scrollbar-width:auto` inline, isolating the classic read from page CSS.
+
 ## [0.7.5]
 
 ### Added

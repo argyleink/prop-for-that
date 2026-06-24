@@ -14,9 +14,12 @@ function writeConstants(): void {
   // Scrollbar width — JS knows it, CSS historically didn't. Probe a scroller,
   // then re-probe with `scrollbar-width: thin` for the thin variant. (Where thin
   // isn't supported it falls back to the classic width, so the two match.)
+  // `scrollbar-width:auto` is pinned inline so a page rule that thins non-root
+  // scrollers (e.g. `:where(:not(:root)){scrollbar-width:thin}`) can't bleed into
+  // the classic read and make both values match.
   const probe = document.createElement('div')
   probe.style.cssText =
-    'position:absolute;top:-9999px;width:100px;height:100px;overflow:scroll;visibility:hidden'
+    'position:absolute;top:-9999px;width:100px;height:100px;overflow:scroll;visibility:hidden;scrollbar-width:auto'
   const host = document.body ?? root
   host.appendChild(probe)
   const scrollbarW = probe.offsetWidth - probe.clientWidth
