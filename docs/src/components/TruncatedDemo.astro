@@ -1,0 +1,106 @@
+---
+// Truncated demo: two resizable clippers bound to `truncated`. The inline box
+// (one line, text-overflow: ellipsis) writes --live-truncated-x; the block box
+// (fixed height, overflowing copy) writes --live-truncated-y — both via the
+// shared ResizeObserver. The only signal is a quiet accent rail at the start
+// edge plus a label that fades in; resize a box until the text fits and it goes.
+---
+<div class="pft-stage trunc-demo">
+  <div class="trunc-demo__case">
+    <p class="trunc-demo__cap">inline &middot; resize&nbsp;&rarr;</p>
+    <p class="trunc-demo__clip trunc-demo__clip--x" data-pft-trunc>Pack my box with five dozen liquid-juice jugs<span class="trunc-demo__flag" aria-hidden="true">truncated-x</span></p>
+  </div>
+
+  <div class="trunc-demo__case">
+    <p class="trunc-demo__cap">block &middot; resize&nbsp;&darr;</p>
+    <div class="trunc-demo__clip trunc-demo__clip--y" data-pft-trunc><p>The brief said &ldquo;just clip it,&rdquo; and CSS did &mdash; quietly hiding the rest of this paragraph with no way for a stylesheet to know it ever happened.</p><span class="trunc-demo__flag" aria-hidden="true">truncated-y</span></div>
+  </div>
+
+  <p class="pft-hint">
+    Each box is bound to <code>truncated</code>, which writes <code>--live-truncated-x</code>
+    / <code>--live-truncated-y</code> on it (<code>scrollWidth&nbsp;&gt;&nbsp;clientWidth</code>
+    and <code>scrollHeight&nbsp;&gt;&nbsp;clientHeight</code>), recomputed via the shared
+    <code>ResizeObserver</code>. Drag a box until the text fits and its flag flips to
+    <code>0</code> &mdash; the cut CSS can clip but can&rsquo;t otherwise detect.
+  </p>
+</div>
+
+<style>
+  .trunc-demo { gap: 1.5rem; }
+  .trunc-demo__case {
+    display: grid;
+    gap: 0.5rem;
+  }
+  .trunc-demo__cap {
+    margin: 0;
+    font-family: var(--sl-font-mono, ui-monospace, monospace);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--sl-color-gray-3);
+  }
+
+  .trunc-demo__clip {
+    --on: 0; /* set per-axis from the box's own --live-truncated-* flag */
+    position: relative;
+    margin: 0;
+    padding: 0.8rem 1.05rem;
+    color: var(--sl-color-white);
+    background: var(--sl-color-black);
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.5rem;
+    overflow: hidden;
+    /* the only treatment: a quiet rail at the start edge, on while clipped */
+    box-shadow: inset 0.16rem 0 0 0
+      color-mix(in oklab, var(--sl-color-text-accent) calc(var(--on) * 100%), transparent);
+    transition: box-shadow 0.16s linear;
+  }
+  .trunc-demo__clip--x {
+    --on: var(--live-truncated-x, 0);
+    inline-size: 13rem;
+    min-inline-size: 6rem;
+    max-inline-size: 100%;
+    min-block-size: 3.4rem;
+    font-weight: 600;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    resize: horizontal;
+  }
+  .trunc-demo__clip--y {
+    --on: var(--live-truncated-y, 0);
+    inline-size: 100%;
+    max-inline-size: 26rem;
+    block-size: 4.5rem;
+    min-block-size: 2.6rem;
+    line-height: 1.5;
+    resize: vertical;
+  }
+  .trunc-demo__clip--y p {
+    margin: 0;
+  }
+
+  /* a descendant, so it reads the inherited flag — names the prop and fades in
+     only while that axis is cut. Carries the box background so it stays legible
+     where it sits over the clipped text. */
+  .trunc-demo__flag {
+    position: absolute;
+    inset-inline-end: 0.45rem;
+    inset-block-end: 0.4rem;
+    padding-inline: 0.3rem;
+    font-family: var(--sl-font-mono, ui-monospace, monospace);
+    font-size: 0.68rem;
+    letter-spacing: 0.02em;
+    color: var(--sl-color-text-accent);
+    background: var(--sl-color-black);
+    opacity: var(--on);
+    transition: opacity 0.16s linear;
+  }
+</style>
+
+<script>
+  import { propsFor, register } from 'prop-for-that'
+  import { truncated } from 'prop-for-that/plugins'
+
+  register(truncated)
+  propsFor(document.querySelectorAll<HTMLElement>('[data-pft-trunc]'), ['truncated'])
+</script>

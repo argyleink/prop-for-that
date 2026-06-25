@@ -8,6 +8,21 @@ backwards-compatible change (semver's `1.0.0`+ rules kick in at v1).
 Only the published library (`dist/`) is versioned here; the demo and docs site
 are repo-only and not part of the npm package.
 
+## [0.7.7]
+
+### Added
+- **`truncated` plugin** (element) — whether an element's own text is being
+  clipped right now, the "is the ellipsis showing?" question CSS can ask a scroll
+  container (`scroll-state()`) but never overflowing text. All `1`/`0`:
+  `--live-truncated` (clipped on either axis), `--live-truncated-x` (inline clip —
+  the classic `text-overflow: ellipsis` line, `scrollWidth > clientWidth`),
+  `--live-truncated-y` (block clip — a `-webkit-line-clamp` / fixed-height
+  `overflow: hidden` box, `scrollHeight > clientHeight`). Reveal a "more"
+  affordance, tooltip trigger, or expand control only while text is actually cut
+  off — `@container style(--live-truncated: 1) { … }` — and have it vanish the
+  moment a wider box fits. Recomputed whenever the box resizes (the shared
+  `ResizeObserver`); gated, so it pauses off screen like `size`. (#11)
+
 ## [0.7.6]
 
 ### Fixed

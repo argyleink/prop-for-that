@@ -441,7 +441,7 @@ const DEMO_PAGE: Record<string, string> = {
   'img-color': 'img-color',
   'video-color': 'video-color',
 }
-const ELEMENT_PLUGINS = new Set(['media', 'img'])
+const ELEMENT_PLUGINS = new Set(['media', 'img', 'truncated'])
 const docUrlFor = (key: string): string =>
   key in DEMO_PAGE
     ? `${DOC_BASE}/demos/${DEMO_PAGE[key]}/`

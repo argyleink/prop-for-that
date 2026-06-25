@@ -28,6 +28,7 @@ import { cpuPressure } from './cpu-pressure'
 import { img } from './img'
 import { imgColor } from './img-color'
 import { videoColor } from './video-color'
+import { truncated } from './truncated'
 
 export {
   scrollVelocity,
@@ -57,6 +58,7 @@ export {
   img,
   imgColor,
   videoColor,
+  truncated,
 }
 
 /** Every plugin source, for `registerPlugins()` / bulk registration. */
@@ -88,6 +90,7 @@ export const allPlugins: Source[] = [
   img,
   imgColor,
   videoColor,
+  truncated,
 ]
 
 /**
