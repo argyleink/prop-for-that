@@ -1,0 +1,110 @@
+---
+// UA demo: the `ua` plugin (global) writes the low-entropy --const-ua-* consts
+// on :root once. Everything below is pure CSS — the chip that matches each
+// --const-ua-* lights up via @container style(); version + mobile render from
+// counters. No JS reads or writes any value here.
+---
+<div class="pft-stage ua-demo">
+  <div class="ua-group">
+    <p class="ua-label">OS &mdash; <code>--const-ua-platform</code></p>
+    <div class="ua-row ua-os">
+      <span class="ua-chip" data-v="macos">macOS</span>
+      <span class="ua-chip" data-v="windows">Windows</span>
+      <span class="ua-chip" data-v="linux">Linux</span>
+      <span class="ua-chip" data-v="android">Android</span>
+      <span class="ua-chip" data-v="ios">iOS</span>
+      <span class="ua-chip" data-v="chromeos">ChromeOS</span>
+    </div>
+  </div>
+  <div class="ua-group">
+    <p class="ua-label">Browser &mdash; <code>--const-ua-browser</code></p>
+    <div class="ua-row ua-browser">
+      <span class="ua-chip" data-v="chrome">Chrome</span>
+      <span class="ua-chip" data-v="edge">Edge</span>
+      <span class="ua-chip" data-v="firefox">Firefox</span>
+      <span class="ua-chip" data-v="safari">Safari</span>
+      <span class="ua-chip" data-v="opera">Opera</span>
+      <span class="ua-chip" data-v="samsung">Samsung</span>
+    </div>
+  </div>
+  <div class="ua-group">
+    <p class="ua-label">Engine &mdash; <code>--const-ua-engine</code></p>
+    <div class="ua-row ua-engine">
+      <span class="ua-chip" data-v="blink">Blink</span>
+      <span class="ua-chip" data-v="gecko">Gecko</span>
+      <span class="ua-chip" data-v="webkit">WebKit</span>
+    </div>
+  </div>
+  <p class="pft-readout">
+    <span class="pft-chip">--const-ua-version <b class="ua-version"></b></span>
+    <span class="pft-chip">--const-ua-mobile <b class="ua-mobile"></b></span>
+  </p>
+  <p class="pft-hint">
+    Written once by the <code>ua</code> plugin (and, FOUC-safe, by the
+    <code>head</code> entry). The lit chip is your current value, matched with
+    <code>@container style(--const-ua-*: …)</code> — CSS branches on the client
+    with no JS. Low-entropy only, so it adds no fingerprinting surface beyond
+    your request headers.
+  </p>
+</div>
+
+<style>
+  .ua-demo { gap: 1rem; }
+  .ua-group { display: grid; gap: 0.5rem; }
+  .ua-label {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--sl-color-gray-3);
+  }
+  .ua-label code { font-size: 0.75rem; }
+  .ua-row { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  /* one chip per possible value; --active (0/1) drives the lit look, set to 1 by
+     the style query that matches the live --const-ua-* below — so the whole
+     highlight is expressed once here and each query is a trivial toggle */
+  .ua-chip {
+    --active: 0;
+    padding: 0.2rem 0.7rem;
+    border-radius: 2rem;
+    border: 1px solid color-mix(in oklab,
+      var(--sl-color-accent) calc(var(--active) * 100%), var(--sl-color-gray-5));
+    background: color-mix(in oklab,
+      var(--sl-color-accent) calc(var(--active) * 90%), var(--sl-color-black));
+    color: color-mix(in oklab,
+      var(--sl-color-white) calc(var(--active) * 100%), var(--sl-color-gray-3));
+    font-family: var(--sl-font-mono, ui-monospace, 'SF Mono', monospace);
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+  }
+  @container style(--const-ua-platform: macos) { .ua-os [data-v='macos'] { --active: 1; } }
+  @container style(--const-ua-platform: windows) { .ua-os [data-v='windows'] { --active: 1; } }
+  @container style(--const-ua-platform: linux) { .ua-os [data-v='linux'] { --active: 1; } }
+  @container style(--const-ua-platform: android) { .ua-os [data-v='android'] { --active: 1; } }
+  @container style(--const-ua-platform: ios) { .ua-os [data-v='ios'] { --active: 1; } }
+  @container style(--const-ua-platform: chromeos) { .ua-os [data-v='chromeos'] { --active: 1; } }
+  @container style(--const-ua-browser: chrome) { .ua-browser [data-v='chrome'] { --active: 1; } }
+  @container style(--const-ua-browser: edge) { .ua-browser [data-v='edge'] { --active: 1; } }
+  @container style(--const-ua-browser: firefox) { .ua-browser [data-v='firefox'] { --active: 1; } }
+  @container style(--const-ua-browser: safari) { .ua-browser [data-v='safari'] { --active: 1; } }
+  @container style(--const-ua-browser: opera) { .ua-browser [data-v='opera'] { --active: 1; } }
+  @container style(--const-ua-browser: samsung) { .ua-browser [data-v='samsung'] { --active: 1; } }
+  @container style(--const-ua-engine: blink) { .ua-engine [data-v='blink'] { --active: 1; } }
+  @container style(--const-ua-engine: gecko) { .ua-engine [data-v='gecko'] { --active: 1; } }
+  @container style(--const-ua-engine: webkit) { .ua-engine [data-v='webkit'] { --active: 1; } }
+
+  .ua-version::after {
+    counter-reset: v calc(var(--const-ua-version, 0));
+    content: counter(v);
+  }
+  /* mobile is a discrete flag — read it with a style query, not a counter */
+  .ua-mobile::after { content: 'no'; }
+  @container style(--const-ua-mobile: 1) { .ua-mobile::after { content: 'yes'; } }
+</style>
+
+<script>
+  import { propsFor, register } from 'prop-for-that'
+  import { ua } from 'prop-for-that/plugins'
+
+  register(ua)
+  propsFor(['ua'])
+</script>

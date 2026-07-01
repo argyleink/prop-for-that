@@ -1,4 +1,5 @@
 import { config } from './core/config'
+import { readUA } from './core/ua'
 
 /**
  * Synchronous, FOUC-safe constants. Import (or inline) this in `<head>` so the
@@ -36,6 +37,16 @@ function writeConstants(): void {
   set('cores', navigator.hardwareConcurrency || 0)
   // Chromium-only and deliberately coarse (0.25–8 GiB); 0 elsewhere.
   set('mem', (navigator as Navigator & { deviceMemory?: number }).deviceMemory || 0)
+
+  // Low-entropy device/browser identity — strings CSS can branch on before first
+  // paint (@container style(--const-ua-platform: ios)). Same values the `ua`
+  // plugin writes; see src/core/ua.ts. High-entropy UA bits are left out.
+  const ua = readUA()
+  set('ua-platform', ua.platform)
+  set('ua-browser', ua.browser)
+  set('ua-engine', ua.engine)
+  set('ua-version', ua.version)
+  set('ua-mobile', ua.mobile)
 }
 
 if (typeof document !== 'undefined') writeConstants()

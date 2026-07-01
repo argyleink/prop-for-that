@@ -52,7 +52,7 @@ Bind any element with `data-props-for="key …"` and read its `--live-*` propert
 
 **Core** (built in): viewport, element size, visibility, and `<input type="range">` values.
 
-**Plugins** (opt-in): pointer position, battery, network, online status, page focus & visibility, navigation type, page meta tags, FPS, clock, scroll velocity, device orientation / motion, geolocation, CPU pressure, soft-keyboard geometry, media playback, form & field state, select & color-picker values, text-truncation (ellipsis) detection, and dominant + accent colors extracted from images and video — 20+ in all.
+**Plugins** (opt-in): pointer position, battery, network, online status, page focus & visibility, navigation type, page meta tags, low-entropy user-agent (OS / browser / engine / version / mobile), FPS, clock, scroll velocity, device orientation / motion, geolocation, CPU pressure, soft-keyboard geometry, media playback, form & field state, select & color-picker values, text-truncation (ellipsis) detection, and dominant + accent colors extracted from images and video — 20+ in all.
 
 → Every source, every property, and live demos are in the **[docs](https://prop-for-that.netlify.app/docsite/reference/plugins/)**.
 
@@ -62,7 +62,7 @@ Bind any element with `data-props-for="key …"` and read its `--live-*` propert
 | --- | --- |
 | `prop-for-that/auto` | Zero-config & declarative: binds every `data-props-for` element — globals included, via `<html data-props-for="…">` — loading plugin sources on demand, kept in sync with the DOM. Use as `<script type="module">`. |
 | `prop-for-that` | Imperative API — `propsFor()`, `register()`, `configure()` — for explicit control and teardown. |
-| `prop-for-that/head` | Synchronous, FOUC-safe constants (scrollbar width & overlay preference, DPR, core count, device memory) before first paint. |
+| `prop-for-that/head` | Synchronous, FOUC-safe constants (scrollbar width & overlay preference, DPR, core count, device memory, low-entropy user-agent) before first paint. |
 | `prop-for-that/plugins` | The opt-in plugin catalog. |
 
 > `auto` sees the **light DOM only** (not shadow roots — bind those with `propsFor(el, …)`), and lazy-loads plugin chunks, so from a CDN use one that serves the `dist` files verbatim (unpkg / jsDelivr), not a rewriting CDN.

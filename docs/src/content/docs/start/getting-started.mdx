@@ -104,12 +104,14 @@ configure({ livePrefix: '--pft-', constPrefix: '--pft-const-' })
 
 ### 3. Head constants
 
-A few values are read once and matter for the first paint: scrollbar width, device pixel ratio, CPU cores. Load the head entry as a synchronous inline script so the properties exist before any CSS applies:
+A few values are read once and matter for the first paint: scrollbar width, device pixel ratio, CPU cores, and the low-entropy user-agent bits (OS, browser, engine). Load the head entry as a synchronous inline script so the properties exist before any CSS applies:
 
 ```html
 <head>
   <script type="module">import 'prop-for-that/head'</script>
-  <!-- sets --const-scrollbar-w, --const-scrollbar-thin-w, --const-scrollbar-overlay, --const-dpr, --const-cores, --const-mem -->
+  <!-- sets --const-scrollbar-w, --const-scrollbar-thin-w, --const-scrollbar-overlay,
+       --const-dpr, --const-cores, --const-mem,
+       --const-ua-platform, --const-ua-browser, --const-ua-engine, --const-ua-version, --const-ua-mobile -->
 </head>
 ```
 

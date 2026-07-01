@@ -1,0 +1,58 @@
+---
+title: User agent
+description: Live demo of the ua source — low-entropy OS, browser, engine, version, and mobile as CSS custom properties.
+---
+
+import UaDemo from '../../../components/UaDemo.astro';
+
+CSS can query a *lot* about the device — pointer type, colour scheme, reduced motion — but not *which* browser, engine, or OS is running. `ua` (global) fills that gap with five write-once constants, preferring structured [UA Client Hints](https://developer.mozilla.org/en-US/docs/Web/API/NavigatorUAData) (`navigator.userAgentData`, Chromium) and falling back to a minimal `userAgent`-string sniff on Firefox and Safari. The chip matching each value lights up below.
+
+<UaDemo />
+
+## The wiring
+
+Register it (or, under `auto`, name it in an attribute), and the constants land on `:root`:
+
+```html
+<script type="module">import 'prop-for-that/auto'</script>
+<html data-props-for="ua">…</html>
+```
+
+```css
+/* branch a whole rule block on the engine — no JS, no media query */
+@container style(--const-ua-engine: webkit) {
+  .sticky-fix { position: -webkit-sticky; }
+}
+
+/* nudge a control only on touch-first platforms */
+@container style(--const-ua-platform: ios) {
+  .cta { padding-block: 0.9rem; }
+}
+
+/* or gate on the numeric version */
+.badge { opacity: calc((var(--const-ua-version) - 100) / 20); }
+```
+
+The five constants:
+
+| property | value |
+| --- | --- |
+| `--const-ua-platform` | `macos` / `windows` / `linux` / `android` / `ios` / `chromeos` / `unknown` |
+| `--const-ua-browser` | `chrome` / `edge` / `firefox` / `safari` / `opera` / `samsung` / `unknown` |
+| `--const-ua-engine` | `blink` / `gecko` / `webkit` / `unknown` |
+| `--const-ua-version` | the browser's major version (number, `0` if unknown) |
+| `--const-ua-mobile` | `1` on a phone-class device, else `0` |
+
+## Before first paint
+
+The same five constants are written **synchronously** by the [`head`](/start/getting-started/#3-head-constants) entry, so you can branch on the client before the first render — no flash while a plugin binds:
+
+```html
+<head>
+  <script type="module">import 'prop-for-that/head'</script>
+</head>
+```
+
+:::note[Low-entropy only]
+`ua` deliberately reads only the low-entropy bits — the same facts your server already receives in request headers. It never calls `getHighEntropyValues()` and never exposes the device model, full version, or architecture, so it adds no fingerprinting surface. Off Chromium the `userAgent`-string fallback is best-effort; treat these as hints, not identity.
+:::
