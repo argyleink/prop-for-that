@@ -8,6 +8,25 @@ backwards-compatible change (semver's `1.0.0`+ rules kick in at v1).
 Only the published library (`dist/`) is versioned here; the demo and docs site
 are repo-only and not part of the npm package.
 
+## [0.7.8]
+
+### Added
+- **`ua` plugin** (global) + **`head` constants** — low-entropy device & browser
+  identity JS can read but CSS can't, written **once** as `--const-ua-*`:
+  `--const-ua-platform` (`macos` / `windows` / `linux` / `android` / `ios` /
+  `chromeos` / `unknown`), `--const-ua-browser` (`chrome` / `edge` / `firefox` /
+  `safari` / `opera` / `samsung` / `unknown`), `--const-ua-engine` (`blink` /
+  `gecko` / `webkit` / `unknown`), `--const-ua-version` (browser major, `0` if
+  unknown), `--const-ua-mobile` (`1` / `0`). Branch on the client with no JS or
+  media query — `@container style(--const-ua-engine: webkit) { … }`. Prefers
+  structured UA Client Hints (`navigator.userAgentData`, Chromium) and falls back
+  to a best-effort `userAgent`-string sniff on Firefox / Safari. **Low-entropy
+  only** — no `getHighEntropyValues`, device model, full version, or architecture,
+  so it adds no fingerprinting surface beyond what request headers already expose.
+  The same five constants are also written **synchronously** by the `head` entry
+  (`import 'prop-for-that/head'`) for FOUC-safe, pre-paint branching. Typed mode
+  registers the strings as `<custom-ident>` and the numbers as `<integer>`.
+
 ## [0.7.7]
 
 ### Added

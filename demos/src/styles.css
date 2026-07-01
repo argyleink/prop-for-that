@@ -3545,6 +3545,28 @@ main {
     content: 'prerender';
   }
 }
+/* ua exposes string consts too — same trick: map each custom-ident to a readable
+   label with style queries (default 'unknown', overridden by the matching value) */
+.src__var--ua-platform dd::after,
+.src__var--ua-browser dd::after,
+.src__var--ua-engine dd::after {
+  content: 'unknown';
+}
+@container style(--const-ua-platform: macos) { .src__var--ua-platform dd::after { content: 'macOS'; } }
+@container style(--const-ua-platform: windows) { .src__var--ua-platform dd::after { content: 'Windows'; } }
+@container style(--const-ua-platform: linux) { .src__var--ua-platform dd::after { content: 'Linux'; } }
+@container style(--const-ua-platform: android) { .src__var--ua-platform dd::after { content: 'Android'; } }
+@container style(--const-ua-platform: ios) { .src__var--ua-platform dd::after { content: 'iOS'; } }
+@container style(--const-ua-platform: chromeos) { .src__var--ua-platform dd::after { content: 'ChromeOS'; } }
+@container style(--const-ua-browser: chrome) { .src__var--ua-browser dd::after { content: 'Chrome'; } }
+@container style(--const-ua-browser: edge) { .src__var--ua-browser dd::after { content: 'Edge'; } }
+@container style(--const-ua-browser: firefox) { .src__var--ua-browser dd::after { content: 'Firefox'; } }
+@container style(--const-ua-browser: safari) { .src__var--ua-browser dd::after { content: 'Safari'; } }
+@container style(--const-ua-browser: opera) { .src__var--ua-browser dd::after { content: 'Opera'; } }
+@container style(--const-ua-browser: samsung) { .src__var--ua-browser dd::after { content: 'Samsung'; } }
+@container style(--const-ua-engine: blink) { .src__var--ua-engine dd::after { content: 'Blink'; } }
+@container style(--const-ua-engine: gecko) { .src__var--ua-engine dd::after { content: 'Gecko'; } }
+@container style(--const-ua-engine: webkit) { .src__var--ua-engine dd::after { content: 'WebKit'; } }
 .src__dash {
   color: var(--ink-faint);
 }

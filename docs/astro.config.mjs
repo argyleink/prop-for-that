@@ -94,6 +94,7 @@ export default defineConfig({
 						{ label: 'Image color', slug: 'demos/img-color' },
 						{ label: 'Video color', slug: 'demos/video-color' },
 						{ label: 'Truncated', slug: 'demos/truncated' },
+						{ label: 'User agent', slug: 'demos/ua' },
 					],
 				},
 				{

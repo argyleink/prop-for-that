@@ -24,6 +24,7 @@ import {
   pageFocused,
   pageVisible,
   navType,
+  ua,
 } from 'prop-for-that/plugins'
 // FOUC-safe device constants on :root: --const-dpr / cores / mem / scrollbar-w(-thin) / scrollbar-overlay.
 // Side-effect import — writes once, synchronously. Surfaced in the gallery's head card.
@@ -76,6 +77,7 @@ registerPlugins(
   pageFocused,
   pageVisible,
   navType,
+  ua,
 )
 
 // ── The entire reactive wiring. JS exposes state; CSS does all the reacting.
@@ -97,6 +99,7 @@ propsFor([
   'motion', // --live-accel-x / y / z (mobile)
   'cpu-pressure', // --live-cpu-pressure (0 nominal → 3 critical, Chromium)
   'nav-type', // --const-nav-type (navigate / reload / back_forward / prerender, write-once)
+  'ua', // --const-ua-platform / browser / engine / version / mobile (write-once; also FOUC-safe via head)
 ])
 
 // Capability flags (one-shot, NOT reactive): the Battery + Network Information
