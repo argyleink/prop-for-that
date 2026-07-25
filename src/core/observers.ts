@@ -24,7 +24,8 @@ export function observeResize(el: Element, cb: RoCb): Disposer {
       for (const entry of entries) {
         roLast.set(entry.target, entry)
         const cbs = roCallbacks.get(entry.target)
-        if (cbs) for (const fn of [...cbs]) fn(entry)
+        // iterated live: Set iteration tolerates unsubscribes mid-dispatch
+        if (cbs) for (const fn of cbs) fn(entry)
       }
     })
   }
@@ -65,7 +66,8 @@ export function observeIntersection(el: Element, cb: IoCb): Disposer {
         for (const entry of entries) {
           ioLast.set(entry.target, entry)
           const cbs = ioCallbacks.get(entry.target)
-          if (cbs) for (const fn of [...cbs]) fn(entry)
+          // iterated live: Set iteration tolerates unsubscribes mid-dispatch
+          if (cbs) for (const fn of cbs) fn(entry)
         }
       },
       { threshold: ioThresholds },

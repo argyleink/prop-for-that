@@ -18,19 +18,27 @@ import { videoColor } from '../src/plugins/video-color'
 import { pointer } from '../src/plugins/pointer'
 import { allPlugins } from '../src/plugins'
 import { loaders } from '../src/plugins/loaders'
-import type { SourceContext } from '../src/core/types'
+import type { Cadence, Config, SourceContext } from '../src/core/types'
 
-/** Collects the latest value written per local name, ignoring cadence prefix. */
-function makeRecorder(target: HTMLElement) {
+/** Collects the latest value (and its cadence) written per local name. */
+function makeRecorder(target: HTMLElement, config?: Partial<Config>) {
   const values: Record<string, number | string> = {}
+  const cadences: Record<string, Cadence> = {}
   const ctx: SourceContext = {
     target,
-    config: { livePrefix: '--live-', constPrefix: '--const-', root: target, typed: false },
-    write(localName, value) {
+    config: {
+      livePrefix: '--live-',
+      constPrefix: '--const-',
+      root: target,
+      typed: false,
+      ...config,
+    },
+    write(localName, value, cadence = 'live') {
       values[localName] = value
+      cadences[localName] = cadence
     },
   }
-  return { ctx, values }
+  return { ctx, values, cadences }
 }
 
 describe('plugin registry & lazy loaders', () => {
@@ -1125,5 +1133,111 @@ describe('truncated', () => {
     expect(values.truncated).toBe(1) // observer removed: no further writes
 
     el.remove()
+  })
+})
+
+/**
+ * `random` is the one source that generates rather than observes, so its tests
+ * are about contracts rather than platform state: three independent rolls, written
+ * once on the `const` cadence, and — seeded — reproducible across `start` calls,
+ * because a seeded roll is derived from the element's DOM position rather than
+ * from a shared sequence.
+ */
+describe('random', () => {
+  const rolls = (values: Record<string, number | string>) =>
+    ['random', 'random-2', 'random-3'].map((k) => values[k] as number)
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+    document.body.innerHTML = ''
+  })
+
+  it('writes three rolls, rounded to 4dp, on the const cadence', async () => {
+    const { random } = await import('../src/plugins/random')
+    vi.spyOn(Math, 'random')
+      .mockReturnValueOnce(0.123456789)
+      .mockReturnValueOnce(0.5)
+      .mockReturnValueOnce(0.987654321)
+    const el = document.createElement('div')
+    document.body.append(el)
+    const { ctx, values, cadences } = makeRecorder(el)
+
+    random.start(ctx)
+    expect(rolls(values)).toEqual([0.1235, 0.5, 0.9877])
+    expect(cadences.random).toBe('const')
+    expect(cadences['random-2']).toBe('const')
+    expect(cadences['random-3']).toBe('const')
+  })
+
+  it('opts out of viewport gating, so re-entry can never re-roll a value', async () => {
+    const { random } = await import('../src/plugins/random')
+    // gate: true would re-run start() (and hand out fresh rolls) every time the
+    // element scrolled back into view, mid-animation.
+    expect(random.gate).toBe(false)
+  })
+
+  it('rolls from Math.random when no seed is configured', async () => {
+    const { random } = await import('../src/plugins/random')
+    const spy = vi.spyOn(Math, 'random')
+    const el = document.createElement('div')
+    document.body.append(el)
+    const { ctx, values } = makeRecorder(el)
+
+    random.start(ctx)
+    expect(spy).toHaveBeenCalledTimes(3)
+    for (const n of rolls(values)) {
+      expect(n).toBeGreaterThanOrEqual(0)
+      expect(n).toBeLessThan(1)
+    }
+  })
+
+  it('seeded: same element + same seed reproduces the same rolls, without Math.random', async () => {
+    const { random } = await import('../src/plugins/random')
+    const spy = vi.spyOn(Math, 'random')
+    const el = document.createElement('div')
+    document.body.append(el)
+
+    const first = makeRecorder(el, { randomSeed: 42 })
+    random.start(first.ctx)
+    const second = makeRecorder(el, { randomSeed: 42 })
+    random.start(second.ctx)
+
+    expect(spy).not.toHaveBeenCalled()
+    expect(rolls(second.values)).toEqual(rolls(first.values)) // stable across rebinds
+    for (const n of rolls(first.values)) {
+      expect(n).toBeGreaterThanOrEqual(0)
+      expect(n).toBeLessThan(1)
+      expect(Math.round(n * 1e4) / 1e4).toBe(n) // 4dp, like every other source
+    }
+    // three independent draws, not one value written three times
+    expect(new Set(rolls(first.values)).size).toBe(3)
+  })
+
+  it('seeded: siblings get different rolls (position is part of the seed)', async () => {
+    const { random } = await import('../src/plugins/random')
+    const wrap = document.createElement('div')
+    wrap.innerHTML = '<p></p><p></p><p></p>'
+    document.body.append(wrap)
+
+    const perChild = [...wrap.children].map((child) => {
+      const r = makeRecorder(child as HTMLElement, { randomSeed: 42 })
+      random.start(r.ctx)
+      return r.values.random as number
+    })
+
+    expect(new Set(perChild).size).toBe(3)
+  })
+
+  it('seeded: a different seed reshuffles the same element', async () => {
+    const { random } = await import('../src/plugins/random')
+    const el = document.createElement('div')
+    document.body.append(el)
+
+    const a = makeRecorder(el, { randomSeed: 42 })
+    random.start(a.ctx)
+    const b = makeRecorder(el, { randomSeed: 1337 })
+    random.start(b.ctx)
+
+    expect(rolls(b.values)).not.toEqual(rolls(a.values))
   })
 })

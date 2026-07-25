@@ -13,8 +13,11 @@ export function onWindow(type: string, handler: Handler): Disposer {
   let group = groups.get(type)
   if (!group) {
     const handlers = new Set<Handler>()
+    // Iterated live, no snapshot: Set iteration tolerates handlers disposing
+    // themselves (or others) mid-dispatch, and copying here would allocate on
+    // every event — including each pointermove.
     const dispatch: EventListener = (e) => {
-      for (const h of [...handlers]) h(e)
+      for (const h of handlers) h(e)
     }
     group = { handlers, dispatch }
     groups.set(type, group)

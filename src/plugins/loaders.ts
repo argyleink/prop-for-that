@@ -41,4 +41,5 @@ export const loaders: Record<string, () => Promise<Source>> = {
   'video-color': () => import('./video-color').then((m) => m.videoColor),
   truncated: () => import('./truncated').then((m) => m.truncated),
   ua: () => import('./ua').then((m) => m.ua),
+  random: () => import('./random').then((m) => m.random),
 }

@@ -3187,6 +3187,38 @@ main {
   object-fit: cover;
   border-radius: inherit;
 }
+/* Hoisting, in one rule: the `img` source is bound to the <img> but writes on the
+   CARD (propsFor(img, ['img'], { to: '.sun-card' }) — the JS twin of
+   data-props-to="figure"). So this skeleton, a *sibling* of the image, can style
+   query --live-loaded while the photo is still in flight. Written on the <img>
+   itself the value would be invisible here — properties inherit downward only,
+   and style queries match an ancestor. */
+.sun-card__skeleton {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 300ms linear;
+  background: linear-gradient(
+    110deg,
+    color-mix(in oklab, var(--accent-soft) 45%, var(--surface)) 30%,
+    color-mix(in oklab, var(--accent-soft) 90%, var(--surface)) 50%,
+    color-mix(in oklab, var(--accent-soft) 45%, var(--surface)) 70%
+  );
+  background-size: 200% 100%;
+  animation: sun-skeleton 1.4s linear infinite;
+}
+@container style(--live-loaded: 0) {
+  .sun-card__skeleton {
+    opacity: 1;
+  }
+}
+@keyframes sun-skeleton {
+  to {
+    background-position: -200% 0;
+  }
+}
 /* the extracted palette — dominant (the shadow's colour) plus the four other
    swatches img-color pulls: accent, dark, light, avg. Each reads its own
    --live-img-<name>-* trio; the dominant uses the bare --live-img-* names. */

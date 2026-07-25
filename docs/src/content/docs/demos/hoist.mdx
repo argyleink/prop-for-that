@@ -1,0 +1,75 @@
+---
+title: Hoisting
+description: Live demo of data-props-to — observe one element, write its live properties on an ancestor so siblings can read them.
+---
+
+import HoistDemo from '../../../components/HoistDemo.astro';
+
+Custom properties inherit **downward only**, so the values a source writes on an element are visible to that element's descendants and to nobody else — not its siblings, and (because `@container style()` matches an *ancestor*) not even the element itself. Hoisting moves just the writes: `data-props-to="<selector>"`, or `{ to }` on `propsFor()`.
+
+<HoistDemo />
+
+## The wiring
+
+The box is bound to `size`. The `<figure>` around it is where the properties land, so every sibling inside the figure inherits them:
+
+```html
+<script type="module">import 'prop-for-that/auto'</script>
+
+<figure>
+  <div data-props-for="size" data-props-to="figure">resize me</div>
+  <div class="fan"><i></i><i></i><i></i></div>
+  <figcaption>…</figcaption>
+</figure>
+```
+
+```css
+/* siblings of the measured box, reading its geometry */
+.fan i {
+  aspect-ratio: var(--live-aspect);                          /* its proportions */
+  rotate: calc(atan2(var(--live-h), var(--live-w)) * var(--i)); /* its diagonal */
+}
+figcaption b::after {
+  counter-reset: w calc(var(--live-w));  /* CSS prints the number itself */
+  content: counter(w);
+}
+```
+
+The imperative form is the same binding:
+
+```js
+import { propsFor } from 'prop-for-that'
+
+propsFor(box, ['size'], { to: 'figure' })   // selector → box.closest('figure')
+propsFor(box, ['size'], { to: box.parentElement })  // or an element
+```
+
+## Why it matters
+
+Drop the `to` and nothing about the source changes — it still measures the box — but the properties are written on the box, where the fan and the caption can't reach them. That's the toggle in the demo above.
+
+It applies to every element source, including the ones that must observe the element itself and so can't use the container-binding trick (`range`, `field`, `img`… find an inner element when you bind their wrapper): `size`, `visibility`, `pointer-local`, `truncated`. The classic case is an image telling its own figure how it's doing:
+
+```html
+<figure>
+  <img data-props-for="img" data-props-to="figure" src="art.jpg">
+  <div class="skeleton"></div>
+  <figcaption>…</figcaption>
+</figure>
+```
+
+```css
+@container style(--live-loaded: 0) {
+  .skeleton { opacity: 1; }   /* shimmer while the bytes are in flight */
+  img { filter: blur(8px); }  /* the source element reacts to its own state */
+}
+```
+
+## Rules of the road
+
+- **A selector resolves once**, at bind time, with `el.closest()`. Under [`auto`](/start/getting-started/#1-auto-zero-config), moving an element in the DOM re-binds it, so the target is re-resolved.
+- **No match degrades.** If nothing matches, the properties are written on the element itself and a `console.warn` says why — the page keeps working, it just loses the sharing.
+- **Globals ignore it.** `to` on a `global` source warns and is ignored; globals already write to a shared target.
+- **One binding per key per target.** Two elements hoisting the same key onto one ancestor overwrite each other (and disposing either strips the property). It warns; give each its own target.
+
+See [Style queries](/concepts/style-queries/#hoisting-an-elements-values-to-an-ancestor) for the `@container` half, and [`propsFor`](/reference/api/#propsfor) for the full API.

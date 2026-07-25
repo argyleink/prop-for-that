@@ -14,8 +14,9 @@ export function onDocument(type: string, handler: Handler): Disposer {
   let group = groups.get(type)
   if (!group) {
     const handlers = new Set<Handler>()
+    // Iterated live, no snapshot — same reasoning as `onWindow`.
     const dispatch: EventListener = (e) => {
-      for (const h of [...handlers]) h(e)
+      for (const h of handlers) h(e)
     }
     group = { handlers, dispatch }
     groups.set(type, group)

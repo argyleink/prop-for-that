@@ -30,6 +30,7 @@ import { imgColor } from './img-color'
 import { videoColor } from './video-color'
 import { truncated } from './truncated'
 import { ua } from './ua'
+import { random } from './random'
 
 export {
   scrollVelocity,
@@ -61,6 +62,7 @@ export {
   videoColor,
   truncated,
   ua,
+  random,
 }
 
 /** Every plugin source, for `registerPlugins()` / bulk registration. */
@@ -94,6 +96,7 @@ export const allPlugins: Source[] = [
   videoColor,
   truncated,
   ua,
+  random,
 ]
 
 /**

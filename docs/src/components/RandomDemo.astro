@@ -1,0 +1,165 @@
+---
+// Random demo: two skylines of bars, each bar bound to `random` and holding its
+// own three write-once rolls. Height, tint and breathe phase are CSS reading that
+// bar's own --const-random / -2 / -3 — no per-bar JS, no :nth-child() rules.
+//
+// The left field is unseeded, the right is seeded (42). "Re-roll" rebinds both:
+// the left reshuffles every press, the right lands on the exact same skyline —
+// because a seeded roll is derived from the bar's position in the DOM. Reload the
+// page and the right field is still identical, the left is new.
+const BARS = 18
+---
+
+<div class="pft-stage rnd-demo">
+  <div class="rnd-demo__fields">
+    <div class="rnd-demo__field">
+      <p class="rnd-demo__cap">unseeded &middot; <code>Math.random()</code></p>
+      <div class="rnd-demo__skyline" data-rnd-field="loose">
+        {Array.from({ length: BARS }, () => <span class="rnd-demo__bar"></span>)}
+      </div>
+    </div>
+
+    <div class="rnd-demo__field">
+      <p class="rnd-demo__cap">seeded &middot; <code>randomSeed: 42</code></p>
+      <div class="rnd-demo__skyline" data-rnd-field="seeded">
+        {Array.from({ length: BARS }, () => <span class="rnd-demo__bar"></span>)}
+      </div>
+    </div>
+  </div>
+
+  <div class="rnd-demo__controls">
+    <button class="rnd-demo__btn" type="button" data-rnd-roll>Re-roll both</button>
+    <span class="rnd-demo__count" aria-live="polite" data-rnd-count>roll 1</span>
+  </div>
+
+  <p class="pft-hint">
+    Every bar is bound to <code>random</code>, which writes <code>--const-random</code>,
+    <code>--const-random-2</code> and <code>--const-random-3</code> on it, once.
+    CSS spends them: height from the first, tint from the second, breathe phase from
+    the third. Press <b>Re-roll both</b> &mdash; the left field is new every time; the
+    right one, seeded, returns the same skyline. Reload the page: the right field is
+    unchanged, the left is a stranger.
+  </p>
+</div>
+
+<script>
+  import { propsFor, configure, register } from 'prop-for-that'
+  import { random } from 'prop-for-that/plugins'
+
+  register(random)
+
+  const loose = document.querySelectorAll<HTMLElement>('[data-rnd-field="loose"] .rnd-demo__bar')
+  const seeded = document.querySelectorAll<HTMLElement>('[data-rnd-field="seeded"] .rnd-demo__bar')
+  const count = document.querySelector<HTMLElement>('[data-rnd-count]')!
+
+  let dispose: Array<() => void> = []
+  let rolls = 0
+
+  // The seed is read when a source *starts*, so flipping it between two propsFor
+  // calls gives one unseeded field and one seeded field on the same page.
+  function reroll() {
+    dispose.forEach((d) => d()) // also removes the --const-* they wrote
+    configure({ randomSeed: undefined })
+    const a = propsFor(loose, ['random'])
+    configure({ randomSeed: 42 })
+    const b = propsFor(seeded, ['random'])
+    dispose = [a, b]
+    count.textContent = `roll ${++rolls}`
+  }
+
+  reroll()
+  document.querySelector('[data-rnd-roll]')!.addEventListener('click', reroll)
+</script>
+
+<style>
+  .rnd-demo__fields {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 44rem) {
+    .rnd-demo__fields {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .rnd-demo__field {
+    display: grid;
+    gap: 0.6rem;
+  }
+  .rnd-demo__cap {
+    margin: 0;
+    font-family: var(--sl-font-mono, ui-monospace, monospace);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--sl-color-gray-3);
+  }
+  .rnd-demo__cap code {
+    font-size: 0.72rem;
+    text-transform: none;
+  }
+
+  .rnd-demo__skyline {
+    display: flex;
+    align-items: end;
+    gap: 0.25rem;
+    block-size: 7.5rem;
+    padding: 0.5rem 0.6rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.5rem;
+    background: var(--sl-color-black);
+  }
+
+  /* the whole point: one rule, eighteen different bars — each reading its own rolls */
+  .rnd-demo__bar {
+    --r1: var(--const-random, 0.5);
+    --r2: var(--const-random-2, 0.5);
+    --r3: var(--const-random-3, 0.5);
+    flex: 1;
+    min-inline-size: 0;
+    block-size: calc(12% + var(--r1) * 88%);
+    border-radius: 0.2rem;
+    background: color-mix(
+      in oklab,
+      var(--sl-color-text-accent) calc(25% + var(--r2) * 75%),
+      var(--sl-color-gray-4)
+    );
+    animation: rnd-breathe 2.4s ease-in-out infinite alternate;
+    /* negative delay: every bar starts mid-cycle, so they're out of phase on frame one */
+    animation-delay: calc(var(--r3) * -2.4s);
+    transition:
+      block-size 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
+      background 0.4s linear;
+  }
+  @keyframes rnd-breathe {
+    to {
+      opacity: 0.5;
+    }
+  }
+
+  .rnd-demo__controls {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+  }
+  .rnd-demo__btn {
+    padding: 0.45rem 0.9rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.45rem;
+    background: var(--sl-color-gray-6);
+    color: var(--sl-color-white);
+    font: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  .rnd-demo__btn:hover {
+    border-color: var(--sl-color-accent);
+  }
+  .rnd-demo__count {
+    font-family: var(--sl-font-mono, ui-monospace, monospace);
+    font-size: 0.78rem;
+    color: var(--sl-color-gray-3);
+    font-variant-numeric: tabular-nums;
+  }
+</style>

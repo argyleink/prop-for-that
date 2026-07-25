@@ -84,6 +84,7 @@ export default defineConfig({
 					items: [
 						{ label: 'Pointer', slug: 'demos/pointer' },
 						{ label: 'Size & viewport', slug: 'demos/size' },
+						{ label: 'Hoisting', slug: 'demos/hoist' },
 						{ label: 'Visibility', slug: 'demos/visibility' },
 						{ label: 'Range', slug: 'demos/range' },
 						{ label: 'Select', slug: 'demos/select' },
@@ -95,6 +96,7 @@ export default defineConfig({
 						{ label: 'Video color', slug: 'demos/video-color' },
 						{ label: 'Truncated', slug: 'demos/truncated' },
 						{ label: 'User agent', slug: 'demos/ua' },
+						{ label: 'Random', slug: 'demos/random' },
 					],
 				},
 				{

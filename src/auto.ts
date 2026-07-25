@@ -12,6 +12,15 @@ import { loaders } from './plugins/loaders'
  *   <div data-props-for="size visibility">…</div>
  *   <html data-props-for="viewport pointer">   <!-- globals → :root -->
  *
+ * Add `data-props-to="<selector>"` to write that element's properties on the
+ * nearest matching **ancestor** instead — the element is still what's observed,
+ * but its siblings (and its own style queries) can then read the values:
+ *
+ *   <figure>
+ *     <img data-props-for="img" data-props-to="figure" src="…">
+ *     <figcaption>…</figcaption>   <!-- reads --live-loaded -->
+ *   </figure>
+ *
  * Nothing is attached by default: a page gets exactly the sources it asks for,
  * including globals (declare them on `<html>`). Plugin sources are **loaded on
  * demand** — the first time a `data-props-for` key needs one, its chunk is
@@ -23,11 +32,18 @@ import { loaders } from './plugins/loaders'
  * `configure({ typed: true })`:
  *
  *   <html data-props-typed>
+ *
+ * Add `data-props-seed="<number>"` to the root `<html>` to seed the `random`
+ * plugin — the HTML mirror of `configure({ randomSeed: n })`, so every bound
+ * element's rolls repeat identically on the next load:
+ *
+ *   <html data-props-seed="42">
  */
 
-/** The data-props-for keys auto bound per element, so we touch only the delta and
- *  never clobber bindings added through the imperative API. */
-const tracked = new WeakMap<HTMLElement, string[]>()
+/** The data-props-for keys auto bound per element (plus the data-props-to they
+ *  were bound with), so we touch only the delta and never clobber bindings added
+ *  through the imperative API. */
+const tracked = new WeakMap<HTMLElement, { keys: string[]; to?: string }>()
 
 /** In-flight plugin loads, deduped by key so concurrent requests share a fetch. */
 const loading = new Map<string, Promise<void>>()
@@ -62,36 +78,44 @@ function ensure(key: string): Promise<void> | null {
   return p
 }
 
-function bindKey(el: HTMLElement, key: string): void {
+function bindKey(el: HTMLElement, key: string, to?: string): void {
   const pending = ensure(key)
   if (!pending) {
-    propsFor(el, [key]) // ready now (or unknown → warns)
+    propsFor(el, [key], { to }) // ready now (or unknown → warns)
     return
   }
-  // attach once the chunk lands — unless the element was removed or the key
-  // dropped while it loaded
+  // attach once the chunk lands — unless the element was removed, the key
+  // dropped, or the hoist target changed while it loaded
   pending.then(() => {
-    if (isRegistered(key) && (tracked.get(el) ?? []).includes(key)) propsFor(el, [key])
+    const rec = tracked.get(el)
+    if (isRegistered(key) && rec && rec.to === to && rec.keys.includes(key)) {
+      propsFor(el, [key], { to })
+    }
   })
 }
 
 function sync(el: HTMLElement): void {
   const next = keysOf(el)
-  const prev = tracked.get(el) ?? []
-  const removed = prev.filter((k) => !next.includes(k))
-  const added = next.filter((k) => !prev.includes(k))
+  const to = el.dataset.propsTo || undefined
+  const prev = tracked.get(el)
+  const prevKeys = prev?.keys ?? []
+  // A changed `to` re-targets every binding on this element, so there's no
+  // per-key delta to take — rebind the whole list against the new target.
+  const retarget = prev !== undefined && prev.to !== to
+  const removed = retarget ? prevKeys : prevKeys.filter((k) => !next.includes(k))
+  const added = retarget ? next : next.filter((k) => !prevKeys.includes(k))
   if (removed.length) unbind(el, removed)
   // record the target state before any async load resolves, so a load that
   // lands later can tell whether its key is still wanted
-  if (next.length) tracked.set(el, next)
+  if (next.length) tracked.set(el, { keys: next, to })
   else tracked.delete(el)
-  for (const key of added) bindKey(el, key)
+  for (const key of added) bindKey(el, key, to)
 }
 
 function clear(el: HTMLElement): void {
-  const keys = tracked.get(el)
-  if (keys) {
-    unbind(el, keys)
+  const rec = tracked.get(el)
+  if (rec) {
+    unbind(el, rec.keys)
     tracked.delete(el)
   }
 }
@@ -117,6 +141,16 @@ function init(): void {
   if (document.documentElement.hasAttribute('data-props-typed')) {
     configure({ typed: true })
   }
+  // `<html data-props-seed="42">` mirrors `configure({ randomSeed: 42 })`: the
+  // `random` plugin then derives its rolls from the seed instead of Math.random,
+  // so the page lays out identically on every load. Read here for the same reason
+  // as `typed` — the seed has to be in `config` before the first source starts.
+  const seed = document.documentElement.dataset.propsSeed
+  if (seed) {
+    const n = Number(seed)
+    if (Number.isFinite(n)) configure({ randomSeed: n })
+    else console.warn(`[prop-for-that] ignoring non-numeric data-props-seed="${seed}"`)
+  }
   document.querySelectorAll<HTMLElement>('[data-props-for]').forEach(sync)
 
   new MutationObserver((mutations) => {
@@ -132,7 +166,7 @@ function init(): void {
     subtree: true,
     childList: true,
     attributes: true,
-    attributeFilter: ['data-props-for'],
+    attributeFilter: ['data-props-for', 'data-props-to'],
   })
 }
 

@@ -17,6 +17,34 @@ A style query matches against an element's **nearest ancestor container**, and f
 - **Global sources** write to `:root`, an ancestor of everything, so they're queryable anywhere.
 - **Element sources** write to the bound element, so its **descendants** query it. (An element can't style-query its own property, only an ancestor's.) That's exactly why a gauge inside the container-bound `range` wrapper can react.
 
+## Hoisting an element's values to an ancestor
+
+That ancestor rule is the whole reason `data-props-to` (imperatively, `propsFor(el, keys, { to })`) exists. An `<img>` that writes `--live-loaded` on itself can't query it, and neither can the `<figcaption>` next to it. Hoist the writes one level up and both can:
+
+```html
+<figure>
+  <img data-props-for="img" data-props-to="figure" src="art.jpg">
+  <div class="skeleton"></div>
+  <figcaption>Sunset over the pier</figcaption>
+</figure>
+```
+
+```css
+.skeleton { opacity: 0; transition: opacity 0.3s; }
+
+/* the <figure> is the query container for everything inside it — including the
+   <img> that produced the value */
+@container style(--live-loaded: 0) {
+  .skeleton { opacity: 1; }        /* sibling: shimmer while it loads */
+  img { filter: blur(8px); }       /* the source element reacts to its own state */
+}
+@container style(--live-broken: 1) {
+  figcaption::after { content: ' (image unavailable)'; }
+}
+```
+
+The element is still the one being *observed* — only the writes move. See [`propsFor`'s `to` option](/reference/api/#propsfor) for the resolution rules (selector via `closest()`, no-match fallback, one binding per key per target).
+
 ## Example 1: a global boolean (offline)
 
 ```js

@@ -13,7 +13,7 @@ when a value actually changed. Zero runtime dependencies, tree-shakeable, TypeSc
 ## Entry points
 
 - `prop-for-that`: the core API (`configure`, `register`, `unregister`, `propsFor`, `unbind`, `reset`).
-- `prop-for-that/auto`: side-effecting and fully declarative. Attaches **nothing** by default — it scans the DOM for `[data-props-for="key1 key2"]` and binds exactly those sources (globals included, declared on `<html data-props-for="viewport pointer">` → writes to `:root`), watching the DOM with a `MutationObserver`. Plugin sources are **loaded on demand**: the first time a key needs one, its chunk is dynamically imported and registered, then the binding attaches (no `registerPlugins()`, no separate plugins import). Because it lazy-loads via dynamic `import()`, use it as a module — `<script type="module" src=".../auto.js">` (a classic CDN drop-in `auto.global.js` no longer exists). If the root `<html>` has the boolean attribute `data-props-typed`, it calls `configure({ typed: true })` first (markup equivalent; read once on load; global, no per-key subset). Two limits: it only sees the **light DOM** (a `MutationObserver` doesn't cross shadow roots, so `data-props-for` inside a web component's shadow root is never auto-bound — bind those imperatively with `propsFor(el, [...])`); and on-demand plugin chunks resolve only on CDNs that serve the `dist` tree verbatim (unpkg / jsDelivr file paths), not rewriting/bundling CDNs (esm.sh, `?module`, jsDelivr `+esm`).
+- `prop-for-that/auto`: side-effecting and fully declarative. Attaches **nothing** by default — it scans the DOM for `[data-props-for="key1 key2"]` and binds exactly those sources (globals included, declared on `<html data-props-for="viewport pointer">` → writes to `:root`), watching the DOM with a `MutationObserver`. An element can add `data-props-to="<selector>"` to write its properties on the nearest matching **ancestor** instead (the element is still what's observed) — editing that attribute rebinds every key on the element against the new target. Plugin sources are **loaded on demand**: the first time a key needs one, its chunk is dynamically imported and registered, then the binding attaches (no `registerPlugins()`, no separate plugins import). Because it lazy-loads via dynamic `import()`, use it as a module — `<script type="module" src=".../auto.js">` (a classic CDN drop-in `auto.global.js` no longer exists). If the root `<html>` has the boolean attribute `data-props-typed`, it calls `configure({ typed: true })` first (markup equivalent; read once on load; global, no per-key subset). Likewise `<html data-props-seed="42">` calls `configure({ randomSeed: 42 })` first (markup equivalent, seeds the `random` plugin; read once on load; a non-numeric value is ignored with a warning). Two limits: it only sees the **light DOM** (a `MutationObserver` doesn't cross shadow roots, so `data-props-for` inside a web component's shadow root is never auto-bound — bind those imperatively with `propsFor(el, [...])`); and on-demand plugin chunks resolve only on CDNs that serve the `dist` tree verbatim (unpkg / jsDelivr file paths), not rewriting/bundling CDNs (esm.sh, `?module`, jsDelivr `+esm`).
 - `prop-for-that/head`: side-effecting. Synchronously writes FOUC-safe constants before first paint. Inline it in `<head>`.
 - `prop-for-that/plugins`: opt-in plugin sources, plus `registerPlugins` and `allPlugins`.
 
@@ -43,7 +43,7 @@ register(source: Source): void           // add a custom/plugin source by key
 unregister(key: SourceKey): void         // remove a source from the registry
 isRegistered(key: SourceKey): boolean    // whether a source key is currently registered
 propsFor(keys: string[]): Disposer       // global: attach sources to config.root (:root)
-propsFor(target: Element | NodeList | Element[], keys: string[]): Disposer  // per element(s)
+propsFor(target: Element | NodeList | Element[], keys: string[], opts?: PropsForOptions): Disposer  // per element(s)
 unbind(target: HTMLElement, keys?: string[]): void    // detach some/all
 reset(): void                            // tear down every binding + shared observers/listeners
 pause(): void                            // freeze the loop (no sampling/flushing); idempotent
@@ -52,10 +52,19 @@ resume(): void                           // unfreeze; flushes anything queued wh
 // propsFor is global unless the first arg is a Node, NodeList, or array of elements.
 // Its disposer tears down only what that call started and removes the properties it wrote.
 
-interface Config { livePrefix: string; constPrefix: string; root: HTMLElement; typed: boolean; defaults?: Record<string, string|number>; liveHz?: number }
+interface PropsForOptions { to?: Element | string }
+// `to` hoists the WRITES to an ancestor (selector → el.closest(), or an explicit element)
+// while still OBSERVING the bound element — the fix for "custom properties inherit
+// downward only, and @container style() matches an ancestor". Markup form: data-props-to.
+// No closest() match → warns, falls back to the element itself. `to` + a global source →
+// warns, ignored. One binding per key per hoist target (duplicates warn and fight).
+
+interface Config { livePrefix: string; constPrefix: string; root: HTMLElement; typed: boolean; defaults?: Record<string, string|number>; liveHz?: number; randomSeed?: number }
 // defaults: livePrefix '--live-', constPrefix '--const-', root document.documentElement, typed false, liveHz unset (every frame)
 // config.defaults are typed @property initial values, keyed by a source's local name
 // liveHz caps loop sampling+flushing rate (e.g. 30); fewer writes = less style recalc + calmer DevTools
+// randomSeed makes the `random` plugin deterministic (rolls derive from seed + the element's DOM position); read when a source starts
+// randomSeed markup equivalent under auto: <html data-props-seed="42">
 
 interface Source {
   key: SourceKey
@@ -147,6 +156,7 @@ Import name is camelCase; the key for `propsFor`/`data-props-for` is the dashed 
 | `imgColor` | `img-color` | element | a palette from an `<img>`, all from one 16×16 bucketing pass (createImageBitmap+OffscreenCanvas). Each swatch is a single sRGB hex colour (no channel props — use relative colour syntax / color-mix to extract): `--live-img` (dominant), `--live-img-accent` (most vibrant), `--live-img-dark` (darkest non-black), `--live-img-light` (lightest non-white), `--live-img-avg` (mean). Plus `--live-img-temp` (−1 cool…+1 warm). Accent reuses the dominant for grayscale. Cross-origin needs `crossorigin` + CORS, else no-ops. Bind the `<img>` or a container. |
 | `videoColor` | `video-color` | element | live colours of a playing `<video>`, each a single sRGB hex colour: `--live-video` (dominant) + `--live-video-accent` (most vibrant; reuses the dominant for a grayscale frame). Both from one 16×16 read on `requestVideoFrameCallback` (stops when paused/offscreen/backgrounded), throttled to ~4 Hz; seeds a paused/poster frame; falls back to `timeupdate`. Cross-origin needs `crossorigin` + CORS, else no-ops. Bind the `<video>` or a container. |
 | `truncated` | `truncated` | element | whether the element's own text is clipped right now — the "is the ellipsis showing?" CSS can ask a scroll container but not overflowing text (all 1/0): `--live-truncated` (either axis), `--live-truncated-x` (inline clip, `scrollWidth > clientWidth` — the `text-overflow: ellipsis` case), `--live-truncated-y` (block clip, `scrollHeight > clientHeight` — `-webkit-line-clamp` / fixed-height box). Drives `@container style(--live-truncated: 1)` to reveal a "more"/tooltip/expand affordance only while text is cut off. Recomputed on resize (shared `ResizeObserver`), flips both ways as layout reflows. Bind the element whose overflow you care about. |
+| `random` | `random` | element | three independent random rolls per bound element, each a float in [0,1), written once: `--const-random`, `--const-random-2`, `--const-random-3`. One CSS rule varies every element (size / tint / animation-delay phase) with no `:nth-child()` ladder. Angles, ranges, buckets, coin flips are derivable in calc() so they aren't shipped. Never re-rolled: `const` cadence + `gate: false` (gating would re-roll on every viewport re-entry). `configure({ randomSeed: 42 })` → deterministic, derived from the seed + the element's DOM position, so the same markup renders the same scatter every load (SSR/screenshot diffing); rebinding returns the same values; reordering the tree reshuffles. Native CSS `random()` is the eventual replacement. |
 
 ## Recipes
 
@@ -183,6 +193,19 @@ Container-bound range (so siblings can read the value):
 propsFor(document.querySelector('.meter'), ['range'])
 ```
 
+Hoisting to an ancestor (the general form — works for every element source):
+
+```html
+<figure>
+  <img data-props-for="img size" data-props-to="figure" src="art.jpg">
+  <figcaption>…</figcaption>   <!-- reads --live-loaded, and can style-query it -->
+</figure>
+```
+
+```js
+propsFor(img, ['img', 'size'], { to: 'figure' })   // or { to: someElement }
+```
+
 Continuous reaction with `var()`:
 
 ```css
@@ -198,7 +221,7 @@ Discrete reaction with a style query:
 
 ## Gotchas (read before writing CSS)
 
-- **Custom properties inherit downward only.** An `element`-scoped source writes its vars on the bound element. To let *sibling* elements react, bind a common ancestor. `range` and `field` help here: bind them to a container and they find the inner `<input>`, writing the vars on the container.
+- **Custom properties inherit downward only.** An `element`-scoped source writes its vars on the bound element, so only its *descendants* see them — and since `@container style()` matches an ancestor, the element can't style-query its own values either. Fix it by **hoisting**: `propsFor(el, keys, { to: 'figure' })` or `data-props-to="figure"` observes `el` but writes on the ancestor, so siblings (and `el` itself) can read and style-query it. The complementary trick: `range`, `field`, `select`, `media`, `img`, `img-color`, `video-color`, `color-input` also accept being bound to a *container* — they find the inner element and write on the container. Keep hoists to one binding per key per target (two elements hoisting the same key to one ancestor overwrite each other; it warns).
 - **Pick the right consumer.** Continuous numbers go through `var()` + `calc()`. Discrete/boolean/integer values use `@container style()`, which matches on **equality only** (range comparisons like `style(--x < 5)` are not stable yet). Emit booleans/tiers when you need thresholds.
 - **`visibility` is binary + latched, not a ratio.** It writes `--live-visible` and `--const-has-entered`. There is no continuous visible-ratio and no scroll-position source: use native `animation-timeline: scroll()` / `view()` for continuous scroll-driven effects.
 - **Values are unitless.** Multiply by `1px`, `1deg`, `100%`, etc. in CSS.
@@ -206,7 +229,7 @@ Discrete reaction with a style query:
 - **Typed properties are opt-in.** `configure({ typed: true })` (before attaching) registers each written `--live-*` with `@property` so it interpolates (consumers add `transition`/`@keyframes`) and resolves to `0` before a value arrives. With the `auto` entry, `<html data-props-typed>` is the markup equivalent (boolean, read once on load; typing is global per `@property` name, so no per-key subset). It is a one-way door (no unregister), uses `inherits: true`, is feature-detected, and skips names already registered. Sources can declare per-property `props: { name: { syntax, initial, inherits } }` (default `<number>` / `0` / inherited); consumers can set initials with `configure({ typed: true, defaults: { 'pointer-x-ratio': 0.5 } })` (keyed by local name).
 - **Permission-gated plugins** (`orientation`, `motion`, `geo`) and unsupported APIs feature-detect and no-op; registering them is always safe. On iOS some need a user-gesture permission grant before values arrive. `cpuPressure` is Chromium-only and needs a secure context + the `compute-pressure` Permissions Policy; it seeds `--live-cpu-pressure: 0` where supported, writes nothing where not.
 - **Global writes land in an adopted stylesheet, not `<html>` inline style.** Root `--live-*` go into one constructable, adopted `:root {}` rule (element-scoped writes stay inline; the `head` entry still writes `--const-*` inline for first paint). Keeps the DevTools Styles panel usable under per-frame churn; `var()`/`calc()` consumption is identical (still inherits). Reading `documentElement.style` directly won't show them — read computed style. Falls back to inline where constructable stylesheets are unsupported.
-- **Continuously-sampling element sources pause off screen.** Under both the imperative API and `auto`, a *gated* `element`-scoped source runs only while its element intersects the viewport (via the shared `IntersectionObserver`); off screen its work (listeners/observers/timers) is torn down and its last-written values freeze in place, resuming + re-seeding on re-entry. This covers the sources that do continuous/heavy work: `size`, `truncated`, `pointer-local`, `media`, `img-color`, `video-color`. `global` sources and `:root` bindings are never gated. Opt out with `gate: false`: `visibility` does (it must keep observing to *report* visibility), and so do the **event-driven** sources `range`, `field`, `field-state`, `form-state`, `select`, `color-input`, `img` — they only write on user interaction or `load` (impossible off screen), so they seed once at bind and run ungated rather than paying for an `IntersectionObserver` subscription that saves nothing.
+- **Continuously-sampling element sources pause off screen.** Under both the imperative API and `auto`, a *gated* `element`-scoped source runs only while its element intersects the viewport (via the shared `IntersectionObserver`); off screen its work (listeners/observers/timers) is torn down and its last-written values freeze in place, resuming + re-seeding on re-entry. This covers the sources that do continuous/heavy work: `size`, `truncated`, `pointer-local`, `media`, `img-color`, `video-color`. `global` sources and `:root` bindings are never gated. Opt out with `gate: false`: `visibility` does (it must keep observing to *report* visibility), and so do the **event-driven** sources `range`, `field`, `field-state`, `form-state`, `select`, `color-input`, `img` — they only write on user interaction or `load` (impossible off screen), so they seed once at bind and run ungated rather than paying for an `IntersectionObserver` subscription that saves nothing. `random` is ungated for a stronger reason: re-entry re-runs `start`, which would re-roll its write-once values.
 - **Freeze or throttle the loop.** The whole loop also freezes automatically while the tab is hidden (`document.hidden`). `pause()` / `resume()` stop and restart sampling+flushing (values hold steady; bindings stay attached). `configure({ liveHz: 30 })` caps the rate to reduce mutations/recalc, throttling samplers (`fps`, `scroll-velocity`) too.
 
 ## Links

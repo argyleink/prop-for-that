@@ -955,6 +955,9 @@
           <div class="stage stage--sun" id="sun-stage">
             <figure class="sun-card" id="sun-card">
               <img class="sun-card__img" id="sun-img" alt="" decoding="async" />
+              <!-- a SIBLING of the <img>: it can only see --live-loaded because
+                   the img source is hoisted onto the card (data-props-to) -->
+              <div class="sun-card__skeleton" aria-hidden="true"></div>
             </figure>
             <ul class="sun-palette" aria-hidden="true">
               <li class="sun-sw sun-sw--dominant"><i></i>dominant</li>
@@ -974,7 +977,9 @@
           <figure class="caption">
             <figcaption>HTML</figcaption>
             <pre><code>&lt;<span class="tok-key">figure</span> <span class="tok-prop">data-props-for</span>=<span class="tok-str">"img-color"</span>&gt;
-  &lt;<span class="tok-key">img</span> <span class="tok-prop">src</span>=<span class="tok-str">"art.jpg"</span>&gt;
+  <span class="tok-com">&lt;!-- hoisted: --live-loaded lands on the figure --&gt;</span>
+  &lt;<span class="tok-key">img</span> <span class="tok-prop">data-props-for</span>=<span class="tok-str">"img"</span> <span class="tok-prop">data-props-to</span>=<span class="tok-str">"figure"</span> <span class="tok-prop">src</span>=<span class="tok-str">"art.jpg"</span>&gt;
+  &lt;<span class="tok-key">div</span> <span class="tok-prop">class</span>=<span class="tok-str">"skeleton"</span>&gt;&lt;/<span class="tok-key">div</span>&gt;
 &lt;/<span class="tok-key">figure</span>&gt;</code></pre>
             <figcaption>CSS</figcaption>
             <pre><code><span class="tok-sel">.sun-card</span> { <span class="tok-com">/* shadow: image colour, cast off the cursor */</span>
@@ -982,6 +987,10 @@
     <span class="tok-fn">calc</span>((<span class="tok-num">.5</span> - <span class="tok-var">var(--live-local-pointer-x-ratio)</span>) * <span class="tok-num">8rem</span>)
     <span class="tok-fn">calc</span>((<span class="tok-num">.5</span> - <span class="tok-var">var(--live-local-pointer-y-ratio)</span>) * <span class="tok-num">8rem</span>) <span class="tok-num">3rem</span>
     <span class="tok-fn">oklch</span>(<span class="tok-key">from</span> <span class="tok-var">var(--live-img)</span> <span class="tok-key">l c h</span> / <span class="tok-num">.6</span>);
+}
+<span class="tok-com">/* the skeleton is a sibling of the img — only the hoist makes this possible */</span>
+<span class="tok-key">@container</span> <span class="tok-fn">style</span>(<span class="tok-var">--live-loaded</span>: <span class="tok-num">0</span>) {
+  <span class="tok-sel">.skeleton</span> { <span class="tok-prop">opacity</span>: <span class="tok-num">1</span>; }
 }</code></pre>
           </figure>
         </div>
@@ -1385,6 +1394,15 @@
               <div class="src__var" style="--val: var(--const-ua-mobile, 0)"><dt>--const-ua-mobile</dt><dd></dd></div>
             </dl>
             <p class="src__desc">Low-entropy client identity, set once &mdash; also FOUC-safe via <code>head</code>: OS, browser, engine, version, mobile.</p>
+          </article>
+          <article class="src">
+            <header class="src__head"><span class="src__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="3.5"/><circle cx="8.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/></svg></span><code class="src__key">random</code><span class="src__scope src__scope--el">element</span></header>
+            <dl class="src__vars">
+              <div class="src__var src__var--scoped"><dt>--const-random</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--const-random-2</dt><dd></dd></div>
+              <div class="src__var src__var--scoped"><dt>--const-random-3</dt><dd></dd></div>
+            </dl>
+            <p class="src__desc">Three write-once rolls per element (0&ndash;1) &mdash; the per-element variation CSS can&rsquo;t compute yet; seedable for a reproducible layout.</p>
           </article>
         </div>
       </section>

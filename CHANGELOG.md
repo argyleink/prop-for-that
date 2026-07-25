@@ -8,6 +8,72 @@ backwards-compatible change (semver's `1.0.0`+ rules kick in at v1).
 Only the published library (`dist/`) is versioned here; the demo and docs site
 are repo-only and not part of the npm package.
 
+## [0.7.11]
+
+### Added
+- **Hoist an element's properties to an ancestor** — `propsFor(el, keys, { to })`
+  and the markup twin `data-props-to="<selector>"`. The binding still *observes*
+  the bound element; only its writes move. This is the general answer to the
+  library's oldest constraint: custom properties inherit **downward only** and
+  `@container style()` matches an **ancestor**, so an element could never share
+  its own values with a sibling, nor style-query them itself. An `<img>` can now
+  hoist `--live-loaded` onto its `<figure>`, where a skeleton overlay, the
+  `<figcaption>`, and the image itself can all react to it.
+
+  It's a binding-layer feature — sources need no changes, they just call
+  `ctx.write` — so it works for **every** element source, including the ones the
+  existing container-binding trick (`range`, `field`, `img`, `img-color`…) can't
+  help: `size`, `visibility`, `pointer-local`, `truncated`. `to` takes a selector
+  (resolved once at bind time via `el.closest()`) or an element. No match warns
+  and falls back to writing on the element itself; `to` on a `global` source
+  warns and is ignored. Two elements hoisting the same key onto one ancestor
+  overwrite each other, so that warns too — keep it to one binding per key per
+  target. Under `auto`, changing `data-props-to` rebinds every key on that
+  element against the new target.
+
+## [0.7.10]
+
+### Added
+- **`random` plugin** (element, opt-in) — the per-element variation CSS can't
+  compute for itself yet: three independent rolls, `--const-random`,
+  `--const-random-2` and `--const-random-3`, each a float in `[0, 1)`, written
+  **once** on the `const` cadence. One rule then varies every element it's bound to
+  (size from the first, tint from the second, `animation-delay` phase from the
+  third) with no `:nth-child()` ladder; angles, ranges, buckets and coin flips are
+  all derivable from these in `calc()`, so they aren't shipped. It sets
+  `gate: false`: a gated element source's `start` re-runs on every viewport
+  re-entry, which for a generator would hand an element a fresh value each time it
+  scrolled back into view, mid-animation.
+- **`configure({ randomSeed })`** — deterministic mode for `random`. Each element's
+  rolls derive from the seed plus the element's position in the DOM rather than from
+  a shared sequence, so the same markup renders the same "random" layout on every
+  load (SSR, screenshot diffing, print), a rebind hands an element the values it had
+  before, and bind order is irrelevant — reordering the tree is what reshuffles.
+  Unset (the default) keeps rolling from `Math.random()`. The seed is read when a
+  source starts, so it can differ between two `propsFor()` calls.
+- **`data-props-seed` on the root `<html>`** — the markup mirror of
+  `configure({ randomSeed })` for the `auto` entry, read once on load before any
+  source attaches (`<html data-props-seed="42">`). `0` is a valid seed; a
+  non-numeric value is ignored with a warning rather than seeding `NaN`.
+
+## [0.7.9]
+
+### Performance
+- **Redundant writes short-circuit at the source boundary.** `ctx.write` now
+  memoizes the last raw value (and the prefixed property name) per binding, so
+  a write whose value hasn't changed — the steady state for most sources, e.g.
+  `pointer-y` during horizontal movement or `scroll-direction` mid-scroll —
+  exits after one Map lookup instead of paying the prefix concat,
+  `String()` coercion, and Writer queue lookups every time (~5.6× faster on
+  that path). Property names are now built once per binding, which also means
+  prefix changes via `configure()` no longer affect already-attached bindings —
+  consistent with `configure`'s documented "call before attaching" contract.
+- **Allocation-free event/observer dispatch.** The shared `window`/`document`
+  listeners and the page-wide Resize/IntersectionObserver callbacks no longer
+  copy their handler set on every dispatch (previously one array allocation
+  per event — including every `pointermove` — and per observer entry). Set
+  iteration already tolerates handlers unsubscribing mid-dispatch.
+
 ## [0.7.8]
 
 ### Added

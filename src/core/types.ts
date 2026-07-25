@@ -33,6 +33,14 @@ export interface Config {
    * `fps`/`scroll-velocity` measure at this rate too.
    */
   liveHz?: number
+  /**
+   * Seed for the `random` plugin. When set, each element's rolls are derived from
+   * this seed plus the element's position in the DOM instead of `Math.random()`,
+   * so the same markup renders the same "random" layout on every load — and a
+   * rebind hands an element the values it had before. Unset (the default) means
+   * genuinely random per load. Any integer works; `0` is a valid seed.
+   */
+  randomSeed?: number
 }
 
 /** Optional `@property` typing for a source's local name, used when `typed` is on. */

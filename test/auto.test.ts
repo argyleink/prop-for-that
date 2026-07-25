@@ -76,6 +76,58 @@ describe('auto: declarative + just-in-time plugins', () => {
     el.remove()
   })
 
+  it('hoists to the ancestor named by data-props-to, and re-targets when it changes', async () => {
+    const scheduled: FrameRequestCallback[] = []
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => scheduled.push(cb))
+    vi.stubGlobal('cancelAnimationFrame', () => {})
+    const flush = () => scheduled.splice(0).forEach((cb) => cb(0))
+    // auto instances from earlier tests still observe the document (resetModules
+    // doesn't disconnect them) and warn about this key they never registered
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    const api = await import('../src/index')
+    api.register({
+      key: 'probe',
+      scope: 'element',
+      start: (ctx) => (ctx.write('p', 1), () => {}),
+    })
+
+    const fig = document.createElement('figure')
+    fig.innerHTML = '<img data-props-for="probe" data-props-to="figure"><figcaption></figcaption>'
+    document.body.append(fig)
+    const img = fig.querySelector('img')!
+
+    await import('../src/auto') // init() binds what's already in the DOM
+    flush()
+    expect(fig.style.getPropertyValue('--live-p')).toBe('1')
+    expect(img.style.getPropertyValue('--live-p')).toBe('')
+
+    // dropping the attribute re-targets the binding onto the element itself
+    img.removeAttribute('data-props-to')
+    await vi.waitFor(() => {
+      flush()
+      expect(img.style.getPropertyValue('--live-p')).toBe('1')
+    })
+    expect(fig.style.getPropertyValue('--live-p')).toBe('') // ancestor cleaned up
+
+    // and putting it back hoists again
+    img.setAttribute('data-props-to', 'figure')
+    await vi.waitFor(() => {
+      flush()
+      expect(fig.style.getPropertyValue('--live-p')).toBe('1')
+    })
+    expect(img.style.getPropertyValue('--live-p')).toBe('')
+
+    // removing the element unbinds it and cleans the ancestor's props
+    img.remove()
+    await vi.waitFor(() => expect(fig.style.getPropertyValue('--live-p')).toBe(''))
+
+    api.reset()
+    fig.remove()
+    warn.mockRestore()
+    vi.unstubAllGlobals()
+  })
+
   it('retries a plugin load that failed the first time (not cached as failed)', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     const error = vi.spyOn(console, 'error').mockImplementation(() => {})

@@ -1,0 +1,153 @@
+---
+// Hoisting demo: `size` is bound to the BOX, but its properties are written on
+// the wrapping <figure> via `{ to: 'figure' }`. Everything that reacts here —
+// the fanned ghosts, the readout, the card's tint — is a *sibling* of the box,
+// so none of it could see --live-w / --live-h / --live-aspect without the hoist.
+// The toggle rebinds without `to` to show exactly that: the props land on the
+// box itself and every sibling falls back to its var() default.
+---
+<div class="pft-stage hoist-demo">
+  <figure class="hoist-demo__card">
+    <div class="hoist-demo__box" data-pft-hoist>
+      <span class="hoist-demo__tag">resize me &searr;</span>
+    </div>
+
+    <!-- siblings of the box: same aspect ratio, fanned by the box's own
+         diagonal angle (atan2 of the hoisted --live-h / --live-w) -->
+    <div class="hoist-demo__fan" aria-hidden="true">
+      <i style="--i: 1"></i>
+      <i style="--i: 2"></i>
+      <i style="--i: 3"></i>
+    </div>
+
+    <figcaption class="pft-readout hoist-demo__cap">
+      <span class="pft-chip">--live-w <b class="hoist-demo__w"></b></span>
+      <span class="pft-chip">--live-h <b class="hoist-demo__h"></b></span>
+      <button class="hoist-demo__toggle" type="button" aria-pressed="true" data-pft-hoist-toggle>
+        <code>to: 'figure'</code>
+      </button>
+    </figcaption>
+  </figure>
+
+  <p class="pft-hint">
+    One binding: <code>propsFor(box, ['size'], &#123; to: 'figure' &#125;)</code>. The box is what's
+    measured; the <code>&lt;figure&gt;</code> is what's written. Drag the box's corner and its
+    siblings answer — the ghosts copy its aspect ratio and fan out along its diagonal,
+    the readout counts its pixels, the card tints with its proportions. Flip the toggle
+    to drop <code>to</code>: the same source now writes on the box itself, where no sibling
+    can reach it, and everything outside the box freezes at its fallback.
+  </p>
+</div>
+
+<style>
+  .hoist-demo__card {
+    /* the card is the write target, so it can style itself from the box's numbers */
+    --hue: calc(var(--live-aspect, 1.6) * 42);
+    margin: 0;
+    display: grid;
+    grid-template-columns: auto minmax(6rem, 1fr);
+    align-items: center;
+    gap: 1.25rem 1.5rem;
+    padding: 1.25rem;
+    border: 1px solid oklch(70% 0.12 var(--hue) / 0.5);
+    border-radius: 0.75rem;
+    background: color-mix(in oklab, oklch(70% 0.15 var(--hue)) 10%, var(--sl-color-black));
+    transition:
+      background-color 0.18s linear,
+      border-color 0.18s linear;
+  }
+  .hoist-demo__box {
+    resize: both;
+    overflow: hidden;
+    inline-size: 13rem;
+    block-size: 8rem;
+    min-inline-size: 6rem;
+    min-block-size: 4rem;
+    max-inline-size: 100%;
+    display: grid;
+    place-content: end;
+    padding: 0.6rem 0.7rem;
+    border: 1px solid var(--sl-color-gray-4);
+    border-radius: 0.5rem;
+    background: var(--sl-color-gray-6);
+  }
+  .hoist-demo__tag {
+    font-family: var(--sl-font-mono, ui-monospace, monospace);
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--sl-color-gray-3);
+  }
+  .hoist-demo__fan {
+    display: grid;
+    place-items: center;
+    min-block-size: 9rem;
+  }
+  .hoist-demo__fan i {
+    grid-area: 1 / 1; /* all three share one cell → a fanned stack */
+    inline-size: clamp(3rem, calc(var(--live-w, 208) * 0.3px), 9rem);
+    aspect-ratio: var(--live-aspect, 1.6);
+    border-radius: 0.4rem;
+    /* the box's own diagonal angle, stepped once per ghost */
+    rotate: calc(atan2(var(--live-h, 128), var(--live-w, 208)) * var(--i) * 0.6);
+    background: oklch(72% 0.16 calc(var(--hue) + var(--i) * 26) / 0.5);
+    transition:
+      rotate 0.18s ease-out,
+      inline-size 0.18s ease-out,
+      background-color 0.18s linear;
+  }
+  .hoist-demo__cap {
+    grid-column: 1 / -1;
+    align-items: center;
+  }
+  /* the numbers, straight from the hoisted properties — no JS in this path */
+  .hoist-demo__w::after {
+    counter-reset: w calc(var(--live-w, 0));
+    content: counter(w);
+  }
+  .hoist-demo__h::after {
+    counter-reset: h calc(var(--live-h, 0));
+    content: counter(h);
+  }
+  .hoist-demo__toggle {
+    margin-inline-start: auto;
+    padding: 0.3rem 0.6rem;
+    border: 1px solid var(--sl-color-gray-4);
+    border-radius: 0.4rem;
+    background: var(--sl-color-gray-6);
+    color: var(--sl-color-gray-2);
+    font: inherit;
+    cursor: pointer;
+  }
+  .hoist-demo__toggle[aria-pressed='true'] {
+    border-color: var(--sl-color-text-accent);
+    color: var(--sl-color-text-accent);
+  }
+  .hoist-demo__toggle code {
+    background: none;
+    font-size: 0.78rem;
+  }
+</style>
+
+<script>
+  import { propsFor } from 'prop-for-that'
+  import type { Disposer } from 'prop-for-that'
+
+  document.querySelectorAll<HTMLElement>('[data-pft-hoist]').forEach((box) => {
+    const card = box.closest('figure')!
+    const toggle = card.querySelector<HTMLButtonElement>('[data-pft-hoist-toggle]')!
+
+    let hoisted = true
+    // `to` is the only difference between the two bindings: same source, same
+    // observed element, different element to write on.
+    let dispose: Disposer = propsFor(box, ['size'], { to: 'figure' })
+
+    toggle.addEventListener('click', () => {
+      dispose() // removes the properties it wrote, wherever they landed
+      hoisted = !hoisted
+      dispose = hoisted ? propsFor(box, ['size'], { to: 'figure' }) : propsFor(box, ['size'])
+      toggle.setAttribute('aria-pressed', String(hoisted))
+      toggle.innerHTML = hoisted ? "<code>to: 'figure'</code>" : '<code>no to</code>'
+    })
+  })
+</script>

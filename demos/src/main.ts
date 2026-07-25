@@ -8,6 +8,7 @@ import {
   formState,
   select,
   colorInput,
+  img,
   imgColor,
   videoColor,
   clock,
@@ -61,6 +62,7 @@ registerPlugins(
   formState,
   select,
   colorInput,
+  img,
   imgColor,
   videoColor,
   clock,
@@ -218,6 +220,12 @@ if (sunImg && sunCard && sunPicker) {
 // colours — accent / dark / light / avg — all inherited from the stage.
 const sunStage = document.getElementById('sun-stage')
 if (sunStage) propsFor(sunStage, ['pointer-local', 'img-color'])
+// `img` HOISTED onto the card — the JS twin of data-props-to="figure". The source
+// observes the <img> (load/error, natural size) but --live-loaded lands on the
+// figure, so the skeleton *sibling* can `@container style(--live-loaded: 0)` while
+// the photo is still downloading. On the <img> itself that value would be
+// unreachable: properties inherit downward only, style queries match an ancestor.
+if (sunImg) propsFor(sunImg, ['img'], { to: '.sun-card' })
 
 // ── Demo 16 (video-color): bind it to the STAGE so the card's glow AND the two
 // swatches below it read the sampled colours (~4 Hz). The accent drives the
@@ -443,6 +451,7 @@ const DEMO_PAGE: Record<string, string> = {
   'form-state': 'form-state',
   'img-color': 'img-color',
   'video-color': 'video-color',
+  random: 'random',
 }
 const ELEMENT_PLUGINS = new Set(['media', 'img', 'truncated'])
 const docUrlFor = (key: string): string =>

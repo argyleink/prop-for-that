@@ -1,0 +1,84 @@
+---
+title: Random
+description: Live demo of the random source — per-element random rolls as write-once CSS custom properties, optionally seeded for a reproducible layout.
+---
+
+import RandomDemo from '../../../components/RandomDemo.astro';
+
+CSS has no way to give each element its own random number today, so organic variation gets faked with long `:nth-child()` ladders of hand-picked values. `random` (element) writes three independent rolls — `--const-random`, `--const-random-2`, `--const-random-3`, each a float in `[0, 1)` — onto every element you bind it to, **once**. One CSS rule then reads them and no two elements look alike.
+
+<RandomDemo />
+
+## The wiring
+
+Bind the elements you want varied; each gets its own rolls, and they inherit to descendants like any custom property:
+
+```html
+<script type="module">import 'prop-for-that/auto'</script>
+
+<div class="tile" data-props-for="random"></div>
+<div class="tile" data-props-for="random"></div>
+<div class="tile" data-props-for="random"></div>
+```
+
+```css
+.tile {
+  /* height, tint and phase — one rule, a different result per tile */
+  block-size: calc(12% + var(--const-random, 0.5) * 88%);
+  background: color-mix(in oklab, tomato calc(var(--const-random-2, 0.5) * 100%), gold);
+  animation: breathe 2.4s ease-in-out infinite alternate;
+  animation-delay: calc(var(--const-random-3, 0.5) * -2.4s);
+}
+```
+
+Three rolls, because variation usually needs more than one axis and CSS can't derive a second *independent* random from the first. Everything past that is derivable, so it isn't shipped:
+
+```css
+.jitter {
+  rotate: calc((var(--const-random) - 0.5) * 20deg);            /* signed spread */
+  translate: calc(var(--const-random-2) * 100% ) 0;             /* 0 → 100%      */
+  animation-duration: calc(2s + var(--const-random-3) * 3s);    /* a range       */
+  --bucket: round(down, calc(var(--const-random) * 5), 1);      /* 0 → 4         */
+  --coin: calc(sign(var(--const-random-2) - 0.5));              /* -1 or 1       */
+}
+```
+
+## Written once, never re-rolled
+
+The rolls are `const` cadence, and `random` opts out of [viewport gating](/reference/plugins/#element-plugins) — a gated element source re-runs on every viewport re-entry, which for a generator would mean a fresh value each time the element scrolled back into view, mid-animation. Bind once, and the number an animation started with is the number it keeps.
+
+## Seeded: the same "random" every load
+
+Pass a seed and the rolls stop being random-per-load without stopping being varied-per-element:
+
+```js
+import { configure, propsFor, register } from 'prop-for-that'
+import { random } from 'prop-for-that/plugins'
+
+register(random)
+configure({ randomSeed: 42 })
+propsFor(document.querySelectorAll('.tile'), ['random'])
+```
+
+Under [`auto`](/start/getting-started/#1-auto-zero-config) it's an attribute on the root `<html>` — no JS of your own at all:
+
+```html
+<script type="module">import 'prop-for-that/auto'</script>
+
+<html data-props-seed="42">
+  <div class="tile" data-props-for="random"></div>
+  …
+</html>
+```
+
+Each element's rolls are derived from the seed plus **its position in the DOM**, not from a shared sequence. So:
+
+- the same markup renders the same scatter on every load — good for SSR, screenshot diffing, and print;
+- rebinding an element hands it the values it had before, rather than a new set;
+- bind order doesn't matter, but tree order does — insert an element in the middle and everything after it reshuffles.
+
+Unset (the default), rolls come from `Math.random()`. The seed is read when a source *starts*, which is how the demo above runs one unseeded field and one seeded field on the same page: flip `randomSeed` between the two `propsFor()` calls.
+
+## Coming to CSS
+
+Native [`random()`](https://developer.mozilla.org/en-US/docs/Web/CSS/random) (CSS Values 5, with `per-element` caching) is the eventual answer to all of this, and it's beginning to ship. Until support is broad enough to rely on, this plugin covers the same ground in every engine — and its values, being custom properties, can also be read by `@container style()` and inherited, which a bare `random()` call can't.

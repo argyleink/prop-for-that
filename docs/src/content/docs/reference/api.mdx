@@ -29,10 +29,13 @@ interface Config {
   typed: boolean       // default: false; register --live-* with @property
   defaults?: Record<string, string | number>  // typed initial values, by local name
   liveHz?: number      // default: unset (every frame); cap loop sampling+flush rate
+  randomSeed?: number  // default: unset (Math.random()); seed the `random` plugin
 }
 ```
 
 Set `typed: true` to register written `--live-*` properties with `@property`, making them interpolatable and giving them a guaranteed initial value. Pass `defaults` (keyed by a source's local name, e.g. `'pointer-x-ratio'`) to choose those initial values. See [Typed properties](/concepts/typed-properties/). With the [`auto` entry](/start/getting-started/#1-auto-zero-config), `<html data-props-typed>` is the markup equivalent of `typed: true`.
+
+Set `randomSeed` to make the [`random` plugin](/demos/random/) deterministic: each element's rolls are derived from the seed plus its position in the DOM instead of `Math.random()`, so the same markup renders the same "random" layout on every load. It's read when a source *starts*, so it can differ between two `propsFor()` calls. With the [`auto` entry](/start/getting-started/#1-auto-zero-config), `<html data-props-seed="42">` is the markup equivalent (a non-numeric value is ignored, with a warning).
 
 Set `liveHz` to cap how often the shared loop samples and flushes — e.g. `30` coalesces writes to at most 30/sec. Fewer custom-property mutations means less style recalc and a calmer DevTools Styles panel, at the cost of update smoothness. It throttles the whole loop, so per-frame samplers like `fps` and `scroll-velocity` measure at this rate too.
 
@@ -117,7 +120,11 @@ The single entry point for attaching sources. It's **global** (writes to the con
 
 ```ts
 function propsFor(keys: string[]): Disposer
-function propsFor(target: Element | NodeList | Element[], keys: string[]): Disposer
+function propsFor(target: Element | NodeList | Element[], keys: string[], opts?: PropsForOptions): Disposer
+
+interface PropsForOptions {
+  to?: Element | string   // write the properties on this ancestor instead
+}
 ```
 
 **Global** (writes to `:root`):
@@ -153,7 +160,25 @@ const dispose = propsFor(document.querySelectorAll('[data-reveal]'), ['visibilit
 dispose()
 ```
 
-Re-attaching a key that's already active on the same target is a no-op for that key.
+**Hoisted to an ancestor** (`opts.to`):
+
+```js
+// observe the <img>, but write --live-loaded / --live-natural-w on the <figure>
+const dispose = propsFor(img, ['img'], { to: 'figure' })
+
+// an explicit element works too
+propsFor(img, ['size'], { to: img.parentElement })
+```
+
+Custom properties inherit **downward only**, and `@container style()` matches against an **ancestor** — so an element can neither share nor style-query the values written on itself. `to` observes the bound element but writes its properties on an ancestor, which is what lets a `<figcaption>` (or a skeleton overlay, or the `<img>` itself) react. It takes a selector, resolved once at bind time with [`el.closest()`](https://developer.mozilla.org/docs/Web/API/Element/closest), or an element. The markup equivalent is [`data-props-to`](/start/getting-started/#1-auto-zero-config). See [Style queries](/concepts/style-queries/#hoisting-an-elements-values-to-an-ancestor).
+
+Three things to know:
+
+- **No match warns and degrades.** If the selector matches no ancestor, the properties are written on the element itself (a `console.warn` says so) — the effect degrades rather than disappearing.
+- **Globals ignore it.** `to` on a `global`-scoped source warns and is ignored; globals already write to a shared target.
+- **One binding per key per target.** Two elements hoisting the same key onto one ancestor overwrite each other's values, and disposing either removes the property. It warns in that case; give each hoist its own target.
+
+Re-attaching a key that's already active on the same target is a no-op for that key — including a re-attach with a *different* `to`. Change the target by tearing the binding down first (`unbind(el, [key])`), then binding again.
 
 ---
 

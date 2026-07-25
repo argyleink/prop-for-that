@@ -69,10 +69,37 @@ article {
 Order doesn't matter and duplicates are ignored. You can mix core and registered plugin keys. Because the list is re-synced whenever the attribute changes, adding or removing a key at runtime binds or tears down just that one source — the others keep running.
 :::
 
+:::tip[Hoist an element's values with `data-props-to`]
+Custom properties inherit **downward only**, and `@container style()` matches against an **ancestor** — so the values a source writes on an element are invisible to that element's own style queries and to its siblings. Add `data-props-to="<selector>"` and the element is still what's *observed*, but its properties are written on the nearest matching ancestor:
+
+```html
+<figure>
+  <img data-props-for="img" data-props-to="figure" src="art.jpg">
+  <div class="skeleton"></div>
+  <figcaption>…</figcaption>
+</figure>
+```
+
+```css
+/* both the skeleton and the caption are siblings of the <img> — they can only
+   see --live-loaded because it lives on the <figure> */
+.skeleton { opacity: 0; transition: opacity 0.3s; }
+@container style(--live-loaded: 0) { .skeleton { opacity: 1; } }
+```
+
+It applies to **every** key on that element, and it's re-resolved whenever the attribute changes (the bindings are torn down and re-attached against the new target). If no ancestor matches, the properties stay on the element itself and a warning explains why. See [Style queries](/concepts/style-queries/#hoisting-an-elements-values-to-an-ancestor) and [`propsFor`'s `to` option](/reference/api/#propsfor).
+:::
+
 Want the values to **interpolate**? Add `data-props-typed` to the root `<html>` and every `--live-*` this page writes is registered as an [`@property`](/concepts/typed-properties/) — the markup equivalent of `configure({ typed: true })`:
 
 ```html
 <html data-props-typed>…</html>
+```
+
+Using [`random`](/demos/random/) and want the same "random" layout on every load? Add `data-props-seed` — the markup equivalent of `configure({ randomSeed: 42 })`:
+
+```html
+<html data-props-seed="42">…</html>
 ```
 
 ### 2. Imperative

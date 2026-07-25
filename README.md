@@ -40,6 +40,29 @@ input {
 
 Bind any element with `data-props-for="key …"` and read its `--live-*` properties in CSS. That's the whole idea.
 
+### Hoisting & style queries
+
+Custom properties inherit **downward only**, and `@container style()` matches against an **ancestor** — so an element can't style-query the values written on itself, and its siblings never see them. Add `data-props-to="<selector>"` (or `{ to }` imperatively) to observe the element but write its properties on the nearest matching ancestor:
+
+```html
+<figure>
+  <img data-props-for="img" data-props-to="figure" src="art.jpg" />
+  <figcaption>…</figcaption>
+</figure>
+```
+
+```css
+/* the skeleton is a sibling of the <img> — it can only react because the
+   property lives on the <figure> */
+@container style(--live-loaded: 0) {
+  .skeleton { opacity: 1; }
+}
+```
+
+```js
+propsFor(img, ['img', 'size'], { to: 'figure' }) // selector, or an element
+```
+
 ## Why
 
 - **CSS does the work.** No per-element event handlers or render loops — bind once, compose in stylesheets.
@@ -52,7 +75,7 @@ Bind any element with `data-props-for="key …"` and read its `--live-*` propert
 
 **Core** (built in): viewport, element size, visibility, and `<input type="range">` values.
 
-**Plugins** (opt-in): pointer position, battery, network, online status, page focus & visibility, navigation type, page meta tags, low-entropy user-agent (OS / browser / engine / version / mobile), FPS, clock, scroll velocity, device orientation / motion, geolocation, CPU pressure, soft-keyboard geometry, media playback, form & field state, select & color-picker values, text-truncation (ellipsis) detection, and dominant + accent colors extracted from images and video — 20+ in all.
+**Plugins** (opt-in): pointer position, battery, network, online status, page focus & visibility, navigation type, page meta tags, low-entropy user-agent (OS / browser / engine / version / mobile), FPS, clock, scroll velocity, device orientation / motion, geolocation, CPU pressure, soft-keyboard geometry, media playback, form & field state, select & color-picker values, text-truncation (ellipsis) detection, dominant + accent colors extracted from images and video, and per-element random rolls (optionally seeded) — 20+ in all.
 
 → Every source, every property, and live demos are in the **[docs](https://prop-for-that.netlify.app/docsite/reference/plugins/)**.
 
@@ -60,7 +83,7 @@ Bind any element with `data-props-for="key …"` and read its `--live-*` propert
 
 | Import | What it does |
 | --- | --- |
-| `prop-for-that/auto` | Zero-config & declarative: binds every `data-props-for` element — globals included, via `<html data-props-for="…">` — loading plugin sources on demand, kept in sync with the DOM. Use as `<script type="module">`. |
+| `prop-for-that/auto` | Zero-config & declarative: binds every `data-props-for` element — globals included, via `<html data-props-for="…">`, hoisting with `data-props-to` — loading plugin sources on demand, kept in sync with the DOM. Use as `<script type="module">`. |
 | `prop-for-that` | Imperative API — `propsFor()`, `register()`, `configure()` — for explicit control and teardown. |
 | `prop-for-that/head` | Synchronous, FOUC-safe constants (scrollbar width & overlay preference, DPR, core count, device memory, low-entropy user-agent) before first paint. |
 | `prop-for-that/plugins` | The opt-in plugin catalog. |
