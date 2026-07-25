@@ -1050,6 +1050,54 @@
         </div>
       </section>
 
+      <!-- ──────────────────────── 17. RANDOM ──────────────────────── -->
+      <section class="demo" id="random">
+        <p class="watermark" aria-hidden="true">17</p>
+        <div class="demo-head">
+          <p class="index">17 / random</p>
+          <h2>Sixty-four tiles, one rule</h2>
+          <p class="desc">
+            Every tile below is the same empty <code>&lt;span&gt;</code>, styled by the
+            same single rule. <code>random</code> writes three write-once rolls on each
+            one &mdash; <code>--const-random</code>, <code>-2</code>, <code>-3</code> &mdash;
+            and CSS spends them on size, hue, roundness and twinkle phase. No
+            <code>:nth-child()</code> ladder, no per-tile JS. Re-roll for a new field,
+            or flip the seed on: seeded rolls come from the element&rsquo;s position in
+            the DOM, so the same field returns every single time.
+          </p>
+        </div>
+
+        <div class="demo-body">
+          <div class="stage stage--rnd">
+            <div class="rnd-grid" id="rnd-grid" aria-hidden="true"></div>
+            <div class="rnd-ctl">
+              <button class="rnd-btn" type="button" id="rnd-roll">re-roll</button>
+              <button class="rnd-btn" type="button" id="rnd-seed" aria-pressed="false">seed 42</button>
+              <p class="rnd-note" id="rnd-note"></p>
+            </div>
+          </div>
+
+          <figure class="caption">
+            <figcaption>HTML</figcaption>
+            <pre><code>&lt;<span class="tok-key">html</span> <span class="tok-prop">data-props-seed</span>=<span class="tok-str">"42"</span>&gt;  <span class="tok-com">&lt;!-- optional: same field every load --&gt;</span>
+
+&lt;<span class="tok-key">div</span> <span class="tok-prop">class</span>=<span class="tok-str">"mosaic"</span>&gt;
+  &lt;<span class="tok-key">span</span> <span class="tok-prop">data-props-for</span>=<span class="tok-str">"random"</span>&gt;&lt;/<span class="tok-key">span</span>&gt;  <span class="tok-com">&lt;!-- &times;64, all identical --&gt;</span>
+&lt;/<span class="tok-key">div</span>&gt;</code></pre>
+            <figcaption>CSS</figcaption>
+            <pre><code><span class="tok-sel">.mosaic span</span> { <span class="tok-com">/* one rule, sixty-four faces */</span>
+  <span class="tok-prop">scale</span>: <span class="tok-fn">calc</span>(<span class="tok-num">.4</span> + <span class="tok-var">var(--const-random)</span> * <span class="tok-num">.6</span>);
+  <span class="tok-prop">border-radius</span>: <span class="tok-fn">calc</span>(<span class="tok-num">8%</span> + <span class="tok-var">var(--const-random-3)</span> * <span class="tok-num">42%</span>);
+  <span class="tok-prop">background</span>: <span class="tok-fn">oklch</span>(<span class="tok-num">65% .16</span>
+    <span class="tok-fn">calc</span>(<span class="tok-var">var(--accent-h)</span> + (<span class="tok-var">var(--const-random-2)</span> - <span class="tok-num">.5</span>) * <span class="tok-num">120</span>));
+  <span class="tok-com">/* negative delay: every tile starts mid-twinkle, out of phase */</span>
+  <span class="tok-prop">animation</span>: <span class="tok-key">twinkle</span> <span class="tok-num">2.6s</span> <span class="tok-key">ease-in-out infinite alternate</span>;
+  <span class="tok-prop">animation-delay</span>: <span class="tok-fn">calc</span>(<span class="tok-var">var(--const-random-3)</span> * <span class="tok-num">-2.6s</span>);
+}</code></pre>
+          </figure>
+        </div>
+      </section>
+
       <!-- ───────────────────────── ★. SOURCE GALLERY ───────────────────────── -->
       <section class="demo gallery" id="gallery">
         <div class="demo-head">

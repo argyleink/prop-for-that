@@ -26,6 +26,7 @@ import {
   pageVisible,
   navType,
   ua,
+  random,
 } from 'prop-for-that/plugins'
 // FOUC-safe device constants on :root: --const-dpr / cores / mem / scrollbar-w(-thin) / scrollbar-overlay.
 // Side-effect import — writes once, synchronously. Surfaced in the gallery's head card.
@@ -80,6 +81,7 @@ registerPlugins(
   pageVisible,
   navType,
   ua,
+  random,
 )
 
 // ── The entire reactive wiring. JS exposes state; CSS does all the reacting.
@@ -412,6 +414,44 @@ if (noHover && hasOrient && tiltBtn) {
       onFirstTilt = null
       setTiltState('denied')
     }, 1500)
+  })
+}
+
+// ── Demo 17 (random): sixty-four IDENTICAL spans and one CSS rule. Nothing in
+// the markup or the stylesheet distinguishes them — every difference (size, hue,
+// roundness, twinkle phase) is CSS reading that tile's own write-once
+// --const-random / -2 / -3. "re-roll" rebinds for a fresh field; "seed 42" rebinds
+// under configure({ randomSeed: 42 }), which derives each roll from the tile's
+// position in the DOM — so the seeded field is the same one every time, forever.
+const rndGrid = document.getElementById('rnd-grid')
+const rndRoll = document.getElementById('rnd-roll')
+const rndSeed = document.getElementById('rnd-seed')
+const rndNote = document.getElementById('rnd-note')
+if (rndGrid && rndRoll && rndSeed && rndNote) {
+  for (let i = 0; i < 64; i++) {
+    const tile = document.createElement('span')
+    tile.className = 'rnd-tile'
+    rndGrid.append(tile)
+  }
+  const tiles = rndGrid.querySelectorAll<HTMLElement>('.rnd-tile')
+  let seeded = false
+  let disposeRnd = () => {}
+
+  const rollTiles = (): void => {
+    disposeRnd() // also removes the --const-random* it wrote
+    configure({ randomSeed: seeded ? 42 : undefined })
+    disposeRnd = propsFor(tiles, ['random'])
+    rndNote.textContent = seeded
+      ? 'seeded 42 — the same field, every roll and every load'
+      : 'unseeded — a new field every roll'
+  }
+
+  rollTiles()
+  rndRoll.addEventListener('click', rollTiles)
+  rndSeed.addEventListener('click', () => {
+    seeded = !seeded
+    rndSeed.setAttribute('aria-pressed', String(seeded))
+    rollTiles()
   })
 }
 

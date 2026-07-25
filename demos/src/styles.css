@@ -3787,3 +3787,86 @@ main {
     animation: none;
   }
 }
+
+/* ─────────────────────── 17. RANDOM ───────────────────────
+   Sixty-four identical spans, one rule. Everything that separates them —
+   size, hue, roundness, twinkle phase — is CSS reading that tile's OWN
+   write-once --const-random / -2 / -3. The hue is a spread AROUND the live
+   accent hue, so the mosaic recolours with the page while staying varied. */
+.stage--rnd {
+  display: grid;
+  gap: var(--space-2);
+  place-items: initial;
+  padding: 10px;
+}
+.rnd-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(2.1rem, 1fr));
+  gap: 0.45rem;
+  padding: var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+}
+.rnd-tile {
+  --r1: var(--const-random, 0.5);
+  --r2: var(--const-random-2, 0.5);
+  --r3: var(--const-random-3, 0.5);
+  aspect-ratio: 1;
+  border-radius: calc(8% + var(--r3) * 42%);
+  scale: calc(0.4 + var(--r1) * 0.6);
+  background: oklch(
+    calc(58% + var(--r1) * 20%) calc(0.08 + var(--r2) * 0.18)
+      calc(var(--accent-h) + (var(--r2) - 0.5) * 120)
+  );
+  animation: rnd-twinkle 2.6s ease-in-out infinite alternate;
+  /* negative delay: every tile starts mid-cycle, so they're out of phase on frame one */
+  animation-delay: calc(var(--r3) * -2.6s);
+  transition:
+    scale 0.45s cubic-bezier(0.2, 0.8, 0.2, 1),
+    border-radius 0.45s linear,
+    background 0.45s linear;
+}
+@keyframes rnd-twinkle {
+  to {
+    opacity: 0.45;
+  }
+}
+
+.rnd-ctl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+}
+.rnd-btn {
+  padding: 0.4rem 0.85rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--step--1);
+  cursor: pointer;
+}
+.rnd-btn:hover {
+  border-color: var(--accent);
+}
+/* the seed toggle reads its own state — pressed means deterministic */
+.rnd-btn[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+.rnd-note {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rnd-tile {
+    animation: none;
+  }
+}
