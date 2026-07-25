@@ -1,11 +1,6 @@
 import type { Source } from '../core/types'
-
-/** A meta tag's `name`/`property` → a safe custom-property name fragment. */
-const slug = (name: string): string =>
-  name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
+import { noop } from '../core/noop'
+import { slug } from '../core/slug'
 
 /**
  * Every `<meta>` value on the page that JavaScript can read but CSS can't,
@@ -30,12 +25,17 @@ const slug = (name: string): string =>
  * at bind on the `const` cadence (these don't change), so meta tags a framework
  * swaps in *after* bind aren't tracked; for a value needed before first paint,
  * read it in a `<head>` script instead. Global source — bind once.
+ *
+ * These names are discovered at runtime, so the source can't declare `props` for
+ * them and they stay **untyped** even under `configure({ typed: true })` — which
+ * is what keeps the values intact, since the `<number>` default would reject a
+ * colour or a URL and compute it to `0`.
  */
 export const meta: Source = {
   key: 'meta',
   scope: 'global',
   start(ctx) {
-    if (typeof document === 'undefined') return () => {}
+    if (typeof document === 'undefined') return noop
 
     const seen = new Set<string>()
     const nodes = document.querySelectorAll<HTMLMetaElement>('meta[name], meta[property]')
@@ -52,6 +52,6 @@ export const meta: Source = {
       seen.add(name)
       ctx.write('meta-' + name, content, 'const')
     }
-    return () => {}
+    return noop
   },
 }

@@ -1,6 +1,6 @@
 import type { Source } from '../core/types'
 import { onFrame } from '../core/frame'
-import { onWindow } from '../core/window-events'
+import { onWindow } from '../core/events'
 import { round4 } from '../core/num'
 
 /**
@@ -15,13 +15,18 @@ export const scrollVelocity: Source = {
   scope: 'global',
   start(ctx) {
     let lastY = window.scrollY
+    // Captured in the scroll handler, never inside the frame. Reading scrollY
+    // from a sampler forces a style+layout recalc every frame (the previous
+    // frame's writes left style dirty); reading it in the event, post-layout, is
+    // free — the same read/write split the whole library is built on. Idle-frame
+    // decay is unaffected: no scroll event means `latestY` holds, so delta is 0.
+    let latestY = lastY
     let velocity = 0
     let stop: (() => void) | null = null
 
     const sample = () => {
-      const y = window.scrollY
-      const delta = y - lastY
-      lastY = y
+      const delta = latestY - lastY
+      lastY = latestY
       velocity = delta || velocity * 0.8 // ease back to 0 on idle frames
       if (Math.abs(velocity) < 0.01) velocity = 0
       const v = round4(velocity)
@@ -33,6 +38,7 @@ export const scrollVelocity: Source = {
       }
     }
     const wake = () => {
+      latestY = window.scrollY
       if (!stop) stop = onFrame(sample)
     }
 

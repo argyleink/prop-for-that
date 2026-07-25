@@ -1,5 +1,7 @@
 import type { Source } from '../core/types'
 import { resolveTarget } from '../core/find'
+import { noop } from '../core/noop'
+import { onAll } from '../core/events'
 import { palette, toHex, colorProp, createSampler } from './_color'
 
 /**
@@ -48,19 +50,27 @@ export const videoColor: Source = {
   props: { video: colorProp, 'video-accent': colorProp },
   start(ctx) {
     const video = resolveTarget<RvfcVideo>(ctx.target, 'video')
-    if (!video) return () => {}
+    if (!video) return noop
 
     const sample = createSampler()
-    if (!sample) return () => {} // no canvas (SSR / unsupported)
+    if (!sample) return noop // no canvas (SSR / unsupported)
 
     let disposed = false
     let lastSample = -Infinity
+    // A tainted canvas can never untaint, and the throttle below only advances on
+    // a *successful* read — so without this latch a cross-origin video would
+    // redraw and re-throw on every presented frame, forever.
+    let tainted = false
 
     const measure = (now: number) => {
+      if (tainted) return
       if (now - lastSample < MIN_INTERVAL) return // throttle to ~4 Hz
       if (video.readyState < HAVE_CURRENT_DATA) return // no frame to read yet
       const data = sample(video)
-      if (!data) return // tainted (cross-origin) or empty
+      if (!data) {
+        tainted = true // cross-origin without a CORS grant: give up, quietly
+        return
+      }
       const pal = palette(data)
       if (!pal) return
       lastSample = now
@@ -88,12 +98,10 @@ export const videoColor: Source = {
     // fires ~4 Hz while playing, which already matches our cadence.
     let elapsed = 0
     const onTime = () => measure((elapsed += MIN_INTERVAL))
-    video.addEventListener('timeupdate', onTime, { passive: true })
-    video.addEventListener('loadeddata', onTime, { passive: true })
+    const off = onAll(video, ['timeupdate', 'loadeddata'], onTime)
     return () => {
       disposed = true
-      video.removeEventListener('timeupdate', onTime)
-      video.removeEventListener('loadeddata', onTime)
+      off()
     }
   },
 }

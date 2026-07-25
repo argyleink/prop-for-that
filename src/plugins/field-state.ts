@@ -1,4 +1,6 @@
 import type { Source } from '../core/types'
+import { noop } from '../core/noop'
+import { onAll } from '../core/events'
 import { type FieldElement, fieldsOf } from './_fields'
 
 /** A field's current "value" as a comparable string, across input kinds. */
@@ -57,7 +59,7 @@ export const fieldState: Source = {
   gate: false,
   start(ctx) {
     const fields = fieldsOf(ctx.target)
-    if (!fields.length) return () => {}
+    if (!fields.length) return noop
 
     const inScope = new Set<FieldElement>(fields)
     const initial = new WeakMap<FieldElement, string>()
@@ -97,9 +99,8 @@ export const fieldState: Source = {
     }
 
     // input/change/focusout all bubble, so one delegated set covers every field
-    ctx.target.addEventListener('input', onEdit, { passive: true })
-    ctx.target.addEventListener('change', onEdit, { passive: true }) // checkbox/radio/<select>
-    ctx.target.addEventListener('focusout', onBlur, { passive: true })
+    const offEdit = onAll(ctx.target, ['input', 'change'], onEdit) // change: checkbox/radio/<select>
+    const offBlur = onAll(ctx.target, ['focusout'], onBlur)
 
     const form = ctx.target instanceof HTMLFormElement ? ctx.target : fields[0]?.form
     const onSubmit = () => {
@@ -120,9 +121,8 @@ export const fieldState: Source = {
     form?.addEventListener('reset', onReset, { passive: true })
 
     return () => {
-      ctx.target.removeEventListener('input', onEdit)
-      ctx.target.removeEventListener('change', onEdit)
-      ctx.target.removeEventListener('focusout', onBlur)
+      offEdit()
+      offBlur()
       form?.removeEventListener('submit', onSubmit)
       form?.removeEventListener('reset', onReset)
     }

@@ -1,8 +1,9 @@
 import type { Source } from '../core/types'
 import { resolveTarget } from '../core/find'
 import { round4 } from '../core/num'
-
-type FieldElement = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+import { noop } from '../core/noop'
+import { onAll } from '../core/events'
+import type { FieldElement } from './_fields'
 
 /**
  * The `ValidityState` flags CSS can't tell apart. `:invalid` says *a* constraint
@@ -48,7 +49,7 @@ export const field: Source = {
   gate: false,
   start(ctx) {
     const el = resolveTarget<FieldElement>(ctx.target, 'input, textarea, select')
-    if (!el) return () => {}
+    if (!el) return noop
 
     const update = () => {
       const length = el.value.length
@@ -64,10 +65,6 @@ export const field: Source = {
       }
     }
     update()
-    const events = ['input', 'change'] // change covers <select>
-    for (const type of events) el.addEventListener(type, update, { passive: true })
-    return () => {
-      for (const type of events) el.removeEventListener(type, update)
-    }
+    return onAll(el, ['input', 'change'], update) // change covers <select>
   },
 }

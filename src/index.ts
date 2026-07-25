@@ -5,6 +5,7 @@ import { pause, resume } from './core/frame'
 import { observeIntersection } from './core/observers'
 import { registerTyped } from './core/property'
 import { coreSources } from './sources'
+import { noop } from './core/noop'
 import type {
   Cadence,
   Config,
@@ -47,8 +48,6 @@ interface Entry {
   writeTarget: HTMLElement
 }
 
-const noop: Disposer = () => {}
-
 /** target → (key → live binding). A strong map so `reset()` can tear everything down. */
 const bindings = new Map<HTMLElement, Map<string, Entry>>()
 /** writeTarget → keys currently hoisted onto it, to warn when two bindings collide. */
@@ -60,7 +59,8 @@ export function register(source: Source): void {
   registry[source.key] = source
 }
 
-/** Remove a previously registered source key. */
+/** Remove a previously registered source key. Bindings already attached with it
+ *  keep running — `unbind`/`reset` tear those down. */
 export function unregister(key: string): void {
   delete registry[key]
 }
@@ -107,7 +107,14 @@ function makeContext(
         m.set(localName, (entry = { raw: value, prop }))
         written.add(prop)
       }
-      if (config.typed) registerTyped(entry.prop, localName, props)
+      // Type it when the source declared a spec, or when the value is a number
+      // (the `<number>` default fits). An *undeclared string* is left untyped:
+      // registering it as `<number>` makes every write invalid at
+      // computed-value time, so the property would compute to `0` instead of
+      // the string. `meta` builds its names at runtime and can't declare them.
+      if (config.typed && (props?.[localName] || typeof value === 'number')) {
+        registerTyped(entry.prop, localName, props)
+      }
       writer.set(writeTarget, entry.prop, String(value))
     },
   }
@@ -124,23 +131,27 @@ function makeContext(
  * ungated. Global sources, bindings on `:root`, and `gate: false` sources (e.g.
  * `visibility`, which must keep observing to *report* visibility) are never gated.
  */
-function attach(source: Source, ctx: SourceContext, target: HTMLElement): Disposer {
+function safeStart(source: Source, ctx: SourceContext): Disposer | null {
+  try {
+    return source.start(ctx)
+  } catch (err) {
+    console.error(`[prop-for-that] source "${source.key}" failed to start`, err)
+    return null
+  }
+}
+
+function attach(source: Source, ctx: SourceContext, target: HTMLElement): Disposer | null {
   const gated =
     source.scope === 'element' &&
     source.gate !== false &&
     target !== config.root &&
     typeof IntersectionObserver !== 'undefined'
 
-  if (!gated) return source.start(ctx)
+  if (!gated) return safeStart(source, ctx)
 
   let work: Disposer | null = null
   const startWork = () => {
-    if (work) return
-    try {
-      work = source.start(ctx)
-    } catch (err) {
-      console.error(`[prop-for-that] source "${source.key}" failed to start`, err)
-    }
+    if (!work) work = safeStart(source, ctx)
   }
   const stopWork = () => {
     work?.()
@@ -218,13 +229,9 @@ function startOn(target: HTMLElement, keys: string[], to?: Element | string): Di
       writeTarget = target
     }
     const written = new Set<string>()
-    let dispose: Disposer
-    try {
-      dispose = attach(source, makeContext(target, writeTarget, written, source.props), target)
-    } catch (err) {
-      console.error(`[prop-for-that] source "${key}" failed to start`, err)
-      continue
-    }
+    const ctx = makeContext(target, writeTarget, written, source.props)
+    const dispose = attach(source, ctx, target)
+    if (!dispose) continue // start threw (already logged) — don't register a dead binding
     if (writeTarget !== target) claimHoist(writeTarget, key)
     active.set(key, { dispose, written, writeTarget })
     started.push(key)

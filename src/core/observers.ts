@@ -11,83 +11,66 @@ import type { Disposer } from './types'
  * initial entry to the *first* `observe()` of an element.
  */
 
-type RoCb = (entry: ResizeObserverEntry) => void
-type IoCb = (entry: IntersectionObserverEntry) => void
-
-let ro: ResizeObserver | undefined
-const roCallbacks = new WeakMap<Element, Set<RoCb>>()
-const roLast = new WeakMap<Element, ResizeObserverEntry>()
-
-export function observeResize(el: Element, cb: RoCb): Disposer {
-  if (!ro) {
-    ro = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        roLast.set(entry.target, entry)
-        const cbs = roCallbacks.get(entry.target)
-        // iterated live: Set iteration tolerates unsubscribes mid-dispatch
-        if (cbs) for (const fn of cbs) fn(entry)
-      }
-    })
-  }
-  let cbs = roCallbacks.get(el)
-  if (!cbs) {
-    roCallbacks.set(el, (cbs = new Set()))
-    ro.observe(el)
-  }
-  cbs.add(cb)
-  const last = roLast.get(el)
-  if (last) cb(last) // replay current size to a late subscriber
-  return () => {
-    const set = roCallbacks.get(el)
-    if (!set) return
-    set.delete(cb)
-    if (set.size === 0) {
-      roCallbacks.delete(el)
-      ro!.unobserve(el)
-    }
-  }
+interface ObserverLike {
+  observe(el: Element): void
+  unobserve(el: Element): void
 }
 
-let io: IntersectionObserver | undefined
-const ioCallbacks = new WeakMap<Element, Set<IoCb>>()
-const ioLast = new WeakMap<Element, IntersectionObserverEntry>()
-const ioThresholds = [0, 0.98, 0.99, 0.995, 0.999, 1]
+/**
+ * Build a shared-observer subscribe function. The observer itself is created
+ * lazily on first subscribe (SSR-safe, and a page that never binds pays
+ * nothing); `create` receives the dispatcher to hand to its constructor.
+ */
+function observerHub<E extends { target: Element }>(
+  create: (dispatch: (entries: E[]) => void) => ObserverLike,
+) {
+  let observer: ObserverLike | undefined
+  const callbacks = new WeakMap<Element, Set<(entry: E) => void>>()
+  const last = new WeakMap<Element, E>()
 
-export function observeIntersection(el: Element, cb: IoCb): Disposer {
-  if (!io) {
-    // Thresholds hug both edges: notify when the target starts/stops overlapping
-    // the viewport at all (ratio crosses 0), and again as it gets *very* close to
-    // full containment. Some mobile engines can stall just shy of ratio 1 due to
-    // viewport chrome / subpixel rounding, so `visibility` gets a near-1 callback
-    // and decides "fully visible" from geometry instead of exact ratio alone. The
-    // binding-layer gate still only cares about the any-pixel edge (`isIntersecting`).
-    io = new IntersectionObserver(
-      (entries) => {
+  return function observe(el: Element, cb: (entry: E) => void): Disposer {
+    if (!observer) {
+      observer = create((entries) => {
         for (const entry of entries) {
-          ioLast.set(entry.target, entry)
-          const cbs = ioCallbacks.get(entry.target)
+          last.set(entry.target, entry)
+          const cbs = callbacks.get(entry.target)
           // iterated live: Set iteration tolerates unsubscribes mid-dispatch
           if (cbs) for (const fn of cbs) fn(entry)
         }
-      },
-      { threshold: ioThresholds },
-    )
-  }
-  let cbs = ioCallbacks.get(el)
-  if (!cbs) {
-    ioCallbacks.set(el, (cbs = new Set()))
-    io.observe(el)
-  }
-  cbs.add(cb)
-  const last = ioLast.get(el)
-  if (last) cb(last) // replay current intersection to a late subscriber
-  return () => {
-    const set = ioCallbacks.get(el)
-    if (!set) return
-    set.delete(cb)
-    if (set.size === 0) {
-      ioCallbacks.delete(el)
-      io!.unobserve(el)
+      })
+    }
+    let cbs = callbacks.get(el)
+    if (!cbs) {
+      callbacks.set(el, (cbs = new Set()))
+      observer.observe(el)
+    }
+    cbs.add(cb)
+    const entry = last.get(el)
+    if (entry) cb(entry) // replay the current state to a late subscriber
+    return () => {
+      const set = callbacks.get(el)
+      if (!set) return
+      set.delete(cb)
+      if (set.size === 0) {
+        callbacks.delete(el)
+        observer!.unobserve(el)
+      }
     }
   }
 }
+
+export const observeResize = observerHub<ResizeObserverEntry>(
+  (dispatch) => new ResizeObserver(dispatch),
+)
+
+// Thresholds hug both edges: notify when the target starts/stops overlapping the
+// viewport at all (ratio crosses 0), and again as it gets *very* close to full
+// containment. Some mobile engines can stall just shy of ratio 1 due to viewport
+// chrome / subpixel rounding, so `visibility` gets a near-1 callback and decides
+// "fully visible" from geometry instead of exact ratio alone. The binding-layer
+// gate still only cares about the any-pixel edge (`isIntersecting`).
+const ioThresholds = [0, 0.98, 0.99, 0.995, 0.999, 1]
+
+export const observeIntersection = observerHub<IntersectionObserverEntry>(
+  (dispatch) => new IntersectionObserver(dispatch, { threshold: ioThresholds }),
+)

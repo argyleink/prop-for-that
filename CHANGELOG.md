@@ -8,6 +8,69 @@ backwards-compatible change (semver's `1.0.0`+ rules kick in at v1).
 Only the published library (`dist/`) is versioned here; the demo and docs site
 are repo-only and not part of the npm package.
 
+## [0.7.12]
+
+A code-review pass: four real bugs, one per-frame layout read, and a round of
+deduplication across the shared helpers. No API changes — every fix below either
+restores documented behaviour or is invisible to consumers.
+
+### Fixed
+- **`typed: true` no longer destroys every `--const-meta-*` value.** A source's
+  *undeclared* value was always registered with the `<number>` default — but the
+  `meta` plugin writes strings (`#3367d6`, `/cover.jpg`, `dark light`) under
+  property names it only learns from the page at runtime, so it can't declare
+  them. A `<number>`-registered property rejects a string at computed-value time,
+  so every meta value computed to `0`. Undeclared **strings** are now left
+  untyped; numbers, and any value whose source declares a `props` syntax, are
+  registered exactly as before.
+- **`img-color` no longer re-decodes on every scroll-back.** The swatch cache
+  lived inside `start`, which the viewport gate re-runs on each re-entry — so the
+  cache it was written for could never survive one, and every pass over a gallery
+  re-ran `createImageBitmap` + `getImageData` per image. It's now a module-scoped
+  `WeakMap`, keyed by the rendered source.
+- **`video-color` no longer pins a core on a tainted canvas.** The sample
+  throttle only advanced on a *successful* read, so a cross-origin video with no
+  CORS grant re-drew and re-threw on every presented frame, forever. Taint is now
+  latched: it gives up after the first failure, and still writes nothing.
+- **`select`'s `--live-value-num` no longer goes stale.** It was written only for
+  a numeric value and never cleared, so picking `"3"` and then a non-numeric
+  option left `3` behind — and the documented `var(--live-value-num, …)` fallback
+  could never apply again. It's now removed when the value isn't numeric.
+- **`battery`** no longer leaves an unhandled promise rejection when `getBattery`
+  exists but rejects (insecure context, or disabled by policy).
+
+### Changed
+- **`scroll-velocity` reads the scroll position in its scroll handler**, not
+  inside the frame. Reading `window.scrollY` from a per-frame sampler forced a
+  style+layout recalc every frame, since the previous frame's writes left style
+  dirty — the one place the library broke its own read/write split. Behaviour is
+  unchanged in a browser (scroll events fire before rAF in the same frame).
+- **`pointer-local`, `motion`, and `orientation` now seed zeros**, like every
+  other source, so their properties resolve on frame one instead of needing a
+  `var(…, 0)` fallback. One thing to know: a `var(--live-local-pointer-x-ratio)`
+  with *no* fallback used to invalidate its whole declaration until the first
+  event, and now resolves to `0` — so gate on `--live-local-pointer-inside`
+  rather than letting a highlight sit in the top-left corner on load. Global
+  `pointer` still doesn't seed: the position genuinely isn't knowable before the
+  first event.
+- **`ctx.write(name, '')` removes a property**, for a value that stops being
+  meaningful. Verified across Chromium, Firefox, and WebKit.
+- **`visual-viewport` and `keyboard` share one set of visual-viewport
+  listeners** via the new ref-counted `onVisualViewport`, instead of attaching
+  their own. `battery` and `network` listeners are now passive, like every other
+  source's.
+- **`form-state`'s post-reset recompute rides the shared frame loop**, replacing
+  the library's only stray `requestAnimationFrame`.
+
+### Internal
+- `core/window-events.ts` + `core/document-events.ts` collapse into
+  `core/events.ts` — one ref-counted hub factory per target (`onWindow`,
+  `onDocument`, `onVisualViewport`), plus an `onAll` helper for the per-element
+  case. `observeResize` / `observeIntersection` likewise share one hub factory.
+  Shared `noop` and `slug` replace ~15 and 2 copies respectively.
+- The per-target queue maps in the writer are pooled and reused rather than
+  reallocated every frame.
+
 ## [0.7.11]
 
 ### Added

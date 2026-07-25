@@ -1,4 +1,5 @@
 import type { Source } from '../core/types'
+import { noop } from '../core/noop'
 import { readUA } from '../core/ua'
 
 /**
@@ -46,6 +47,6 @@ export const ua: Source = {
     ctx.write('ua-engine', engine, 'const')
     ctx.write('ua-version', version, 'const')
     ctx.write('ua-mobile', mobile, 'const')
-    return () => {}
+    return noop
   },
 }

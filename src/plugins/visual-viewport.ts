@@ -1,5 +1,7 @@
 import type { Source } from '../core/types'
 import { round4 } from '../core/num'
+import { noop } from '../core/noop'
+import { onVisualViewport } from '../core/events'
 
 /**
  * `--live-vvp-scale`, `--live-vvp-offset-top`, `--live-vvp-height`
@@ -10,7 +12,7 @@ export const visualViewport: Source = {
   scope: 'global',
   start(ctx) {
     const vvp = window.visualViewport
-    if (!vvp) return () => {}
+    if (!vvp) return noop
 
     const update = () => {
       ctx.write('vvp-scale', round4(vvp.scale))
@@ -18,11 +20,12 @@ export const visualViewport: Source = {
       ctx.write('vvp-height', round4(vvp.height))
     }
     update()
-    vvp.addEventListener('resize', update, { passive: true })
-    vvp.addEventListener('scroll', update, { passive: true })
+    // shared with `keyboard`: one real listener per visual-viewport event
+    const offResize = onVisualViewport('resize', update)
+    const offScroll = onVisualViewport('scroll', update)
     return () => {
-      vvp.removeEventListener('resize', update)
-      vvp.removeEventListener('scroll', update)
+      offResize()
+      offScroll()
     }
   },
 }

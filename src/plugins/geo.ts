@@ -1,4 +1,5 @@
 import type { Source } from '../core/types'
+import { noop } from '../core/noop'
 import { round4 } from '../core/num'
 
 /**
@@ -11,7 +12,7 @@ export const geo: Source = {
   scope: 'global',
   start(ctx) {
     const geolocation = navigator.geolocation
-    if (!geolocation) return () => {}
+    if (!geolocation) return noop
 
     let disposed = false
     const id = geolocation.watchPosition((pos) => {

@@ -1,5 +1,7 @@
-import type { Source } from '../core/types'
+import type { Disposer, Source } from '../core/types'
 import { round4 } from '../core/num'
+import { noop } from '../core/noop'
+import { onAll } from '../core/events'
 
 interface BatteryManager extends EventTarget {
   level: number
@@ -13,30 +15,29 @@ export const battery: Source = {
   start(ctx) {
     const getBattery = (navigator as { getBattery?: () => Promise<BatteryManager> })
       .getBattery
-    if (!getBattery) return () => {}
+    if (!getBattery) return noop
 
     let disposed = false
-    let mgr: BatteryManager | undefined
-    let update: (() => void) | undefined
+    let off: Disposer = noop
 
-    getBattery.call(navigator).then((battery) => {
-      if (disposed) return
-      mgr = battery
-      update = () => {
-        ctx.write('battery-level', round4(battery.level))
-        ctx.write('battery-charging', battery.charging ? 1 : 0)
-      }
-      update()
-      battery.addEventListener('levelchange', update)
-      battery.addEventListener('chargingchange', update)
-    })
+    getBattery
+      .call(navigator)
+      .then((battery) => {
+        if (disposed) return
+        const update = () => {
+          ctx.write('battery-level', round4(battery.level))
+          ctx.write('battery-charging', battery.charging ? 1 : 0)
+        }
+        update()
+        off = onAll(battery, ['levelchange', 'chargingchange'], update)
+      })
+      // present but rejecting: insecure context, or the API disabled by policy.
+      // Swallow it — an unhandled rejection isn't the page author's to debug.
+      .catch(() => {})
 
     return () => {
       disposed = true
-      if (mgr && update) {
-        mgr.removeEventListener('levelchange', update)
-        mgr.removeEventListener('chargingchange', update)
-      }
+      off()
     }
   },
 }

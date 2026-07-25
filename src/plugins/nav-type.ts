@@ -1,4 +1,5 @@
 import type { Source } from '../core/types'
+import { noop } from '../core/noop'
 
 /**
  * `--const-nav-type` — how the user arrived at this page, read once from
@@ -27,6 +28,6 @@ export const navType: Source = {
       | PerformanceNavigationTiming
       | undefined
     ctx.write('nav-type', nav?.type ?? 'navigate', 'const')
-    return () => {}
+    return noop
   },
 }

@@ -41,4 +41,4 @@ The chosen value reflows layout, and the index positions a marker — all in CSS
 .bar i { scale: var(--live-selected-pct) 1; }
 ```
 
-`--live-value-num` is written only when the chosen value is numeric, so keep a `var(--live-value-num, 3)` fallback for non-numeric options.
+`--live-value-num` exists only while the chosen value is numeric — it's removed again when a non-numeric option is picked — so keep a `var(--live-value-num, 3)` fallback.

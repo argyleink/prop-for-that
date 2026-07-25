@@ -1,5 +1,7 @@
 import type { Source } from '../core/types'
 import { resolveTarget } from '../core/find'
+import { noop } from '../core/noop'
+import { onAll } from '../core/events'
 import { colorProp } from './_color'
 
 /**
@@ -24,14 +26,11 @@ export const colorInput: Source = {
   gate: false,
   start(ctx) {
     const el = resolveTarget<HTMLInputElement>(ctx.target, 'input[type="color"]')
-    if (!el) return () => {}
+    if (!el) return noop
 
     const update = () => ctx.write('color', el.value)
     update()
-    const events = ['input', 'change'] // input fires while dragging the picker, change on commit
-    for (const type of events) el.addEventListener(type, update, { passive: true })
-    return () => {
-      for (const type of events) el.removeEventListener(type, update)
-    }
+    // input fires while dragging the picker, change on commit
+    return onAll(el, ['input', 'change'], update)
   },
 }

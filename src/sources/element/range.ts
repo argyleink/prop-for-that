@@ -1,4 +1,5 @@
 import type { Source } from '../../core/types'
+import { noop } from '../../core/noop'
 import { resolveTarget } from '../../core/find'
 import { round4 } from '../../core/num'
 
@@ -21,7 +22,7 @@ export const range: Source = {
       ctx.target,
       'input[type="range"], input[type="number"]',
     )
-    if (!input) return () => {}
+    if (!input) return noop
 
     const update = () => {
       const min = input.min === '' ? 0 : Number(input.min)

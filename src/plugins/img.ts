@@ -1,5 +1,6 @@
 import type { Source } from '../core/types'
 import { resolveTarget } from '../core/find'
+import { noop } from '../core/noop'
 
 /**
  * For `<img>`: `--live-natural-w` / `--live-natural-h` (intrinsic pixel size),
@@ -21,7 +22,7 @@ export const img: Source = {
   gate: false,
   start(ctx) {
     const el = resolveTarget<HTMLImageElement>(ctx.target, 'img')
-    if (!el) return () => {}
+    if (!el) return noop
 
     const hasSrc = () =>
       el.getAttribute('src') !== null || el.getAttribute('srcset') !== null

@@ -10,9 +10,16 @@ import { styleFor } from './root-style'
  * (value already on the element, nothing pending) are dropped without waking a
  * frame.
  */
+/** Cap on recycled queue maps — enough for a busy frame, bounded for a quiet one. */
+const POOL_MAX = 32
+
 export class Writer {
   private pending = new Map<HTMLElement, Map<string, string>>()
   private last = new WeakMap<HTMLElement, Map<string, string>>()
+  // The per-target queue maps are emptied and reused rather than reallocated:
+  // `pending` is cleared every flush, so without a pool a page with N live
+  // elements churns N maps per frame for the GC to collect.
+  private pool: Map<string, string>[] = []
 
   set(target: HTMLElement, prop: string, value: string): void {
     const props = this.pending.get(target)
@@ -23,7 +30,11 @@ export class Writer {
     }
     if (this.last.get(target)?.get(prop) === value) return // unchanged, skip
     if (props) props.set(prop, value)
-    else this.pending.set(target, new Map([[prop, value]]))
+    else {
+      const queue = this.pool.pop() ?? new Map()
+      queue.set(prop, value)
+      this.pending.set(target, queue)
+    }
     requestTick()
   }
 
@@ -53,6 +64,8 @@ export class Writer {
           seen.set(prop, value)
         }
       }
+      props.clear()
+      if (this.pool.length < POOL_MAX) this.pool.push(props)
     }
     this.pending.clear()
   }

@@ -6,6 +6,15 @@ import { readUA } from './core/ua'
  * values exist before first paint. Bypasses the rAF writer on purpose.
  *
  *   import 'prop-for-that/head'  // sets --const-scrollbar-w, --const-dpr, …
+ *
+ * Two consequences of running this early and outside the writer:
+ *
+ * - These land in the root's **inline** `style`, where the batched writer uses an
+ *   adopted `:root` rule. Inline wins, so on a page that loads both this and the
+ *   `ua` plugin the constants here are the ones that apply (identical values —
+ *   the plugin reads the same `readUA()`), and `unbind`/`reset` can't remove them.
+ * - `config` is read at import time, so a later `configure({ constPrefix })`
+ *   can't retro-rename what this already wrote.
  */
 function writeConstants(): void {
   const root = config.root
@@ -49,4 +58,4 @@ function writeConstants(): void {
   set('ua-mobile', ua.mobile)
 }
 
-if (typeof document !== 'undefined') writeConstants()
+if (typeof document !== 'undefined' && config.root) writeConstants()

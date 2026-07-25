@@ -18,6 +18,14 @@ import { observeResize } from '../core/observers'
  * have it disappear the moment a wider box fits the text. Recomputed whenever the
  * box resizes (the shared `ResizeObserver`), so responsive truncation flips both
  * ways as the layout reflows.
+ *
+ * Two false negatives to know about, both from what it measures:
+ *
+ * - `scrollWidth` / `clientWidth` are **integer-rounded**, so a sub-pixel
+ *   overflow can show an ellipsis while these still read equal.
+ * - It's driven by *resize*, so replacing the text inside a fixed-size box
+ *   doesn't re-measure — a `ResizeObserver` sees no size change. Rebind (or
+ *   nudge the box) after swapping content.
  */
 export const truncated: Source = {
   key: 'truncated',

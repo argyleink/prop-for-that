@@ -1,4 +1,5 @@
 import type { Source } from '../core/types'
+import { noop } from '../core/noop'
 import { round4 } from '../core/num'
 
 /**
@@ -50,7 +51,7 @@ export const random: Source = {
     ctx.write('random', round4(next()), 'const')
     ctx.write('random-2', round4(next()), 'const')
     ctx.write('random-3', round4(next()), 'const')
-    return () => {}
+    return noop
   },
 }
 

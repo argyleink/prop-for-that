@@ -8,13 +8,25 @@ export interface Config {
   livePrefix: string
   /** Prefix for write-once constants. */
   constPrefix: string
-  /** Where global sources write. */
+  /**
+   * Where global sources write. Typed non-nullable for consumers' sake, but it
+   * really is `undefined` without a document — the internals guard it, and so
+   * should a custom source that reads it (`ctx.config.root`) outside the browser.
+   */
   root: HTMLElement
   /**
-   * When true, written `--live-*` properties are registered with `@property`
+   * When true, written properties are registered with `@property`
    * (via `CSS.registerProperty`) as typed, interpolatable custom properties with
-   * a guaranteed initial value. Opt in with `configure({ typed: true })` before
-   * attaching sources. Off by default.
+   * a guaranteed initial value. Applies to both cadences — `--const-*` values
+   * are registered too, which is what lets string constants like `--const-ua-*`
+   * survive typing. Opt in with `configure({ typed: true })` before attaching
+   * sources. Off by default.
+   *
+   * A source's **string** values are only registered when the source declares a
+   * `props` entry for them (`ua`, `nav-type`, `color-input`, the colour
+   * plugins). Undeclared strings are left untyped rather than registered as the
+   * `<number>` default, which would reject the value and compute to `0` — see
+   * `meta`, whose property names are discovered at runtime.
    */
   typed: boolean
   /**
@@ -60,6 +72,12 @@ export interface SourceContext {
   /**
    * Queue a value for the next batched flush. `localName` is prefixed by cadence
    * (e.g. `write('pointer-x', 12)` → `--live-pointer-x: 12`).
+   *
+   * Writing the **empty string** removes the property, so a value that stops
+   * being meaningful (a `<select>` whose new option isn't numeric) falls back to
+   * the consumer's `var(--live-x, …)` again instead of going stale. Under
+   * `typed: true` a removed property computes to its registered initial value
+   * rather than the `var()` fallback.
    */
   write(localName: string, value: number | string, cadence?: Cadence): void
 }

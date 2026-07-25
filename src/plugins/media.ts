@@ -1,6 +1,8 @@
 import type { Source } from '../core/types'
 import { resolveTarget } from '../core/find'
 import { round4 } from '../core/num'
+import { noop } from '../core/noop'
+import { onAll } from '../core/events'
 
 /**
  * For `<video>`/`<audio>`: `--live-current-time`, `--live-duration`,
@@ -15,7 +17,7 @@ export const media: Source = {
   scope: 'element',
   start(ctx) {
     const el = resolveTarget<HTMLMediaElement>(ctx.target, 'video, audio')
-    if (!el) return () => {}
+    if (!el) return noop
 
     const update = () => {
       const duration = isFinite(el.duration) ? el.duration : 0
@@ -26,10 +28,6 @@ export const media: Source = {
       ctx.write('volume', round4(el.volume))
     }
     update()
-    const events = ['timeupdate', 'loadedmetadata', 'play', 'pause', 'volumechange']
-    for (const type of events) el.addEventListener(type, update, { passive: true })
-    return () => {
-      for (const type of events) el.removeEventListener(type, update)
-    }
+    return onAll(el, ['timeupdate', 'loadedmetadata', 'play', 'pause', 'volumechange'], update)
   },
 }

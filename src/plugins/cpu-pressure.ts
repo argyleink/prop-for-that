@@ -1,4 +1,5 @@
 import type { Source } from '../core/types'
+import { noop } from '../core/noop'
 
 type PressureState = 'nominal' | 'fair' | 'serious' | 'critical'
 interface PressureRecord {
@@ -36,7 +37,7 @@ export const cpuPressure: Source = {
     const PressureObserver = (
       globalThis as { PressureObserver?: PressureObserverCtor }
     ).PressureObserver
-    if (!PressureObserver) return () => {}
+    if (!PressureObserver) return noop
 
     ctx.write('cpu-pressure', 0) // seed nominal so var() resolves before first sample
     let observer: PressureObserverInstance | undefined

@@ -170,7 +170,7 @@ export function palette(data: Uint8ClampedArray): Palette | null {
   }
 }
 
-/** Side of the square images/frames are sampled down to (256 px is plenty, and cheap). */
+/** Side of the square images/frames are sampled down to — 16×16, i.e. 256 pixels. */
 export const SAMPLE = 16
 
 type AnyCanvas = OffscreenCanvas | HTMLCanvasElement

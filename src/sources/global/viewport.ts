@@ -1,5 +1,5 @@
 import type { Source } from '../../core/types'
-import { onWindow } from '../../core/window-events'
+import { onWindow } from '../../core/events'
 
 /** `--live-vw`, `--live-vh` */
 export const viewport: Source = {

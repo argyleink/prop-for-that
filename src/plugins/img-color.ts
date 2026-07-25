@@ -1,12 +1,13 @@
 import type { Source } from '../core/types'
 import { resolveTarget } from '../core/find'
 import { round4 } from '../core/num'
+import { noop } from '../core/noop'
 import { palette, toHex, colorProp, SAMPLE, createSampler } from './_color'
 
 /** Read the image's downscaled pixels, preferring an off-main-thread decode. */
 async function samplePixels(img: HTMLImageElement): Promise<Uint8ClampedArray | null> {
   const sample = createSampler()
-  if (!sample) return null
+  if (!sample) return null // no canvas (SSR / unsupported)
 
   // createImageBitmap decodes + resizes off the main thread; fall back to a
   // straight downscaling drawImage where it (or its resize options) is missing.
@@ -28,6 +29,17 @@ async function samplePixels(img: HTMLImageElement): Promise<Uint8ClampedArray | 
   bmp?.close()
   return data
 }
+
+type Swatches = Record<string, string | number>
+
+/**
+ * Last-computed swatches per image, keyed by the source they came from.
+ *
+ * Module-scoped on purpose: the viewport gate re-runs `start` on every re-entry,
+ * so a per-`start` cache would be empty each time and every scroll-back would
+ * re-decode the image. A WeakMap outlives the restarts and dies with the element.
+ */
+const cache = new WeakMap<HTMLImageElement, { src: string; vals: Swatches }>()
 
 /**
  * A small colour palette extracted from an `<img>`, each swatch a single
@@ -69,28 +81,22 @@ export const imgColor: Source = {
   },
   start(ctx) {
     const img = resolveTarget<HTMLImageElement>(ctx.target, 'img')
-    if (!img) return () => {}
+    if (!img) return noop
     let disposed = false
 
-    // Cache the last-written swatches keyed by the rendered source, so a re-run of
-    // start() (the viewport gate re-runs it on every re-entry) re-emits the cached
-    // values instead of re-sampling the canvas when the image hasn't changed.
-    let memoKey = ''
-    let memo: Record<string, string | number> | null = null
-
-    const emit = (vals: Record<string, string | number>) => {
+    const emit = (vals: Swatches) => {
       for (const name in vals) ctx.write(name, vals[name]!)
     }
 
     const compute = async () => {
       if (!img.complete || img.naturalWidth === 0) return // not loaded yet, or broken
-      if (memo && memoKey === img.currentSrc) return emit(memo) // unchanged → reuse
+      const hit = cache.get(img)
+      if (hit && hit.src === img.currentSrc) return emit(hit.vals) // unchanged → reuse
       const data = await samplePixels(img).catch(() => null)
       if (disposed || !data) return
       const pal = palette(data)
       if (!pal) return
-      memoKey = img.currentSrc
-      memo = {
+      const vals: Swatches = {
         img: toHex(pal.dominant), // dominant keeps the bare name
         'img-accent': toHex(pal.accent),
         'img-dark': toHex(pal.dark),
@@ -98,9 +104,10 @@ export const imgColor: Source = {
         'img-avg': toHex(pal.average),
         'img-temp': round4(pal.temp),
       }
-      emit(memo)
+      cache.set(img, { src: img.currentSrc, vals })
+      emit(vals)
     }
-    compute() // seed from an already-loaded/cached image
+    compute() // seed from an already-loaded/cached image (or replay the cache)
     img.addEventListener('load', compute, { passive: true })
 
     return () => {

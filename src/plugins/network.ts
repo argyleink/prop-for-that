@@ -1,4 +1,5 @@
 import type { Source } from '../core/types'
+import { noop } from '../core/noop'
 
 interface NetworkInformation extends EventTarget {
   downlink?: number
@@ -32,7 +33,7 @@ export const network: Source = {
   scope: 'global',
   start(ctx) {
     const connection = (navigator as { connection?: NetworkInformation }).connection
-    if (!connection) return () => {}
+    if (!connection) return noop
 
     const update = () => {
       ctx.write('net-downlink', connection.downlink ?? 0)
@@ -41,7 +42,7 @@ export const network: Source = {
       ctx.write('net-type', netTypeToNumber(connection.effectiveType))
     }
     update()
-    connection.addEventListener('change', update)
+    connection.addEventListener('change', update, { passive: true })
     return () => connection.removeEventListener('change', update)
   },
 }

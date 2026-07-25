@@ -73,7 +73,7 @@ The value must be valid for the property's syntax (a plain number for the defaul
 
 ## Custom syntax for your own sources
 
-A custom or plugin source can declare per-property typings via `props`, applied only when `typed` is on. Anything you don't declare defaults to `<number>` / `0` / inherited:
+A custom or plugin source can declare per-property typings via `props`, applied only when `typed` is on. Anything numeric you don't declare defaults to `<number>` / `0` / inherited:
 
 ```js
 register({
@@ -85,3 +85,22 @@ register({
   },
 })
 ```
+
+### Declare `props` for anything that isn't a number
+
+A registered property only accepts values its syntax can parse. Write a colour into a property registered as `<number>` and the declaration is invalid at computed-value time — CSS falls back to the registered initial (`0`), and the string is gone.
+
+So a source that writes **strings** must say so:
+
+```js
+register({
+  key: 'theme',
+  scope: 'global',
+  props: { brand: { syntax: '<color>', initial: 'transparent' } },
+  start(ctx) {
+    ctx.write('brand', '#3367d6', 'const') // typed as a colour → survives, and interpolates
+  },
+})
+```
+
+Leave it undeclared and prop-for-that won't type it at all — an undeclared string is skipped rather than registered as `<number>`, so the value still lands, just without interpolation. That's what keeps the [`meta`](/reference/plugins/) plugin working under `typed`: its property names come from the page's `<meta>` tags at runtime, so it can't declare them ahead of time.

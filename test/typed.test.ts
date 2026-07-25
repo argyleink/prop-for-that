@@ -131,4 +131,57 @@ describe('typed (@property registration)', () => {
     )
     unregister('f-ovr')
   })
+
+  /**
+   * An undeclared *string* must stay untyped. Registering it as the `<number>`
+   * default makes every write invalid at computed-value time, so the property
+   * computes to `0` and the string is lost — which is exactly what happened to
+   * every `--const-meta-*` value, whose names are only known at runtime.
+   */
+  it('leaves an undeclared string value untyped', () => {
+    const spy = vi.fn()
+    vi.stubGlobal('CSS', { registerProperty: spy })
+    configure({ typed: true })
+    register({
+      key: 'f-str',
+      scope: 'element',
+      start(ctx) {
+        ctx.write('str-a', '#3367d6', 'const')
+        ctx.write('str-num', 12) // numbers alongside it are still typed
+        return () => {}
+      },
+    })
+
+    const el = document.createElement('div')
+    propsFor(el, ['f-str'])
+    expect(spy).toHaveBeenCalledTimes(1)
+    expect(spy).toHaveBeenCalledWith(expect.objectContaining({ name: '--live-str-num' }))
+    expect(spy).not.toHaveBeenCalledWith(
+      expect.objectContaining({ name: '--const-str-a' }),
+    )
+    unregister('f-str')
+  })
+
+  it('types a declared string value using its PropSpec', () => {
+    const spy = vi.fn()
+    vi.stubGlobal('CSS', { registerProperty: spy })
+    configure({ typed: true })
+    register({
+      key: 'f-decl',
+      scope: 'element',
+      props: { 'decl-a': { syntax: '<color>', initial: 'transparent' } },
+      start(ctx) {
+        ctx.write('decl-a', '#3367d6')
+        return () => {}
+      },
+    })
+    propsFor(document.createElement('div'), ['f-decl'])
+    expect(spy).toHaveBeenCalledWith({
+      name: '--live-decl-a',
+      syntax: '<color>',
+      inherits: true,
+      initialValue: 'transparent',
+    })
+    unregister('f-decl')
+  })
 })

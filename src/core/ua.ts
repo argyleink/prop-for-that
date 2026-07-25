@@ -10,6 +10,8 @@
  * UA bits are deliberately omitted.
  */
 
+import { slug } from './slug'
+
 export interface UAInfo {
   /** `macos` / `windows` / `linux` / `android` / `ios` / `chromeos` / `unknown` */
   platform: string
@@ -52,12 +54,6 @@ const CH_PLATFORM: Record<string, string> = {
   windows: 'windows',
 }
 
-const slug = (s: string): string =>
-  s
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-
 /** Map a brand name (UA-CH entry) to our browser slug. Order matters: Edge / */
 /* Opera / Samsung brand strings can also mention Chromium. */
 function brandToBrowser(name: string): string {
@@ -99,35 +95,32 @@ const BROWSERS: Array<{ id: string; test: RegExp; ver: RegExp }> = [
   { id: 'safari', test: /Safari\//, ver: /Version\/(\d+)/ },
 ]
 
+/** Order matters: Android and CrOS UAs also say "Linux". */
+const PLATFORMS: Array<[RegExp, string]> = [
+  [/Android/, 'android'],
+  [/iPhone|iPad|iPod/, 'ios'],
+  [/Macintosh|Mac OS X/, 'macos'],
+  [/Windows/, 'windows'],
+  [/CrOS/, 'chromeos'],
+  [/Linux/, 'linux'],
+]
+
+/** Browser slug → rendering engine, for the engines UA-CH doesn't cover. */
+const ENGINES: Record<string, string> = {
+  firefox: 'gecko',
+  safari: 'webkit',
+  unknown: 'unknown',
+}
+
 function fromUAString(ua: string): UAInfo {
-  const platform = /Android/.test(ua)
-    ? 'android'
-    : /iPhone|iPad|iPod/.test(ua)
-      ? 'ios'
-      : /Macintosh|Mac OS X/.test(ua)
-        ? 'macos'
-        : /Windows/.test(ua)
-          ? 'windows'
-          : /CrOS/.test(ua)
-            ? 'chromeos'
-            : /Linux/.test(ua)
-              ? 'linux'
-              : 'unknown'
+  const platform = PLATFORMS.find(([re]) => re.test(ua))?.[1] ?? 'unknown'
 
   const match = BROWSERS.find((b) => b.test.test(ua))
   const browser = match?.id ?? 'unknown'
   const version = match ? parseInt(ua.match(match.ver)?.[1] ?? '', 10) || 0 : 0
 
-  const engine =
-    platform === 'ios' // every browser on iOS is WebKit
-      ? 'webkit'
-      : browser === 'firefox'
-        ? 'gecko'
-        : browser === 'safari'
-          ? 'webkit'
-          : browser === 'unknown'
-            ? 'unknown'
-            : 'blink'
+  // every browser on iOS is WebKit, whatever it brands itself as
+  const engine = platform === 'ios' ? 'webkit' : (ENGINES[browser] ?? 'blink')
 
   const mobile = /Mobi|Android|iPhone|iPod/.test(ua) ? 1 : 0
 

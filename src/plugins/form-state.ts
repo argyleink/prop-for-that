@@ -1,5 +1,8 @@
-import type { Source } from '../core/types'
+import type { Disposer, Source } from '../core/types'
 import { round4 } from '../core/num'
+import { noop } from '../core/noop'
+import { onFrame } from '../core/frame'
+import { onAll } from '../core/events'
 import { fieldsOf } from './_fields'
 
 /**
@@ -27,7 +30,7 @@ export const formState: Source = {
   gate: false,
   start(ctx) {
     const fields = fieldsOf(ctx.target)
-    if (!fields.length) return () => {}
+    if (!fields.length) return noop
 
     const update = () => {
       let total = 0
@@ -53,24 +56,30 @@ export const formState: Source = {
     update() // seed
 
     // validity changes synchronously with the value, so input/change is enough
-    ctx.target.addEventListener('input', update, { passive: true })
-    ctx.target.addEventListener('change', update, { passive: true })
+    const offEdit = onAll(ctx.target, ['input', 'change'], update)
 
-    let disposed = false
+    // A reset reverts control values *after* this event's default action, so
+    // validity has to be recomputed a frame later, once the new values are in
+    // place. That rides the shared frame loop like everything else — a one-shot
+    // sampler that unregisters itself — rather than a stray requestAnimationFrame.
+    let offFrame: Disposer | null = null
+    const stopFrame = () => {
+      offFrame?.()
+      offFrame = null
+    }
     const form = ctx.target instanceof HTMLFormElement ? ctx.target : fields[0]?.form
     const onReset = () => {
-      // a reset reverts control values *after* this event's default action, so
-      // recompute validity on the next frame, once the new values are in place
-      requestAnimationFrame(() => {
-        if (!disposed) update()
+      stopFrame()
+      offFrame = onFrame(() => {
+        stopFrame()
+        update()
       })
     }
     form?.addEventListener('reset', onReset, { passive: true })
 
     return () => {
-      disposed = true
-      ctx.target.removeEventListener('input', update)
-      ctx.target.removeEventListener('change', update)
+      stopFrame()
+      offEdit()
       form?.removeEventListener('reset', onReset)
     }
   },

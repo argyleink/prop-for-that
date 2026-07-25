@@ -52,10 +52,12 @@ Everything funnels through one shared frame loop and one batched writer. The flo
 - **`src/core/writer.ts`** — batched, diffed custom-property writer. `set()` coalesces
   per element+prop and **diffs against the last written value**, so `setProperty` only
   fires on real change, once per frame max. Redundant sets don't even wake a frame.
-- **`src/core/observers.ts`** / **`window-events.ts`** — exactly **one** `ResizeObserver`
-  and **one** `IntersectionObserver` page-wide, dispatched per element via `WeakMap`; and
-  ref-counted passive `window` listeners (one real listener per event type). N bound
-  elements ≠ N observers/listeners.
+- **`src/core/observers.ts`** / **`events.ts`** — exactly **one** `ResizeObserver` and
+  **one** `IntersectionObserver` page-wide, dispatched per element via `WeakMap`; and
+  ref-counted passive listeners on `window` / `document` / `visualViewport` (`onWindow`,
+  `onDocument`, `onVisualViewport` — one real listener per event type per target). N bound
+  elements ≠ N observers/listeners. `onAll` is the per-element helper for the
+  non-shared case (a `<video>`, an `<input>`): several event types, one disposer.
 - **The read/write split is load-bearing**: sources *read* layout in their event/observer
   callbacks (post-layout, cheap) and *write* in the rAF flush. Never read computed layout
   during a flush — it reintroduces the thrash this design avoids.
@@ -66,7 +68,8 @@ A `Source` is `{ key, scope: 'global' | 'element', props?, start(ctx) → Dispos
 (`src/core/types.ts`). `start` attaches listeners/observers, **seeds initial values** so
 props exist on frame one, and returns a disposer that tears down everything it created.
 It writes via `ctx.write(localName, value, cadence?)` — `localName` is prefixed by cadence
-(`'live'` → `config.livePrefix`, `'const'` → `config.constPrefix`).
+(`'live'` → `config.livePrefix`, `'const'` → `config.constPrefix`). Writing `''` **removes**
+the property, for a value that stops being meaningful (see `select`'s `--live-value-num`).
 
 - **Core sources** (`src/sources/`, always registered): `viewport`, `pointer` (global);
   `size`, `visibility`, `range` (element). Shipped in the main bundle.
@@ -99,8 +102,10 @@ heavy work, memoize it or set `gate: false` and pause internally (as `visibility
   `loaders.ts`) the first time a key needs one — so load `auto` as a module script. Tracks
   per-element keys so it only touches the delta and never clobbers imperatively-added bindings.
 - **`./head` (`src/head.ts`)** — synchronous, FOUC-safe constants for inline use in
-  `<head>`. Writes `--const-scrollbar-w`, `--const-scrollbar-thin-w`, `--const-scrollbar-overlay`, `--const-dpr`, `--const-cores`, `--const-mem` immediately,
-  **bypassing the rAF writer on purpose** (these affect first paint).
+  `<head>`. Writes `--const-scrollbar-w`, `--const-scrollbar-thin-w`, `--const-scrollbar-overlay`, `--const-dpr`, `--const-cores`, `--const-mem`, `--const-ua-*` immediately,
+  **bypassing the rAF writer on purpose** (these affect first paint). They land on
+  the root's *inline* style, which outranks the writer's adopted `:root` rule — so
+  on a page that also binds the `ua` plugin, `head`'s copies are the ones that apply.
 - **`./plugins` (`src/plugins/index.ts`)** — the opt-in plugin catalog.
 
 `auto` and `head` are the only entries marked `sideEffects` in package.json; keep the rest
@@ -117,6 +122,13 @@ side-effect-free so tree-shaking works.
 - **`data-props-for` / `propsFor` keys use the dashed form** of multi-word sources:
   `scroll-velocity`, `pointer-local`, `visual-viewport`.
 - **Cadence**: reactive values are `'live'`; values written once are `'const'`.
+- **A source that writes strings must declare `props`** for them. Under `typed: true`
+  an undeclared value only gets registered when it's a *number* (the `<number>` default
+  fits); an undeclared **string** is deliberately left untyped, because registering it as
+  `<number>` makes every write invalid at computed-value time and the property computes to
+  `0`. Declare a `syntax` (`<color>`, `<custom-ident>`, …) and the string is typed properly
+  — see `ua`, `nav-type`, `color-input`. `meta` is the exception that can't: its names come
+  from the page at runtime, so it stays untyped by design.
 - **Typed `@property`** is opt-in via `configure({ typed: true })` (+ optional `defaults`);
   it makes `--live-*` interpolatable. Off by default. See `src/core/property.ts`.
 - **Sensor/permission-gated sources** (`orientation`, `motion`, `geo`) must feature-detect

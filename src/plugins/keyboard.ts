@@ -1,5 +1,7 @@
 import type { Source } from '../core/types'
 import { round4 } from '../core/num'
+import { noop } from '../core/noop'
+import { onVisualViewport } from '../core/events'
 
 /**
  * The soft (on-screen) keyboard's geometry, written to `:root`:
@@ -80,15 +82,16 @@ export const keyboard: Source = {
         else write(0, 0, 0, 0, false)
       }
       update() // seed
-      vvp.addEventListener('resize', update, { passive: true })
-      vvp.addEventListener('scroll', update, { passive: true })
+      // shared with `visual-viewport`: one real listener per event
+      const offResize = onVisualViewport('resize', update)
+      const offScroll = onVisualViewport('scroll', update)
       return () => {
-        vvp.removeEventListener('resize', update)
-        vvp.removeEventListener('scroll', update)
+        offResize()
+        offScroll()
       }
     }
 
     write(0, 0, 0, 0, false) // unsupported: seed zeros so var() resolves
-    return () => {}
+    return noop
   },
 }

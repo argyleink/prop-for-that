@@ -62,7 +62,13 @@ article {
      pointer-local → --live-local-pointer-x-ratio/--live-local-pointer-y-ratio — all on this one element */
   aspect-ratio: var(--live-w) / var(--live-h);
   opacity: var(--const-has-entered);
-  background: radial-gradient(circle at calc(var(--live-local-pointer-x-ratio) * 100%) calc(var(--live-local-pointer-y-ratio) * 100%), white, transparent);
+  /* --live-local-pointer-inside is 0 until the pointer is actually over the
+     element, so the highlight stays hidden instead of sitting in the corner */
+  background: radial-gradient(
+    circle at calc(var(--live-local-pointer-x-ratio) * 100%) calc(var(--live-local-pointer-y-ratio) * 100%),
+    rgb(255 255 255 / calc(var(--live-local-pointer-inside) * 100%)),
+    transparent
+  );
 }
 ```
 

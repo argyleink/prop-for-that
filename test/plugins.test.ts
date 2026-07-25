@@ -6,6 +6,7 @@ import { formState } from '../src/plugins/form-state'
 import { select } from '../src/plugins/select'
 import { colorInput } from '../src/plugins/color-input'
 import { palette, toHex } from '../src/plugins/_color'
+import { imgColor } from '../src/plugins/img-color'
 import { scrollVelocity } from '../src/plugins/scroll-velocity'
 import { pageFocused } from '../src/plugins/page-focused'
 import { pageVisible } from '../src/plugins/page-visible'
@@ -291,12 +292,28 @@ describe('select', () => {
     el.remove()
   })
 
-  it('skips value-num for a non-numeric value', () => {
+  it('clears value-num for a non-numeric value instead of writing NaN', () => {
     const el = make('<option value="apple">apple</option><option value="pear">pear</option>')
     const { ctx, values } = makeRecorder(el)
     const dispose = select.start(ctx)
     expect(values.index).toBe(0)
-    expect(values['value-num']).toBeUndefined() // no NaN written
+    expect(values['value-num']).toBe('') // empty = remove the property, never NaN
+    dispose()
+    el.remove()
+  })
+
+  it('clears a previously-written value-num when a non-numeric option is picked', () => {
+    const el = make('<option value="3">three</option><option value="apple">apple</option>')
+    const { ctx, values } = makeRecorder(el)
+    const dispose = select.start(ctx)
+    expect(values['value-num']).toBe(3)
+
+    // switching to a non-numeric value must not leave the old number behind —
+    // the empty write removes the property so var(--live-value-num, …) applies
+    el.selectedIndex = 1
+    el.dispatchEvent(new Event('change'))
+    expect(values['value-num']).toBe('')
+
     dispose()
     el.remove()
   })
@@ -611,6 +628,58 @@ describe('img-color palette', () => {
     expect(toHex({ r: 0, g: 0, b: 0, l: 0 })).toBe('#000000') // padding, not "#0"
     expect(toHex({ r: 31, g: 158, b: 138, l: 0 })).toBe('#1f9e8a')
   })
+
+  /**
+   * `img-color` is viewport-gated, so `start` re-runs on every re-entry. The
+   * swatch cache has to outlive those restarts — a per-`start` cache is empty
+   * each time, so every scroll-back re-decodes the image.
+   */
+  it('reuses cached swatches across start/stop cycles instead of re-sampling', async () => {
+    let reads = 0
+    vi.stubGlobal(
+      'OffscreenCanvas',
+      class {
+        constructor(_w: number, _h: number) {}
+        getContext() {
+          return {
+            drawImage() {},
+            getImageData: () => {
+              reads++
+              return { data: new Uint8ClampedArray([255, 0, 0, 255]) }
+            },
+          }
+        }
+      },
+    )
+    const el = document.createElement('img')
+    Object.defineProperty(el, 'complete', { value: true, configurable: true })
+    Object.defineProperty(el, 'naturalWidth', { value: 8, configurable: true })
+    Object.defineProperty(el, 'currentSrc', { value: '/a.png', configurable: true })
+    document.body.append(el)
+
+    const first = makeRecorder(el)
+    const stop = imgColor.start(first.ctx)
+    await vi.waitFor(() => expect(first.values['img']).toBe('#ff0000'))
+    expect(reads).toBe(1)
+    stop() // scrolled out of view: the gate tears the source down
+
+    // scrolled back into view: same image, so re-emit rather than re-decode
+    const again = makeRecorder(el)
+    const stopAgain = imgColor.start(again.ctx)
+    await vi.waitFor(() => expect(again.values['img']).toBe('#ff0000')) // restored
+    expect(reads).toBe(1) // …without touching the canvas again
+    stopAgain()
+
+    // a src swap invalidates the cache and samples again
+    Object.defineProperty(el, 'currentSrc', { value: '/b.png', configurable: true })
+    const swapped = makeRecorder(el)
+    const stopSwapped = imgColor.start(swapped.ctx)
+    await vi.waitFor(() => expect(reads).toBe(2))
+    stopSwapped()
+
+    el.remove()
+    vi.unstubAllGlobals()
+  })
 })
 
 describe('img', () => {
@@ -764,6 +833,46 @@ describe('video-color', () => {
     v.fire(400) // past the interval → re-samples blue
     expect(values['video']).toBe('#0000ff')
 
+    v.el.remove()
+  })
+
+  /**
+   * A tainted canvas can never untaint, and the throttle only advances on a
+   * *successful* read — so an unlatched failure re-draws and re-reads on every
+   * presented frame, forever, for a source that can never produce a value.
+   */
+  it('stops reading pixels for good once the canvas is tainted', () => {
+    let reads = 0
+    vi.stubGlobal(
+      'OffscreenCanvas',
+      class {
+        constructor(_w: number, _h: number) {}
+        getContext() {
+          return {
+            drawImage() {},
+            getImageData() {
+              reads++
+              throw new Error('tainted') // cross-origin, no CORS grant
+            },
+          }
+        }
+      },
+    )
+    const v = fakeVideo()
+    document.body.append(v.el)
+    const { ctx, values } = makeRecorder(v.el)
+
+    const dispose = videoColor.start(ctx) // seed attempt reads once, taints
+    expect(reads).toBe(1)
+
+    v.fire(1000)
+    v.fire(2000)
+    v.fire(3000) // each well past the throttle interval
+    expect(reads).toBe(1) // …but latched off, so no further reads
+    expect(values['video']).toBeUndefined() // nothing written, var() fallback holds
+    expect((v.el as any).requestVideoFrameCallback).toHaveBeenCalled() // still re-arming
+
+    dispose()
     v.el.remove()
   })
 
@@ -921,8 +1030,11 @@ describe('scroll-velocity', () => {
     expect(values['scroll-velocity']).toBeGreaterThan(0)
     expect(values['scroll-direction']).toBe(1)
 
-    // scroll up: the loop is still active and re-scheduled, drive the next frame
+    // scroll up: the loop is still active and re-scheduled, drive the next frame.
+    // The position is captured in the scroll handler (never read inside the
+    // frame), so the event is what makes the new offset visible to the sampler.
     Object.defineProperty(window, 'scrollY', { value: 40, configurable: true })
+    window.dispatchEvent(new Event('scroll'))
     tick()
     expect(values['scroll-velocity']).toBeLessThan(0)
     expect(values['scroll-direction']).toBe(-1)

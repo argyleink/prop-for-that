@@ -1,5 +1,5 @@
 import type { Source } from '../core/types'
-import { onWindow } from '../core/window-events'
+import { onWindow } from '../core/events'
 
 /**
  * `--live-page-focused` (1/0) — whether the document currently has focus: the
