@@ -96,6 +96,24 @@ Custom properties inherit **downward only**, and `@container style()` matches ag
 It applies to **every** key on that element, and it's re-resolved whenever the attribute changes (the bindings are torn down and re-attached against the new target). If no ancestor matches, the properties stay on the element itself and a warning explains why. See [Style queries](/concepts/style-queries/#hoisting-an-elements-values-to-an-ancestor) and [`propsFor`'s `to` option](/reference/api/#propsfor).
 :::
 
+:::tip[Name them apart with `data-props-as`]
+Two elements hoisting the same key onto one ancestor would write the same property names and overwrite each other. `data-props-as="<name>"` slots a namespace in after the cadence prefix, so each gets its own:
+
+```html
+<figure>
+  <img data-props-for="size" data-props-as="image" data-props-to="figure" src="art.jpg">
+  <figcaption data-props-for="size" data-props-as="caption" data-props-to="figure">…</figcaption>
+</figure>
+```
+
+```css
+/* --live-image-h and --live-caption-h, both on the <figure> */
+figure { min-height: calc((var(--live-image-h) + var(--live-caption-h)) * 1px); }
+```
+
+It works with or without `data-props-to`, applies to every key on the element, and rebinds when the attribute changes (properties written under the old name are removed). The name must be `[A-Za-z0-9_-]+`; anything else warns and is ignored. See [`propsFor`'s `as` option](/reference/api/#propsfor).
+:::
+
 Want the values to **interpolate**? Add `data-props-typed` to the root `<html>` and every `--live-*` this page writes is registered as an [`@property`](/concepts/typed-properties/) — the markup equivalent of `configure({ typed: true })`:
 
 ```html

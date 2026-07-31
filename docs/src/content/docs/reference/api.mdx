@@ -176,9 +176,28 @@ Three things to know:
 
 - **No match warns and degrades.** If the selector matches no ancestor, the properties are written on the element itself (a `console.warn` says so) — the effect degrades rather than disappearing.
 - **Globals ignore it.** `to` on a `global`-scoped source warns and is ignored; globals already write to a shared target.
-- **One binding per key per target.** Two elements hoisting the same key onto one ancestor overwrite each other's values, and disposing either removes the property. It warns in that case; give each hoist its own target.
+- **One binding per key per target.** Two elements hoisting the same key onto one ancestor overwrite each other's values, and disposing either removes the property. It warns in that case; give each hoist its own target — or its own namespace, below.
 
 Re-attaching a key that's already active on the same target is a no-op for that key — including a re-attach with a *different* `to`. Change the target by tearing the binding down first (`unbind(el, [key])`), then binding again.
+
+**Namespaced** (`opts.as`):
+
+```js
+// both write `size`, both onto the <figure> — under different names
+propsFor(img, ['size'], { to: 'figure', as: 'image' })    // --live-image-w/-h/-aspect
+propsFor(cap, ['size'], { to: 'figure', as: 'caption' })  // --live-caption-w/-h/-aspect
+```
+
+```css
+figure { min-height: calc((var(--live-image-h) + var(--live-caption-h)) * 1px); }
+```
+
+`as` inserts a name **after** the cadence prefix, so `--live-h` becomes `--live-caption-h` (and a `const` value `--const-caption-n`). It's the answer to the one-binding-per-key-per-target limit above: namespaced bindings write different property names, so they don't collide and the warning doesn't fire. The markup equivalent is `data-props-as`.
+
+- **Independent of `to`.** A namespace is legal on any binding — hoisted or not, element- or global-scoped. It only renames.
+- **`[A-Za-z0-9_-]+` only.** Anything else (whitespace, `{`, `$`, an escape) would break the custom-property name as a CSS token: it warns and is ignored, and the binding attaches unnamespaced.
+- **Typing is unaffected.** [`@property`](/concepts/typed-properties/) syntax and `configure({ defaults })` still resolve by the source's *local* name, so `defaults: { h: '0px' }` covers `--live-h` and `--live-caption-h` alike.
+- **Not part of the dedupe key.** Bindings still dedupe on (element, key), so one element can't bind `size` twice under two names; `unbind(el, ['size'])` stays unambiguous.
 
 ---
 
