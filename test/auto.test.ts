@@ -128,6 +128,48 @@ describe('auto: declarative + just-in-time plugins', () => {
     vi.unstubAllGlobals()
   })
 
+  it('namespaces via data-props-as, and renames when the attribute changes', async () => {
+    const scheduled: FrameRequestCallback[] = []
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => scheduled.push(cb))
+    vi.stubGlobal('cancelAnimationFrame', () => {})
+    const flush = () => scheduled.splice(0).forEach((cb) => cb(0))
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    const api = await import('../src/index')
+    api.register({
+      key: 'ns-probe',
+      scope: 'element',
+      start: (ctx) => (ctx.write('p', 1), () => {}),
+    })
+
+    const fig = document.createElement('figure')
+    fig.innerHTML =
+      '<img data-props-for="ns-probe" data-props-as="image" data-props-to="figure">' +
+      '<figcaption data-props-for="ns-probe" data-props-as="caption" data-props-to="figure"></figcaption>'
+    document.body.append(fig)
+    const img = fig.querySelector('img')!
+
+    await import('../src/auto')
+    flush()
+    // both elements hoist the same key onto the figure without clobbering
+    expect(fig.style.getPropertyValue('--live-image-p')).toBe('1')
+    expect(fig.style.getPropertyValue('--live-caption-p')).toBe('1')
+
+    // renaming rebinds: the old property is removed, the new one appears
+    img.setAttribute('data-props-as', 'photo')
+    await vi.waitFor(() => {
+      flush()
+      expect(fig.style.getPropertyValue('--live-photo-p')).toBe('1')
+    })
+    expect(fig.style.getPropertyValue('--live-image-p')).toBe('')
+    expect(fig.style.getPropertyValue('--live-caption-p')).toBe('1') // untouched
+
+    api.reset()
+    fig.remove()
+    warn.mockRestore()
+    vi.unstubAllGlobals()
+  })
+
   it('retries a plugin load that failed the first time (not cached as failed)', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     const error = vi.spyOn(console, 'error').mockImplementation(() => {})
