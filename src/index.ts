@@ -36,7 +36,7 @@ export interface PropsForOptions {
    * No `closest()` match warns and falls back to the element itself; `to` on a
    * `global` source warns and is ignored. Keep it to **one binding per key per
    * target**: two elements hoisting the same key to one ancestor overwrite each
-   * other (dev-time warning).
+   * other (dev-time warning) — unless they name themselves apart with `as`.
    */
   to?: Element | string
 }
@@ -46,6 +46,8 @@ interface Entry {
   written: Set<string>
   /** Where this binding's props land: the bound element unless hoisted via `to`. */
   writeTarget: HTMLElement
+  /** The `hoisted` entry this binding claimed: its namespace + key. */
+  claim: string
 }
 
 /** target → (key → live binding). A strong map so `reset()` can tear everything down. */
@@ -75,11 +77,28 @@ export function configure(opts: Partial<Config>): void {
   Object.assign(config, opts)
 }
 
+/** Anything outside this would break the property name as a CSS token. */
+const NAMESPACE = /^[A-Za-z0-9_-]+$/
+
+/** `opts.as` as a property-name infix. Invalid → warn and drop it, so a typo
+ *  degrades to unnamespaced props instead of deleting the feature. */
+function resolveNamespace(as: string | undefined): string {
+  if (!as) return ''
+  if (!NAMESPACE.test(as)) {
+    console.warn(
+      `[prop-for-that] invalid namespace "${as}" — expected [A-Za-z0-9_-]+, writing unnamespaced props`,
+    )
+    return ''
+  }
+  return as + '-'
+}
+
 function makeContext(
   target: HTMLElement,
   writeTarget: HTMLElement,
   written: Set<string>,
   props?: Source['props'],
+  ns = '',
 ): SourceContext {
   // Per-binding memo, keyed by localName within each cadence: the last raw value
   // (so a redundant write exits after one lookup, before any stringify/queue
@@ -103,7 +122,8 @@ function makeContext(
         if (entry.raw === value) return // unchanged, skip
         entry.raw = value
       } else {
-        const prop = (cadence === 'const' ? config.constPrefix : config.livePrefix) + localName
+        const prop =
+          (cadence === 'const' ? config.constPrefix : config.livePrefix) + ns + localName
         m.set(localName, (entry = { raw: value, prop }))
         written.add(prop)
       }
@@ -177,7 +197,7 @@ function disposeEntry(target: HTMLElement, key: string, active: Map<string, Entr
     style.removeProperty(prop)
     writer.forget(writeTarget, prop)
   }
-  if (writeTarget !== target) hoisted.get(writeTarget)?.delete(key)
+  if (writeTarget !== target) hoisted.get(writeTarget)?.delete(entry.claim)
   active.delete(key)
 }
 
@@ -208,10 +228,16 @@ function claimHoist(writeTarget: HTMLElement, key: string): void {
   keys.add(key)
 }
 
-function startOn(target: HTMLElement, keys: string[], to?: Element | string): Disposer {
+function startOn(
+  target: HTMLElement,
+  keys: string[],
+  to?: Element | string,
+  as?: string,
+): Disposer {
   let active = bindings.get(target)
   if (!active) bindings.set(target, (active = new Map()))
   const hoist = to ? resolveWriteTarget(target, to) : target
+  const ns = resolveNamespace(as)
 
   const started: string[] = []
   for (const key of keys) {
@@ -229,11 +255,12 @@ function startOn(target: HTMLElement, keys: string[], to?: Element | string): Di
       writeTarget = target
     }
     const written = new Set<string>()
-    const ctx = makeContext(target, writeTarget, written, source.props)
+    const ctx = makeContext(target, writeTarget, written, source.props, ns)
     const dispose = attach(source, ctx, target)
     if (!dispose) continue // start threw (already logged) — don't register a dead binding
-    if (writeTarget !== target) claimHoist(writeTarget, key)
-    active.set(key, { dispose, written, writeTarget })
+    const claim = ns + key
+    if (writeTarget !== target) claimHoist(writeTarget, claim)
+    active.set(key, { dispose, written, writeTarget, claim })
     started.push(key)
   }
 
@@ -273,9 +300,11 @@ function isKeys(x: unknown): x is string[] {
  *   propsFor(els, ['visibility'])    // → each element in a NodeList / array
  *
  * `opts.to` hoists the writes to an ancestor (selector or element) while still
- * observing the bound element, so siblings can read the values:
+ * observing the bound element, so siblings can read the values; `opts.as`
+ * namespaces them, so two elements can hoist the same key onto one ancestor:
  *
  *   propsFor(img, ['img'], { to: 'figure' })
+ *   propsFor(cap, ['size'], { to: 'figure', as: 'caption' })  // --live-caption-h
  *
  * Returns a disposer that tears down exactly what this call started and removes
  * the custom properties it wrote.
@@ -297,7 +326,7 @@ export function propsFor(a: unknown, b?: SourceKey[], opts?: PropsForOptions): D
     keys = (b ?? []) as string[]
   }
   if (!targets.length || !keys.length) return noop
-  const disposers = targets.map((t) => startOn(t, keys, opts?.to))
+  const disposers = targets.map((t) => startOn(t, keys, opts?.to, opts?.as))
   return () => {
     for (const d of disposers) d()
   }
