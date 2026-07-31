@@ -39,6 +39,12 @@ export interface PropsForOptions {
    * other (dev-time warning) — unless they name themselves apart with `as`.
    */
   to?: Element | string
+  /**
+   * Namespace this binding's properties: the name is inserted **after** the
+   * cadence prefix, so `size` bound with `as: 'caption'` writes
+   * `--live-caption-h` instead of `--live-h`.
+   *
+  as?: string
 }
 
 interface Entry {
