@@ -241,7 +241,7 @@ describe('propsFor: as (namespace)', () => {
     flushFrames()
     expect(fig.style.getPropertyValue('--live-caption-x')).toBe('1')
     expect(fig.style.getPropertyValue('--live-x')).toBe('')
-    expect(seen).toEqual([img]) // observation is unaffected
+    expect(seen).toEqual([img])
 
     dispose()
     expect(fig.style.getPropertyValue('--live-caption-x')).toBe('')
@@ -275,11 +275,11 @@ describe('propsFor: as (namespace)', () => {
     const a = propsFor(img, ['fake'], { to: 'figure', as: 'image' })
     const b = propsFor(cap, ['fake'], { to: 'figure', as: 'caption' })
     flushFrames()
-    expect(warn).not.toHaveBeenCalled() // different property names: no collision
+    expect(warn).not.toHaveBeenCalled()
     expect(fig.style.getPropertyValue('--live-image-x')).toBe('1')
     expect(fig.style.getPropertyValue('--live-caption-x')).toBe('1')
 
-    a() // disposing one must not strip the other's props
+    a()
     expect(fig.style.getPropertyValue('--live-image-x')).toBe('')
     expect(fig.style.getPropertyValue('--live-caption-x')).toBe('1')
 
@@ -301,7 +301,6 @@ describe('propsFor: as (namespace)', () => {
 
     a()
     b()
-    // the claim is released on dispose, so a later rebind is clean
     warn.mockClear()
     const c = propsFor(img, ['fake'], { to: 'figure', as: 'same' })
     expect(warn).not.toHaveBeenCalled()
@@ -321,7 +320,7 @@ describe('propsFor: as (namespace)', () => {
     const dispose = propsFor(img, ['fake'], { as: 'my caption' })
     flushFrames()
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('invalid namespace "my caption"'))
-    expect(img.style.getPropertyValue('--live-x')).toBe('1') // unnamespaced fallback
+    expect(img.style.getPropertyValue('--live-x')).toBe('1')
 
     dispose()
     warn.mockRestore()

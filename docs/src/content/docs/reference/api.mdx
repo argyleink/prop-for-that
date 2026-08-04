@@ -183,21 +183,16 @@ Re-attaching a key that's already active on the same target is a no-op for that 
 **Namespaced** (`opts.as`):
 
 ```js
-// both write `size`, both onto the <figure> — under different names
-propsFor(img, ['size'], { to: 'figure', as: 'image' })    // --live-image-w/-h/-aspect
-propsFor(cap, ['size'], { to: 'figure', as: 'caption' })  // --live-caption-w/-h/-aspect
+propsFor(img, ['size'], { to: 'figure', as: 'image' })   // --live-image-*
+propsFor(cap, ['size'], { to: 'figure', as: 'caption' }) // --live-caption-*
 ```
 
-```css
-figure { min-height: calc((var(--live-image-h) + var(--live-caption-h)) * 1px); }
-```
+`as` adds a namespace after the cadence prefix, preventing hoist collisions. Markup equivalent: `data-props-as`.
 
-`as` inserts a name **after** the cadence prefix, so `--live-h` becomes `--live-caption-h` (and a `const` value `--const-caption-n`). It's the answer to the one-binding-per-key-per-target limit above: namespaced bindings write different property names, so they don't collide and the warning doesn't fire. The markup equivalent is `data-props-as`.
-
-- **Independent of `to`.** A namespace is legal on any binding — hoisted or not, element- or global-scoped. It only renames.
-- **`[A-Za-z0-9_-]+` only.** Anything else (whitespace, `{`, `$`, an escape) would break the custom-property name as a CSS token: it warns and is ignored, and the binding attaches unnamespaced.
-- **Typing is unaffected.** [`@property`](/concepts/typed-properties/) syntax and `configure({ defaults })` still resolve by the source's *local* name, so `defaults: { h: '0px' }` covers `--live-h` and `--live-caption-h` alike.
-- **Not part of the dedupe key.** Bindings still dedupe on (element, key), so one element can't bind `size` twice under two names; `unbind(el, ['size'])` stays unambiguous.
+- Works with or without `to` and with element- or global-scoped sources.
+- Names must match `[A-Za-z0-9_-]+`. Invalid names warn and fall back to unnamespaced properties.
+- Typed-property specs and defaults still use source-local names. `defaults: { h: 0 }` covers both `--live-h` and `--live-caption-h`.
+- Dedupe remains `(element, key)`, so one element can't bind one key under multiple names.
 
 ---
 

@@ -1,15 +1,8 @@
 import { test, expect } from '@playwright/test'
 import { existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
+import type * as API from '../src/index'
 
-/**
- * Namespacing (`propsFor(el, keys, { as })` / `data-props-as`) exists because
- * hoisting alone can't express "measure both of these onto the same ancestor":
- * two elements writing `size` onto one `<figure>` produce one `--live-h` and
- * last-write-wins. `as` inserts a name after the cadence prefix, so they become
- * `--live-image-h` and `--live-caption-h`.
- *
- */
 const BUILD = fileURLToPath(new URL('../dist/index.global.js', import.meta.url))
 
 const CONTENT = `
@@ -18,15 +11,12 @@ const CONTENT = `
     <figcaption id="cap" style="width:40px;height:20px">caption</figcaption>
   </figure>
   <style>
-    /* both namespaced values, read together in one calc() on a descendant */
     #cap { padding-top: calc((var(--live-image-h) + var(--live-caption-h)) * 1px); }
   </style>
 `
 
-/** Bind `size` on both children, hoisted onto the figure under distinct names;
- *  returns the disposer for the `image` one. */
 const bind = () => {
-  const PF = (window as unknown as { PropForThat: any }).PropForThat
+  const PF = (window as unknown as { PropForThat: typeof API }).PropForThat
   const stop = PF.propsFor(document.getElementById('pic')!, ['size'], {
     to: 'figure',
     as: 'image',
@@ -35,8 +25,6 @@ const bind = () => {
   return stop as () => void
 }
 
-/** Poll predicate: the figure's `prop` has settled on `want`. ResizeObserver
- *  delivers on its own schedule, so tests poll rather than count frames. */
 function settled(args: { prop: string; want: string }): boolean {
   return (
     getComputedStyle(document.getElementById('fig')!).getPropertyValue(args.prop).trim() ===
@@ -62,15 +50,14 @@ test.describe('namespaced props (as)', () => {
         captionH: cs.getPropertyValue('--live-caption-h').trim(),
         plain: cs.getPropertyValue('--live-h').trim(),
         inherited: cap.getPropertyValue('--live-image-h').trim(),
-        // 60 + 20: both namespaced values resolved in one calc()
         padding: cap.paddingTop,
       }
     })
 
     expect(r.imageH).toBe('60')
     expect(r.captionH).toBe('20')
-    expect(r.plain).toBe('') // nothing landed under the unnamespaced name
-    expect(r.inherited).toBe('60') // namespaced names inherit like any other
+    expect(r.plain).toBe('')
+    expect(r.inherited).toBe('60')
     expect(r.padding).toBe('80px')
   })
 
@@ -92,7 +79,7 @@ test.describe('namespaced props (as)', () => {
       }
     })
 
-    expect(r.imageH).toBe('') // removed with its binding
-    expect(r.captionH).toBe('20') // the survivor is untouched
+    expect(r.imageH).toBe('')
+    expect(r.captionH).toBe('20')
   })
 })

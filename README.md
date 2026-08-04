@@ -63,7 +63,7 @@ Custom properties inherit **downward only**, and `@container style()` matches ag
 propsFor(img, ['img', 'size'], { to: 'figure' }) // selector, or an element
 ```
 
-Two elements hoisting the same key onto one ancestor would overwrite each other, so name them apart with `data-props-as` (`{ as }` imperatively) — the name slots in after the cadence prefix:
+Use `data-props-as` (`{ as }` imperatively) when two elements hoist the same key. Namespace follows cadence prefix:
 
 ```html
 <figure>
@@ -73,7 +73,6 @@ Two elements hoisting the same key onto one ancestor would overwrite each other,
 ```
 
 ```css
-/* --live-image-h and --live-caption-h both live on the <figure> */
 figure { min-height: calc((var(--live-image-h) + var(--live-caption-h)) * 1px); }
 ```
 
@@ -97,7 +96,7 @@ figure { min-height: calc((var(--live-image-h) + var(--live-caption-h)) * 1px); 
 
 | Import | What it does |
 | --- | --- |
-| `prop-for-that/auto` | Zero-config & declarative: binds every `data-props-for` element — globals included, via `<html data-props-for="…">`, hoisting with `data-props-to`, namespacing with `data-props-as` — loading plugin sources on demand, kept in sync with the DOM. Use as `<script type="module">`. |
+| `prop-for-that/auto` | Declarative binding via `data-props-for`, `data-props-to`, and `data-props-as`. Loads plugins on demand and tracks DOM changes. Use as `<script type="module">`. |
 | `prop-for-that` | Imperative API — `propsFor()`, `register()`, `configure()` — for explicit control and teardown. |
 | `prop-for-that/head` | Synchronous, FOUC-safe constants (scrollbar width & overlay preference, DPR, core count, device memory, low-entropy user-agent) before first paint. |
 | `prop-for-that/plugins` | The opt-in plugin catalog. |

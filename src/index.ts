@@ -23,36 +23,16 @@ export type SourceKey = CoreKey | (string & {})
 
 /** Options for the element-targeted `propsFor`. */
 export interface PropsForOptions {
-  /**
-   * Write this binding's properties on an **ancestor** instead of the bound
-   * element — a selector resolved with `el.closest()`, or an explicit element.
-   * The bound element is still the one observed.
-   *
-   * Custom properties inherit downward only, and `@container style()` matches
-   * against an *ancestor*, so an element can neither style-query nor share the
-   * values written on itself. Hoisting to a wrapper is what lets the element's
-   * siblings — and the element itself — react to them.
-   *
-   * No `closest()` match warns and falls back to the element itself; `to` on a
-   * `global` source warns and is ignored. Keep it to **one binding per key per
-   * target**: two elements hoisting the same key to one ancestor overwrite each
-   * other (dev-time warning) — unless they name themselves apart with `as`.
-   */
+  /** Write on an ancestor while observing the bound element. */
   to?: Element | string
-  /**
-   * Namespace this binding's properties: the name is inserted **after** the
-   * cadence prefix, so `size` bound with `as: 'caption'` writes
-   * `--live-caption-h` instead of `--live-h`.
-   *
+  /** Insert a namespace after the cadence prefix: `--live-caption-h`. */
   as?: string
 }
 
 interface Entry {
   dispose: Disposer
   written: Set<string>
-  /** Where this binding's props land: the bound element unless hoisted via `to`. */
   writeTarget: HTMLElement
-  /** The `hoisted` entry this binding claimed: its namespace + key. */
   claim: string
 }
 
@@ -83,11 +63,8 @@ export function configure(opts: Partial<Config>): void {
   Object.assign(config, opts)
 }
 
-/** Anything outside this would break the property name as a CSS token. */
 const NAMESPACE = /^[A-Za-z0-9_-]+$/
 
-/** `opts.as` as a property-name infix. Invalid → warn and drop it, so a typo
- *  degrades to unnamespaced props instead of deleting the feature. */
 function resolveNamespace(as: string | undefined): string {
   if (!as) return ''
   if (!NAMESPACE.test(as)) {
@@ -253,8 +230,6 @@ function startOn(
       console.warn(`[prop-for-that] unknown source "${key}"`)
       continue
     }
-    // Globals aren't the element's state to hoist — they already write to a
-    // shared target (`config.root` in the global form). Leave them where they are.
     let writeTarget = hoist
     if (writeTarget !== target && source.scope === 'global') {
       console.warn(`[prop-for-that] "to" ignored for global source "${key}"`)
@@ -305,12 +280,9 @@ function isKeys(x: unknown): x is string[] {
  *   propsFor(el, ['size'])           // → el
  *   propsFor(els, ['visibility'])    // → each element in a NodeList / array
  *
- * `opts.to` hoists the writes to an ancestor (selector or element) while still
- * observing the bound element, so siblings can read the values; `opts.as`
- * namespaces them, so two elements can hoist the same key onto one ancestor:
+ * `opts.to` hoists writes to an ancestor. `opts.as` namespaces properties:
  *
- *   propsFor(img, ['img'], { to: 'figure' })
- *   propsFor(cap, ['size'], { to: 'figure', as: 'caption' })  // --live-caption-h
+ *   propsFor(cap, ['size'], { to: 'figure', as: 'caption' }) // --live-caption-h
  *
  * Returns a disposer that tears down exactly what this call started and removes
  * the custom properties it wrote.

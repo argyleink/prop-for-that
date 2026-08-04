@@ -45,9 +45,9 @@ That ancestor rule is the whole reason `data-props-to` (imperatively, `propsFor(
 
 The element is still the one being *observed* — only the writes move. See [`propsFor`'s `to` option](/reference/api/#propsfor) for the resolution rules (selector via `closest()`, no-match fallback, one binding per key per target).
 
-### Naming two hoists apart
+### Namespaced hoists
 
-Hoisting the same key from two elements onto one ancestor makes them fight over one set of property names. `data-props-as` (imperatively, `{ as }`) inserts a name after the cadence prefix, so each binding gets its own:
+Hoisting the same key twice causes collisions. `data-props-as` (`{ as }` imperatively) adds a namespace after the cadence prefix:
 
 ```html
 <figure>
@@ -57,13 +57,7 @@ Hoisting the same key from two elements onto one ancestor makes them fight over 
 ```
 
 ```css
-/* --live-image-h and --live-caption-h both live on the <figure>, so anything
-   inside it can read either — or both at once */
 figure { min-height: calc((var(--live-image-h) + var(--live-caption-h)) * 1px); }
-
-@container style(--live-caption-h: 20) {
-  figcaption { text-wrap: balance; }
-}
 ```
 
 ## Example 1: a global boolean (offline)

@@ -21,14 +21,7 @@ import { loaders } from './plugins/loaders'
  *     <figcaption>…</figcaption>   <!-- reads --live-loaded -->
  *   </figure>
  *
- * Add `data-props-as="<name>"` to namespace that element's properties — the name
- * is inserted after the cadence prefix (`--live-caption-h`). Without it, two
- * elements hoisting the same key onto one ancestor overwrite each other:
- *
- *   <figure>
- *     <img data-props-for="size" data-props-as="image" data-props-to="figure">
- *     <figcaption data-props-for="size" data-props-as="caption" data-props-to="figure">…
- *   </figure>
+ * `data-props-as="caption"` namespaces properties as `--live-caption-*`.
  *
  * Nothing is attached by default: a page gets exactly the sources it asks for,
  * including globals (declare them on `<html>`). Plugin sources are **loaded on
@@ -49,9 +42,6 @@ import { loaders } from './plugins/loaders'
  *   <html data-props-seed="42">
  */
 
-/** The data-props-for keys auto bound per element (plus the data-props-to /
- *  data-props-as they were bound with), so we touch only the delta and never
- *  clobber bindings added through the imperative API. */
 const tracked = new WeakMap<HTMLElement, { keys: string[]; to?: string; as?: string }>()
 
 /** In-flight plugin loads, deduped by key so concurrent requests share a fetch. */
@@ -90,11 +80,9 @@ function ensure(key: string): Promise<void> | null {
 function bindKey(el: HTMLElement, key: string, to?: string, as?: string): void {
   const pending = ensure(key)
   if (!pending) {
-    propsFor(el, [key], { to, as }) // ready now (or unknown → warns)
+    propsFor(el, [key], { to, as })
     return
   }
-  // attach once the chunk lands — unless the element was removed, the key
-  // dropped, or the hoist target / namespace changed while it loaded
   pending.then(() => {
     const rec = tracked.get(el)
     if (isRegistered(key) && rec && rec.to === to && rec.as === as && rec.keys.includes(key)) {
@@ -109,8 +97,6 @@ function sync(el: HTMLElement): void {
   const as = el.dataset.propsAs || undefined
   const prev = tracked.get(el)
   const prevKeys = prev?.keys ?? []
-  // A changed `to` re-targets every binding on this element, a changed `as`
-  // renames every property — either way there's no per-key delta to take.
   const retarget = prev !== undefined && (prev.to !== to || prev.as !== as)
   const removed = retarget ? prevKeys : prevKeys.filter((k) => !next.includes(k))
   const added = retarget ? next : next.filter((k) => !prevKeys.includes(k))

@@ -151,18 +151,16 @@ describe('auto: declarative + just-in-time plugins', () => {
 
     await import('../src/auto')
     flush()
-    // both elements hoist the same key onto the figure without clobbering
     expect(fig.style.getPropertyValue('--live-image-p')).toBe('1')
     expect(fig.style.getPropertyValue('--live-caption-p')).toBe('1')
 
-    // renaming rebinds: the old property is removed, the new one appears
     img.setAttribute('data-props-as', 'photo')
     await vi.waitFor(() => {
       flush()
       expect(fig.style.getPropertyValue('--live-photo-p')).toBe('1')
     })
     expect(fig.style.getPropertyValue('--live-image-p')).toBe('')
-    expect(fig.style.getPropertyValue('--live-caption-p')).toBe('1') // untouched
+    expect(fig.style.getPropertyValue('--live-caption-p')).toBe('1')
 
     api.reset()
     fig.remove()
