@@ -63,6 +63,19 @@ Custom properties inherit **downward only**, and `@container style()` matches ag
 propsFor(img, ['img', 'size'], { to: 'figure' }) // selector, or an element
 ```
 
+Use `data-props-as` (`{ as }` imperatively) when two elements hoist the same key. Namespace follows cadence prefix:
+
+```html
+<figure>
+  <img data-props-for="size" data-props-as="image" data-props-to="figure" src="art.jpg" />
+  <figcaption data-props-for="size" data-props-as="caption" data-props-to="figure">…</figcaption>
+</figure>
+```
+
+```css
+figure { min-height: calc((var(--live-image-h) + var(--live-caption-h)) * 1px); }
+```
+
 ## Why
 
 - **CSS does the work.** No per-element event handlers or render loops — bind once, compose in stylesheets.
@@ -83,7 +96,7 @@ propsFor(img, ['img', 'size'], { to: 'figure' }) // selector, or an element
 
 | Import | What it does |
 | --- | --- |
-| `prop-for-that/auto` | Zero-config & declarative: binds every `data-props-for` element — globals included, via `<html data-props-for="…">`, hoisting with `data-props-to` — loading plugin sources on demand, kept in sync with the DOM. Use as `<script type="module">`. |
+| `prop-for-that/auto` | Declarative binding via `data-props-for`, `data-props-to`, and `data-props-as`. Loads plugins on demand and tracks DOM changes. Use as `<script type="module">`. |
 | `prop-for-that` | Imperative API — `propsFor()`, `register()`, `configure()` — for explicit control and teardown. |
 | `prop-for-that/head` | Synchronous, FOUC-safe constants (scrollbar width & overlay preference, DPR, core count, device memory, low-entropy user-agent) before first paint. |
 | `prop-for-that/plugins` | The opt-in plugin catalog. |

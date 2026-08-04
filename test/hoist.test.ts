@@ -230,3 +230,122 @@ describe('propsFor: duplicate hoists onto one target', () => {
     fig.remove()
   })
 })
+
+describe('propsFor: as (namespace)', () => {
+  it('inserts the name after the cadence prefix', () => {
+    const { fig, img } = figure()
+    const { source, seen } = makeFakeSource()
+    register(source)
+
+    const dispose = propsFor(img, ['fake'], { to: fig, as: 'caption' })
+    flushFrames()
+    expect(fig.style.getPropertyValue('--live-caption-x')).toBe('1')
+    expect(fig.style.getPropertyValue('--live-x')).toBe('')
+    expect(seen).toEqual([img])
+
+    dispose()
+    expect(fig.style.getPropertyValue('--live-caption-x')).toBe('')
+
+    unregister('fake')
+    fig.remove()
+  })
+
+  it('works without `to` — namespaces props written on the element itself', () => {
+    const { fig, img } = figure()
+    const { source } = makeFakeSource()
+    register(source)
+
+    const dispose = propsFor(img, ['fake'], { as: 'img' })
+    flushFrames()
+    expect(img.style.getPropertyValue('--live-img-x')).toBe('1')
+
+    dispose()
+    expect(img.style.getPropertyValue('--live-img-x')).toBe('')
+
+    unregister('fake')
+    fig.remove()
+  })
+
+  it('lets two elements hoist one key onto one ancestor without collision', () => {
+    const { fig, img, cap } = figure()
+    const { source } = makeFakeSource()
+    register(source)
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    const a = propsFor(img, ['fake'], { to: 'figure', as: 'image' })
+    const b = propsFor(cap, ['fake'], { to: 'figure', as: 'caption' })
+    flushFrames()
+    expect(warn).not.toHaveBeenCalled()
+    expect(fig.style.getPropertyValue('--live-image-x')).toBe('1')
+    expect(fig.style.getPropertyValue('--live-caption-x')).toBe('1')
+
+    a()
+    expect(fig.style.getPropertyValue('--live-image-x')).toBe('')
+    expect(fig.style.getPropertyValue('--live-caption-x')).toBe('1')
+
+    b()
+    warn.mockRestore()
+    unregister('fake')
+    fig.remove()
+  })
+
+  it('still warns when two bindings share a namespace and a key', () => {
+    const { fig, img, cap } = figure()
+    const { source } = makeFakeSource()
+    register(source)
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    const a = propsFor(img, ['fake'], { to: 'figure', as: 'same' })
+    const b = propsFor(cap, ['fake'], { to: 'figure', as: 'same' })
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('already hoisted'), fig)
+
+    a()
+    b()
+    warn.mockClear()
+    const c = propsFor(img, ['fake'], { to: 'figure', as: 'same' })
+    expect(warn).not.toHaveBeenCalled()
+
+    c()
+    warn.mockRestore()
+    unregister('fake')
+    fig.remove()
+  })
+
+  it('warns and drops an invalid namespace, keeping the binding', () => {
+    const { fig, img } = figure()
+    const { source } = makeFakeSource()
+    register(source)
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    const dispose = propsFor(img, ['fake'], { as: 'my caption' })
+    flushFrames()
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('invalid namespace "my caption"'))
+    expect(img.style.getPropertyValue('--live-x')).toBe('1')
+
+    dispose()
+    warn.mockRestore()
+    unregister('fake')
+    fig.remove()
+  })
+
+  it('namespaces const-cadence props too', () => {
+    const { fig, img } = figure()
+    const source: Source = {
+      key: 'fake-const',
+      scope: 'element',
+      start(ctx) {
+        ctx.write('n', 3, 'const')
+        return () => {}
+      },
+    }
+    register(source)
+
+    const dispose = propsFor(img, ['fake-const'], { as: 'cap' })
+    flushFrames()
+    expect(img.style.getPropertyValue('--const-cap-n')).toBe('3')
+
+    dispose()
+    unregister('fake-const')
+    fig.remove()
+  })
+})

@@ -176,9 +176,23 @@ Three things to know:
 
 - **No match warns and degrades.** If the selector matches no ancestor, the properties are written on the element itself (a `console.warn` says so) — the effect degrades rather than disappearing.
 - **Globals ignore it.** `to` on a `global`-scoped source warns and is ignored; globals already write to a shared target.
-- **One binding per key per target.** Two elements hoisting the same key onto one ancestor overwrite each other's values, and disposing either removes the property. It warns in that case; give each hoist its own target.
+- **One binding per key per target.** Two elements hoisting the same key onto one ancestor overwrite each other's values, and disposing either removes the property. It warns in that case; give each hoist its own target — or its own namespace, below.
 
 Re-attaching a key that's already active on the same target is a no-op for that key — including a re-attach with a *different* `to`. Change the target by tearing the binding down first (`unbind(el, [key])`), then binding again.
+
+**Namespaced** (`opts.as`):
+
+```js
+propsFor(img, ['size'], { to: 'figure', as: 'image' })   // --live-image-*
+propsFor(cap, ['size'], { to: 'figure', as: 'caption' }) // --live-caption-*
+```
+
+`as` adds a namespace after the cadence prefix, preventing hoist collisions. Markup equivalent: `data-props-as`.
+
+- Works with or without `to` and with element- or global-scoped sources.
+- Names must match `[A-Za-z0-9_-]+`. Invalid names warn and fall back to unnamespaced properties.
+- Typed-property specs and defaults still use source-local names. `defaults: { h: 0 }` covers both `--live-h` and `--live-caption-h`.
+- Dedupe remains `(element, key)`, so one element can't bind one key under multiple names.
 
 ---
 

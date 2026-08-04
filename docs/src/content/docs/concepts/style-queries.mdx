@@ -45,6 +45,21 @@ That ancestor rule is the whole reason `data-props-to` (imperatively, `propsFor(
 
 The element is still the one being *observed* — only the writes move. See [`propsFor`'s `to` option](/reference/api/#propsfor) for the resolution rules (selector via `closest()`, no-match fallback, one binding per key per target).
 
+### Namespaced hoists
+
+Hoisting the same key twice causes collisions. `data-props-as` (`{ as }` imperatively) adds a namespace after the cadence prefix:
+
+```html
+<figure>
+  <img data-props-for="size" data-props-as="image" data-props-to="figure" src="art.jpg">
+  <figcaption data-props-for="size" data-props-as="caption" data-props-to="figure">Sunset over the pier</figcaption>
+</figure>
+```
+
+```css
+figure { min-height: calc((var(--live-image-h) + var(--live-caption-h)) * 1px); }
+```
+
 ## Example 1: a global boolean (offline)
 
 ```js

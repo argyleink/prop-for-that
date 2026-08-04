@@ -52,12 +52,10 @@ resume(): void                           // unfreeze; flushes anything queued wh
 // propsFor is global unless the first arg is a Node, NodeList, or array of elements.
 // Its disposer tears down only what that call started and removes the properties it wrote.
 
-interface PropsForOptions { to?: Element | string }
-// `to` hoists the WRITES to an ancestor (selector → el.closest(), or an explicit element)
-// while still OBSERVING the bound element — the fix for "custom properties inherit
-// downward only, and @container style() matches an ancestor". Markup form: data-props-to.
-// No closest() match → warns, falls back to the element itself. `to` + a global source →
-// warns, ignored. One binding per key per hoist target (duplicates warn and fight).
+interface PropsForOptions { to?: Element | string; as?: string }
+// `to` writes on an ancestor while observing the bound element. Markup: data-props-to.
+// `as` adds a namespace after cadence prefix. Markup: data-props-as.
+// Missing `to` match falls back to element. Global sources ignore `to`.
 
 interface Config { livePrefix: string; constPrefix: string; root: HTMLElement; typed: boolean; defaults?: Record<string, string|number>; liveHz?: number; randomSeed?: number }
 // defaults: livePrefix '--live-', constPrefix '--const-', root document.documentElement, typed false, liveHz unset (every frame)
